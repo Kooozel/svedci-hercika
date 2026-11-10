@@ -1,13 +1,15 @@
 # Svědci Herčíka
 
-Přehled naší party ve WoW Forever: levely a XP, spec, role, profese, který dungeon sedí všem
-a ready check dungeonových questů (kdo má quest v logu, kdo hotový a komu chybí). Ready check potřebuje API klíče.
+Přehled naší party ve WoW Forever: příští dungeon, ready check dungeonových questů (co se nasdílí u vchodu
+a pro co si kdo musí dojít), postavy s XP a výbavou, profese a novinky od včerejška. Ready check a výbava potřebují API klíče.
 Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka se přegeneruje každé ráno v 6:00 (v létě v 7:00) přes GitHub Actions.
 
 ## Úpravy
 
 - **Přidat postavu:** do `party.json` připiš konec jejího odkazu na Armory, tedy `jmeno-prijmeni`
-  (malými písmeny, diakritika zůstává, třeba `horaes-velký`).
+  (malými písmeny, diakritika zůstává, třeba `horaes-velký`). `size` je počet míst v partě (prázdná se ukážou jako volná).
+- **Novinky od včerejška:** skript si stáhne `party.json` z nasazené stránky (`site_url`) a porovná levely, XP,
+  profese a výbavu se stavem z posledního běhu před dneškem.
 - **Dungeony:** seznam a rozsahy levelů jsou podle
   [Wowhead pro Forever](https://www.wowhead.com/forever/guide/dungeons-overview-locations-details), opravíš je v `dungeons.json`.
   `new` označí nový dungeon z Forever, `alliance_side` dungeon na území Aliance, který se na stránce nezobrazuje.
