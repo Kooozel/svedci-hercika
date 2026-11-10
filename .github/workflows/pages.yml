@@ -23,6 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 build.py
+        env:
+          BNET_CLIENT_ID: ${{ secrets.BNET_CLIENT_ID }}
+          BNET_CLIENT_SECRET: ${{ secrets.BNET_CLIENT_SECRET }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

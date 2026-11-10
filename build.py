@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Stáhne postavy party z WoW Forever Armory a vygeneruje statickou stránku do site/."""
+"""Stáhne postavy party z Blizzard API (záloha: Armory) a vygeneruje statickou stránku do site/."""
+import base64
 import html
 import json
+import os
 import re
 import sys
 import time
@@ -39,66 +41,127 @@ CLASS_COLOR = {
 }
 
 
-def fetch_profile(region, slug):
+def http_json(req):
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        return json.load(resp)
+
+
+# ---------- oficiální Blizzard API (hlavní zdroj) ----------
+
+def api_token():
+    cid, secret = os.environ.get("BNET_CLIENT_ID"), os.environ.get("BNET_CLIENT_SECRET")
+    if not (cid and secret):
+        return None
+    auth = base64.b64encode(f"{cid}:{secret}".encode()).decode()
+    req = urllib.request.Request("https://oauth.battle.net/token", data=b"grant_type=client_credentials",
+                                 headers={"Authorization": f"Basic {auth}"})
+    return http_json(req)["access_token"]
+
+
+def fetch_api(token, region, slug):
+    def get(sub=""):
+        path = urllib.parse.quote(f"/profile/wow/character/{slug}{sub}")
+        url = f"https://{region}.api.blizzard.com{path}?namespace=profile-forever-{region}&locale=en_GB"
+        return http_json(urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"}))
+
+    c = get()
+    groups = get("/specializations").get("specialization_groups") or []
+    active = next((g for g in groups if g.get("is_active")), groups[0] if groups else {})
+    specs = [(s["specialization_name"], s["spent_points"])
+             for s in active.get("specializations") or [] if s.get("spent_points")]
+    profs = get("/professions")
+    assets = {a["key"]: a["value"] for a in get("/character-media").get("assets") or []}
+    login = c.get("last_login_timestamp")
+    return member(
+        slug=slug, region=region, name=c["name"], surname=c.get("surname", ""), level=c["level"],
+        ilvl=c.get("average_item_level"), race=c["race"]["name"], cls=c["character_class"]["name"],
+        specs=specs, ruleset=(c.get("ruleset") or {}).get("name"), faction=(c.get("faction") or {}).get("name"),
+        avatar=assets.get("avatar"),
+        updated=datetime.fromtimestamp(login / 1000, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ") if login else None,
+        updated_label="Naposledy ve hře",
+        professions=[(p["profession"]["name"], group == "primaries", p.get("tiers") or [],
+                      "skill_points", "max_skill_points")
+                     for group in ("primaries", "secondaries") for p in profs.get(group) or []],
+        source="api",
+    )
+
+
+# ---------- veřejná Armory (záloha) ----------
+
+def fetch_armory(region, slug):
     url = ARMORY.format(region=region, slug=urllib.parse.quote(slug))
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=30) as resp:
-        page = resp.read().decode("utf-8")
-    match = STATE_RE.search(page)
+        match = STATE_RE.search(resp.read().decode("utf-8"))
     if not match:
         raise ValueError("stránka neobsahuje data postavy")
-    return json.loads(match.group(1))["character"], url
+    c = json.loads(match.group(1))["character"]
+    return member(
+        slug=slug, region=region, name=c["name"], surname=c.get("surname", ""), level=c["level"],
+        ilvl=c.get("averageItemLevel"), race=c["race"]["name"], cls=c["class"]["name"],
+        specs=[(s["name"], s["spentPoints"]) for s in c.get("specs") or [] if s.get("spentPoints")],
+        ruleset=(c.get("ruleset") or {}).get("name"), faction=(c.get("faction") or {}).get("name"),
+        avatar=(c.get("avatar") or {}).get("url"),
+        updated=(c.get("lastUpdatedTimestamp") or {}).get("iso8601"),
+        updated_label="Armory aktualizována",
+        professions=[(p["name"], group == "primaries", p.get("tiers") or [], "skillPoints", "maxSkillPoints")
+                     for group in ("primaries", "secondaries") for p in (c.get("professions") or {}).get(group, [])],
+        source="armory",
+    )
 
 
-def summarize(c, url):
-    # Armory označí jako active každý strom s body; hlavní spec je ten s nejvíc body.
-    specs = [s for s in c.get("specs") or [] if s.get("spentPoints")]
-    spec = max(specs, key=lambda s: s["spentPoints"], default=None)
-    cls = c["class"]["slug"]
-    roles = ROLES.get((cls, spec["id"]), ["dps"]) if spec else []
-
-    professions = []
-    for group in ("primaries", "secondaries"):
-        for p in (c.get("professions") or {}).get(group, []):
-            tier = max(p.get("tiers") or [{}], key=lambda t: t.get("maxSkillPoints", 0))
-            professions.append({
-                "name": p["name"],
-                "primary": group == "primaries",
-                "skill": tier.get("skillPoints", 0),
-                "max": tier.get("maxSkillPoints", 0),
-            })
-
+def member(*, slug, region, name, surname, cls, specs, professions, **rest):
+    # Body můžou být ve víc stromech; hlavní spec je ten s nejvíc body.
+    spec_name, spec_points = max(specs, key=lambda s: s[1], default=(None, 0))
+    cls_slug = cls.lower()
+    spec_slug = spec_name.lower().replace(" ", "-") if spec_name else None
+    profs = []
+    for prof_name, primary, tiers, skill_key, max_key in professions:
+        tier = max(tiers or [{}], key=lambda t: t.get(max_key, 0))
+        profs.append({"name": prof_name, "primary": primary,
+                      "skill": tier.get(skill_key, 0), "max": tier.get(max_key, 0)})
     return {
         "ok": True,
-        "name": f'{c["name"]} {c["surname"]}'.strip(),
-        "slug": c["slug"],
-        "url": url,
-        "level": c["level"],
-        "ilvl": c.get("averageItemLevel"),
-        "race": c["race"]["name"],
-        "class": c["class"]["name"],
-        "class_slug": cls,
-        "spec": spec["name"] if spec else None,
-        "spec_points": spec["spentPoints"] if spec else 0,
-        "roles": roles,
-        "ruleset": (c.get("ruleset") or {}).get("name"),
-        "faction": (c.get("faction") or {}).get("name"),
-        "avatar": (c.get("avatar") or {}).get("url"),
-        "updated": (c.get("lastUpdatedTimestamp") or {}).get("iso8601"),
-        "professions": professions,
+        "name": f"{name} {surname}".strip(),
+        "slug": slug,
+        "url": ARMORY.format(region=region, slug=urllib.parse.quote(slug)),
+        "class": cls,
+        "class_slug": cls_slug,
+        "spec": spec_name,
+        "spec_points": spec_points,
+        "roles": ROLES.get((cls_slug, spec_slug), ["dps"]) if spec_name else [],
+        "professions": profs,
+        **rest,
     }
 
 
 def load_party(party):
+    region = party["region"]
+    try:
+        token = api_token()
+    except Exception as exc:
+        print(f"API token: {exc}, jedu jen přes Armory", file=sys.stderr)
+        token = None
+    if not token:
+        print("Bez API klíčů, data beru z Armory", file=sys.stderr)
+
     members = []
     for i, slug in enumerate(party["characters"]):
+        try:
+            if not token:
+                raise RuntimeError("bez API")
+            members.append(fetch_api(token, region, slug))
+            continue
+        except Exception as exc:
+            if token:
+                print(f"{slug}: API selhalo ({exc}), zkouším Armory", file=sys.stderr)
         if i:
             time.sleep(2)  # Armory je neoficiální zdroj, nebombardujeme ho
         try:
-            members.append(summarize(*fetch_profile(party["region"], slug)))
+            members.append(fetch_armory(region, slug))
         except Exception as exc:  # jedna rozbitá postava nesmí shodit celou stránku
             print(f"{slug}: {exc}", file=sys.stderr)
-            url = ARMORY.format(region=party["region"], slug=urllib.parse.quote(slug))
+            url = ARMORY.format(region=region, slug=urllib.parse.quote(slug))
             members.append({"ok": False, "slug": slug, "url": url, "error": str(exc)})
     return members
 
@@ -168,7 +231,7 @@ def card(m):
     <span class="ilvl">ilvl {e(m["ilvl"])}</span>
   </div>
   <ul class="profs">{profs}</ul>
-  <p class="updated">Armory aktualizována <time data-ts="{e(m["updated"] or "")}">{e(m["updated"] or "?")}</time></p>
+  <p class="updated">{e(m["updated_label"])} <time data-ts="{e(m["updated"] or "")}">{e(m["updated"] or "?")}</time></p>
 </article>'''
 
 
@@ -275,7 +338,7 @@ def render(party, members, rows, best, built):
     <p class="note">✓ sedí · −N chybí N levelů · +N je o N levelů výš. Rozsahy podle
     <a href="https://www.wowhead.com/forever/guide/dungeons-overview-locations-details" target="_blank" rel="noopener">Wowhead pro Forever</a>, upravíš je v <code>dungeons.json</code>.</p></section>
   <section><h2 class="sec">Profese</h2>{professions_box(ok)}</section>
-  <footer>Data z veřejné <a href="https://worldofwarcraft.blizzard.com/en-us/forever/eu/armory" target="_blank" rel="noopener">WoW Forever Armory</a>, neoficiálně, obnovuje se každé ráno. Armory se aktualizuje se zpožděním.</footer>
+  <footer>Data z Blizzard API (záloha: veřejná <a href="https://worldofwarcraft.blizzard.com/en-us/forever/eu/armory" target="_blank" rel="noopener">WoW Forever Armory</a>), obnovuje se každé ráno. Postava se aktualizuje, když se odhlásí ze hry.</footer>
 </main>
 <script>{JS}</script>
 </body>
