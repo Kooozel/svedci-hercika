@@ -208,6 +208,7 @@ def ready_check(token, region, rows, best, members, catalog):
     done = {m["slug"]: set(m["quests_done"]) for m in with_quests}
     levels = {m["slug"]: m["level"] for m in with_quests}
     names = {q["id"]: q["name"] for qs in catalog.values() for q in qs}
+    home = {q["id"]: d for d, qs in catalog.items() for q in qs}
     xp_cache = {}
 
     def quest_xp(qid):
@@ -227,10 +228,22 @@ def ready_check(token, region, rows, best, members, catalog):
             continue
         seen.add(title)
         quests, unclaimed_names = [], set()
+        here = {q["id"] for q in catalog[title]}
         for q in catalog[title]:
             qid, series = q["id"], q.get("series") or []
             step = series.index(qid) if qid in series else None
             prev = series[step - 1] if step else None
+            # Předquesty nezobrazujeme: z řetězu jen jeho poslední krok v tomhle dungeonu,
+            # a řetězy, které začínají v jiném dungeonu, patří tam.
+            if step is not None:
+                inside = [x for x in series if x in here]
+                started = any(x in active[sl] or x in done[sl] for x in series for sl in active)
+                # rozdělaný řetěz ukážeme jeho cílem, nezačatý prvním krokem, který jde vzít
+                if qid != (inside[-1] if started else inside[0]):
+                    continue
+            if prev and home.get(prev, title) != title:
+                continue
+            earlier = set(series[:step]) if step else set()
             status = {}
             for slug in active:
                 if qid in active[slug]:
@@ -239,13 +252,15 @@ def ready_check(token, region, rows, best, members, catalog):
                     status[slug] = "done"
                 elif q.get("req") and levels[slug] < q["req"]:
                     status[slug] = "level"
+                elif earlier & active[slug]:
+                    status[slug] = "pre"
                 elif prev and prev not in done[slug]:
                     status[slug] = "chain"
                 else:
                     status[slug] = "missing"
             if all(st == "done" for st in status.values()):
                 continue
-            unclaimed = not any(st in ("active", "done") for st in status.values())
+            unclaimed = not any(st in ("active", "done", "pre") for st in status.values())
             if unclaimed:
                 # varianty se stejným názvem (opakovatelné kroky řetězu) stačí ukázat jednou
                 if q["name"] in unclaimed_names:
@@ -259,9 +274,10 @@ def ready_check(token, region, rows, best, members, catalog):
             })
         # nejdřív questy, které někdo má, pak volné, nakonec ty, na které zatím nikdo nemůže
         quests.sort(key=lambda q: (q["unclaimed"], all(st in ("level", "chain") for st in q["status"].values())))
+        take = sum(1 for q in quests for st in q["status"].values() if st == "missing")
         if quests and (r is best or any(not q["unclaimed"] for q in quests)):
             checks.append({"title": title, "min": r["min"], "max": r["max"], "best": r is best,
-                           "quests": quests, "members": list(active)})
+                           "quests": quests, "members": list(active), "take": take})
     return checks
 
 
@@ -357,6 +373,8 @@ def quest_cell(q, st):
         return '<td class="st st-over" title="už odevzdal">hotovo</td>'
     if st == "level":
         return f'<td class="st st-over" title="quest jde vzít od levelu {q["req"]}">lvl {q["req"]}</td>'
+    if st == "pre":
+        return f'<td class="st st-pre" title="má v logu předquest řetězu">⛓ ✓</td>'
     if st == "chain":
         return f'<td class="st st-over" title="nejdřív: {e(q["prev"])}">⛓</td>'
     return '<td class="st st-under" title="nemá, může si ho vzít">✗</td>'
@@ -365,13 +383,11 @@ def quest_cell(q, st):
 def quest_meta(q):
     bits = [f'{q["xp"]:,} XP'.replace(",", "\u00a0") if q["xp"] else None,
             f'od lvl {q["req"]}' if q["req"] else None,
-            "nesdílitelný" if q["sharable"] is False else None,
-            (f'krok {q["step"][0]}/{q["step"][1]}' + (f', po: {e(q["prev"])}' if q["prev"] else ""))
-            if q["step"] else None]
+            (f'řetěz, nejdřív: {e(q["prev"])}' if q["prev"] else None)]
     return " · ".join(b for b in bits if b)
 
 
-def ready_box(check, members):
+def ready_box(check, members, idx):
     by_slug = {m["slug"]: m for m in members}
     cols = [by_slug[s] for s in check["members"]]
     head = "".join(f'<th class="who-col" style="--cls:{CLASS_COLOR.get(m["class_slug"], "#ccc")}">{e(m["name"].split()[0])}</th>'
@@ -380,16 +396,23 @@ def ready_box(check, members):
     for q in check["quests"]:
         cells = "".join(quest_cell(q, q["status"][m["slug"]]) for m in cols)
         cls = ' class="q-none"' if q["unclaimed"] else ""
-        body.append(f'<tr{cls}><th scope="row"><a href="https://www.wowhead.com/forever/quest={q["id"]}" target="_blank" '
-                    f'rel="noopener">{e(q["name"])}</a><small>{quest_meta(q)}</small></th>{cells}</tr>')
+        share = {True: '<span class="share share-yes" title="kdo ho má, může ho v partě nasdílet ostatním">↗ sdílitelný</span>',
+                 False: '<span class="share share-no" title="nejde nasdílet, každý si ho musí vzít sám">✋ každý sám</span>'}.get(q["sharable"], "")
+        holders = [m["name"].split()[0] for m in cols if q["status"][m["slug"]] == "active"]
+        takers = [m for m in cols if q["status"][m["slug"]] == "missing"]
+        hint = (f'<span class="share-hint">nasdílí {e(", ".join(holders))}</span>'
+                if q["sharable"] and holders and takers else "")
+        body.append(f'<tr{cls}><th scope="row"><div class="q-name"><a href="https://www.wowhead.com/forever/quest={q["id"]}" '
+                    f'target="_blank" rel="noopener">{e(q["name"])}</a>{share}{hint}</div><small>{quest_meta(q)}</small></th>{cells}</tr>')
     totals = "".join(
         f'<td class="st">{sum(q["xp"] or 0 for q in check["quests"] if q["status"][m["slug"]] == "active"):,}</td>'
         .replace(",", "\u00a0") for m in cols)
-    take = sum(1 for q in check["quests"] for st in q["status"].values() if st == "missing")
+    take = check["take"]
     flag = ('<span class="flag flag-ok">✓ nikomu nic nechybí</span>' if not take
             else f'<span class="flag flag-bad">✗ k vyzvednutí {take}×</span>')
     best = '<span class="chip chip-new">doporučený</span>' if check["best"] else ""
-    return f'''<article class="rc">
+    hidden = "" if idx == 0 else " hidden"
+    return f'''<article class="rc" id="rc-{idx}" role="tabpanel"{hidden}>
   <header class="rc-head"><h3>{e(check["title"])}{best}</h3><span class="range">level {check["min"]}–{check["max"]}</span>{flag}</header>
   <div class="table-wrap"><table class="dungeons rc-table"><thead><tr><th>Quest</th>{head}</tr></thead>
   <tbody>{"".join(body)}</tbody>
@@ -433,12 +456,17 @@ def professions_box(members):
 def ready_section(checks, members):
     if not checks:
         return ""
+    tabs = "".join(
+        f'<button type="button" role="tab" data-rc="{i}" aria-selected="{"true" if i == 0 else "false"}">'
+        f'{e(c["title"])}<span class="{"tab-take" if c["take"] else "tab-ok"}">{c["take"] or "✓"}</span></button>'
+        for i, c in enumerate(checks))
     return (f'<section><h2 class="sec">Ready check před dungeonem</h2>'
             f'<p class="note legend"><span class="st-fit">✓</span> má v logu · <span class="st-under">✗</span> nemá, může si ho vzít · '
-            f'⛓ nejdřív předchozí quest · lvl N zatím nízký level · hotovo = už odevzdal. '
+            f'⛓ ✓ má v logu předquest · ⛓ nejdřív předchozí quest · lvl N zatím nízký level · hotovo = už odevzdal. '
             f'Šedé questy nemá nikdo z vás. Řetězy a sdílení podle Wowheadu, '
             f'jestli quest začíná až v dungeonu, data neříkají.</p>'
-            f'{"".join(ready_box(c, members) for c in checks)}</section>')
+            f'<div class="rc-picker" role="tablist">{tabs}</div>'
+            f'{"".join(ready_box(c, members, i) for i, c in enumerate(checks))}</section>')
 
 
 def render(party, members, rows, best, built, checks):
@@ -537,6 +565,17 @@ h1{font-size:clamp(28px,6vw,44px);color:var(--gold)}
 .rc-table tbody th a{color:var(--text)}.rc-table tr.q-none th a{color:var(--muted)}
 .rc-table tbody th small{display:block;color:var(--muted);font-weight:400;font-size:12px}
 .legend .st-fit{color:var(--ok)}.legend .st-under{color:var(--bad)}
+.st-pre{color:#9fd3a3;font-size:12px}
+.q-name{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.share{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.share-yes{background:#1f4224;color:#8fe39a}.share-no{background:#4a3a14;color:var(--warn)}
+.share-hint{font-size:11px;color:#8fe39a}
+.rc-picker{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.rc-picker button{font:600 14px Inter,system-ui,sans-serif;color:var(--text);background:var(--panel);border:1px solid var(--line);
+border-radius:999px;padding:6px 8px 6px 14px;cursor:pointer;display:flex;align-items:center;gap:8px}
+.rc-picker button[aria-selected=true]{border-color:var(--gold);background:#2c2014;color:var(--gold)}
+.rc-picker span{font-size:12px;border-radius:999px;padding:1px 8px}
+.tab-take{background:#4a1f1b;color:#ff9b8f}.tab-ok{background:#1f4224;color:#8fe39a}
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
 .dungeons th,.dungeons td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
@@ -556,6 +595,12 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px}
 """
 
 JS = """
+const tabs=[...document.querySelectorAll('.rc-picker button')];
+function pick(i){tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.rc==i));
+  document.querySelectorAll('.rc').forEach(a=>a.hidden=a.id!=='rc-'+i);
+  try{localStorage.setItem('rc-pick',document.querySelector('.rc-picker [data-rc="'+i+'"]').textContent)}catch(e){}}
+tabs.forEach(b=>b.addEventListener('click',()=>pick(b.dataset.rc)));
+try{const saved=localStorage.getItem('rc-pick');const t=tabs.find(b=>b.textContent===saved);if(t)pick(t.dataset.rc)}catch(e){}
 const rtf=new Intl.RelativeTimeFormat('cs',{numeric:'auto'});
 for(const t of document.querySelectorAll('time[data-ts]')){
   const d=new Date(t.dataset.ts); if(isNaN(d)) continue;
