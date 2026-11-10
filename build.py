@@ -256,6 +256,8 @@ def ready_check(token, region, rows, best, members, catalog):
                     status[slug] = "pre"
                 elif prev and prev not in done[slug]:
                     status[slug] = "chain"
+                elif q.get("start") == "dungeon":
+                    status[slug] = "inside"
                 else:
                     status[slug] = "missing"
             if all(st == "done" for st in status.values()):
@@ -268,7 +270,7 @@ def ready_check(token, region, rows, best, members, catalog):
                 unclaimed_names.add(q["name"])
             quests.append({
                 "id": qid, "name": q["name"], "xp": quest_xp(qid), "req": q.get("req"),
-                "sharable": q.get("sharable"), "status": status, "unclaimed": unclaimed,
+                "sharable": q.get("sharable"), "status": status, "unclaimed": unclaimed, "start": q.get("start"),
                 "step": [step + 1, len(series)] if step is not None else None,
                 "prev": (names.get(prev) or "předchozí quest") if prev else None,
             })
@@ -373,6 +375,8 @@ def quest_cell(q, st):
         return '<td class="st st-over" title="už odevzdal">hotovo</td>'
     if st == "level":
         return f'<td class="st st-over" title="quest jde vzít od levelu {q["req"]}">lvl {q["req"]}</td>'
+    if st == "inside":
+        return '<td class="st st-over" title="quest začíná předmětem v dungeonu, předem se brát nedá">v dungu</td>'
     if st == "pre":
         return f'<td class="st st-pre" title="má v logu předquest řetězu">⛓ ✓</td>'
     if st == "chain":
@@ -383,6 +387,7 @@ def quest_cell(q, st):
 def quest_meta(q):
     bits = [f'{q["xp"]:,} XP'.replace(",", "\u00a0") if q["xp"] else None,
             f'od lvl {q["req"]}' if q["req"] else None,
+            f'start: {e(q["start"])}' if q["start"] and q["start"] != "dungeon" else None,
             (f'řetěz, nejdřív: {e(q["prev"])}' if q["prev"] else None)]
     return " · ".join(b for b in bits if b)
 
@@ -405,6 +410,9 @@ def ready_box(check, members, idx):
             share = {True: '<span class="share share-yes" title="kdo ho má, může ho v partě nasdílet ostatním">↗ sdílitelný</span>',
                      False: '<span class="share share-no" title="nejde nasdílet, každý si ho musí vzít sám">✋ každý sám</span>'
                      }.get(q["sharable"], "")
+        if q["start"] == "dungeon":
+            share = ('<span class="share share-in" title="začíná předmětem, který padne v dungeonu">📦 začíná v dungeonu</span>'
+                     + share)
         holders = [m["name"].split()[0] for m in cols if q["status"][m["slug"]] == "active"]
         takers = [m for m in cols if q["status"][m["slug"]] == "missing"]
         hint = (f'<span class="share-hint">nasdílí {e(", ".join(holders))}</span>'
@@ -469,9 +477,8 @@ def ready_section(checks, members):
         for i, c in enumerate(checks))
     return (f'<section><h2 class="sec">Ready check před dungeonem</h2>'
             f'<p class="note legend"><span class="st-fit">✓</span> má v logu · <span class="st-under">✗</span> nemá, může si ho vzít · '
-            f'⛓ ✓ má v logu předquest · ⛓ nejdřív předchozí quest · lvl N zatím nízký level · hotovo = už odevzdal. '
-            f'Šedé questy nemá nikdo z vás. Řetězy a sdílení podle Wowheadu, '
-            f'jestli quest začíná až v dungeonu, data neříkají.</p>'
+            f'⛓ ✓ má v logu předquest · ⛓ nejdřív předchozí quest · lvl N zatím nízký level · v dungu = vezme se až uvnitř · hotovo = už odevzdal. '
+            f'Šedé questy nemá nikdo z vás. Řetězy, sdílení a start podle Wowheadu.</p>'
             f'<div class="rc-picker" role="tablist">{tabs}</div>'
             f'{"".join(ready_box(c, members, i) for i, c in enumerate(checks))}</section>')
 
@@ -575,7 +582,7 @@ h1{font-size:clamp(28px,6vw,44px);color:var(--gold)}
 .st-pre{color:#9fd3a3;font-size:12px}
 .q-name{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .share{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap}
-.share-yes{background:#1f4224;color:#8fe39a}.share-no{background:#4a3a14;color:var(--warn)}
+.share-yes{background:#1f4224;color:#8fe39a}.share-in{background:#3b2a5c;color:#c9b2ff}.share-no{background:#4a3a14;color:var(--warn)}
 .share-hint{font-size:11px;color:#8fe39a}
 .rc-picker{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
 .rc-picker button{font:600 14px Inter,system-ui,sans-serif;color:var(--text);background:var(--panel);border:1px solid var(--line);

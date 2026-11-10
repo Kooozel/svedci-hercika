@@ -1,5 +1,5 @@
 {
- "_info": "Dungeonové questy pro Hordu podle Wowhead Forever (sebráno 2026-11-10). series = pořadí řetězu, sharable = jde sdílet v partě. U vyšších dungeonů chybí detaily.",
+ "_info": "Dungeonové questy pro Hordu podle Wowhead Forever (sebráno 2026-11-10). series = pořadí řetězu, sharable = jde sdílet v partě. U vyšších dungeonů chybí detaily. start = NPC, u kterého quest začíná, nebo \"dungeon\" když začíná předmětem v dungeonu (zatím jen RoL, WC, SFK).",
  "dungeons": {
   "Ragefire Chasm": [
    {
@@ -58,31 +58,36 @@
     "id": 92401,
     "name": "A Frightened Request",
     "req": 15,
-    "sharable": true
+    "sharable": true,
+    "start": "Tabitha Heartweaver"
    },
    {
     "id": 92421,
     "name": "Light's Justice",
     "req": 15,
-    "sharable": true
+    "sharable": true,
+    "start": "Morbin Lightbane"
    },
    {
     "id": 92422,
     "name": "The Wrath of Rath'mael",
     "req": 15,
-    "sharable": true
+    "sharable": true,
+    "start": "Deathguard Kristof"
    },
    {
     "id": 95204,
     "name": "Crest of Lordaeron",
     "req": 15,
-    "sharable": false
+    "sharable": false,
+    "start": "dungeon"
    },
    {
     "id": 95216,
     "name": "The New Plague",
     "req": 15,
-    "sharable": true
+    "sharable": true,
+    "start": "Theodore Griffs"
    },
    {
     "id": 97287,
@@ -106,7 +111,8 @@
      97290,
      97291,
      97292
-    ]
+    ],
+    "start": "dungeon"
    },
    {
     "id": 97289,
@@ -158,31 +164,36 @@
      1489,
      1490,
      914
-    ]
+    ],
+    "start": "Nara Wildmane"
    },
    {
     "id": 959,
     "name": "Trouble at the Docks",
     "req": 14,
-    "sharable": true
+    "sharable": true,
+    "start": "Crane Operator Bigglefuzz"
    },
    {
     "id": 962,
     "name": "Serpentbloom",
     "req": 14,
-    "sharable": true
+    "sharable": true,
+    "start": "Apothecary Zamah"
    },
    {
     "id": 1486,
     "name": "Deviate Hides",
     "req": 13,
-    "sharable": true
+    "sharable": true,
+    "start": "Nalpak"
    },
    {
     "id": 1487,
     "name": "Deviate Eradication",
     "req": 15,
-    "sharable": true
+    "sharable": true,
+    "start": "Ebru"
    },
    {
     "id": 1489,
@@ -210,19 +221,22 @@
     "id": 1491,
     "name": "Smart Drinks",
     "req": 13,
-    "sharable": true
+    "sharable": true,
+    "start": "Mebok Mizzyrix"
    },
    {
     "id": 3366,
     "name": "The Glowing Shard",
     "req": 15,
-    "sharable": false
+    "sharable": false,
+    "start": "dungeon"
    },
    {
     "id": 6981,
     "name": "The Glowing Shard",
     "req": 15,
-    "sharable": false
+    "sharable": false,
+    "start": "dungeon"
    },
    {
     "id": 7944,
@@ -236,19 +250,22 @@
     "id": 1013,
     "name": "The Book of Ur",
     "req": 16,
-    "sharable": true
+    "sharable": true,
+    "start": "Keeper Bel'dugur"
    },
    {
     "id": 1014,
     "name": "Arugal Must Die",
     "req": 18,
-    "sharable": true
+    "sharable": true,
+    "start": "Dalar Dawnweaver"
    },
    {
     "id": 1098,
     "name": "Deathstalkers in Shadowfang",
     "req": 18,
-    "sharable": true
+    "sharable": true,
+    "start": "High Executor Hadrec"
    }
   ],
   "Excavation Site: Wetlands": [
