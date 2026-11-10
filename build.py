@@ -207,8 +207,6 @@ def ready_check(token, region, rows, best, members, catalog):
     active = {m["slug"]: {q["id"] for q in m["quests_active"]} for m in with_quests}
     done = {m["slug"]: set(m["quests_done"]) for m in with_quests}
     levels = {m["slug"]: m["level"] for m in with_quests}
-    names = {q["id"]: q["name"] for qs in catalog.values() for q in qs}
-    home = {q["id"]: d for d, qs in catalog.items() for q in qs}
     xp_cache = {}
 
     def quest_xp(qid):
@@ -227,29 +225,12 @@ def ready_check(token, region, rows, best, members, catalog):
         if title not in catalog or title in seen:
             continue
         seen.add(title)
-        quests, unclaimed_names = [], set()
-        here = {q["id"] for q in catalog[title]}
-        for q in catalog[title]:
-            qid, series = q["id"], q.get("series") or []
-            step = series.index(qid) if qid in series else None
-            prev = series[step - 1] if step else None
-            # Předquesty nezobrazujeme: z řetězu jen jeho poslední krok v tomhle dungeonu,
-            # a řetězy, které začínají v jiném dungeonu, patří tam.
-            if step is not None:
-                inside = [x for x in series if x in here]
-                started = any(x in active[sl] or x in done[sl] for x in series for sl in active)
-                # rozdělaný řetěz ukážeme jeho cílem, nezačatý prvním krokem, který jde vzít
-                if qid != (inside[-1] if started else inside[0]):
-                    continue
-            if prev and home.get(prev, title) != title:
-                continue
-            earlier = set(series[:step]) if step else set()
-            required = {prev} if prev else set()
-            prev_name = (names.get(prev) or "předchozí quest") if prev else None
-            if q.get("pre"):  # předquesty mimo dungeon, které v řetězu z Wowheadu nejsou
-                earlier |= set(q["pre"]["ids"])
-                required = set(q["pre"]["ids"])
-                prev_name = q["pre"]["name"]
+        quests = []
+        for q in catalog[title]["quests"]:
+            qid, pre = q["id"], q.get("pre")
+            # předquesty se nezobrazují, jen se podle nich pozná, kdo už quest může vzít
+            earlier = set(pre["ids"]) if pre else set()
+            required = {pre["ids"][-1]} if pre else set()
             status = {}
             for slug in active:
                 if qid in active[slug]:
@@ -268,24 +249,19 @@ def ready_check(token, region, rows, best, members, catalog):
                     status[slug] = "missing"
             if all(st == "done" for st in status.values()):
                 continue
-            unclaimed = not any(st in ("active", "done", "pre") for st in status.values())
-            if unclaimed:
-                # varianty se stejným názvem (opakovatelné kroky řetězu) stačí ukázat jednou
-                if q["name"] in unclaimed_names:
-                    continue
-                unclaimed_names.add(q["name"])
             quests.append({
                 "id": qid, "name": q["name"], "xp": quest_xp(qid), "req": q.get("req"),
-                "sharable": q.get("sharable"), "status": status, "unclaimed": unclaimed, "start": q.get("start"), "note": q.get("note"),
-                "step": [step + 1, len(series)] if step is not None else None,
-                "prev": prev_name,
+                "sharable": q.get("sharable"), "start": q.get("start"), "note": q.get("note"),
+                "prev": pre["name"] if pre else None, "status": status,
+                "unclaimed": not any(st in ("active", "done", "pre") for st in status.values()),
             })
         # nejdřív questy, které někdo má, pak volné, nakonec ty, na které zatím nikdo nemůže
         quests.sort(key=lambda q: (q["unclaimed"], all(st in ("level", "chain") for st in q["status"].values())))
         take = sum(1 for q in quests for st in q["status"].values() if st == "missing")
         if quests and (r is best or any(not q["unclaimed"] for q in quests)):
             checks.append({"title": title, "min": r["min"], "max": r["max"], "best": r is best,
-                           "quests": quests, "members": list(active), "take": take})
+                           "quests": quests, "members": list(active), "take": take,
+                           "source": catalog[title].get("source")})
     return checks
 
 
@@ -394,7 +370,7 @@ def quest_meta(q):
     bits = [f'{q["xp"]:,} XP'.replace(",", "\u00a0") if q["xp"] else None,
             f'od lvl {q["req"]}' if q["req"] else None,
             f'start: {e(q["start"])}' if q["start"] and q["start"] != "dungeon" else None,
-            (f'řetěz, nejdřív: {e(q["prev"])}' if q["prev"] else None),
+            (f'nejdřív: {e(q["prev"])}' if q["prev"] else None),
             e(q["note"]) if q.get("note") else None]
     return " · ".join(b for b in bits if b)
 
@@ -433,9 +409,11 @@ def ready_box(check, members, idx):
     flag = ('<span class="flag flag-ok">✓ nikomu nic nechybí</span>' if not take
             else f'<span class="flag flag-bad">✗ k vyzvednutí {take}×</span>')
     best = '<span class="chip chip-new">doporučený</span>' if check["best"] else ""
+    source = (f'<a class="rc-source" href="{e(check["source"])}" target="_blank" rel="noopener">průvodce questů ↗</a>'
+              if check.get("source") else "")
     hidden = "" if idx == 0 else " hidden"
     return f'''<article class="rc" id="rc-{idx}" role="tabpanel"{hidden}>
-  <header class="rc-head"><h3>{e(check["title"])}{best}</h3><span class="range">level {check["min"]}–{check["max"]}</span>{flag}</header>
+  <header class="rc-head"><h3>{e(check["title"])}{best}</h3><span class="range">level {check["min"]}–{check["max"]}</span>{flag}{source}</header>
   <div class="table-wrap"><table class="dungeons rc-table"><thead><tr><th>Quest</th>{head}</tr></thead>
   <tbody>{"".join(body)}</tbody>
   <tfoot><tr><th scope="row">XP z questů v logu</th>{totals}</tr></tfoot></table></div>
@@ -485,7 +463,8 @@ def ready_section(checks, members):
     return (f'<section><h2 class="sec">Ready check před dungeonem</h2>'
             f'<p class="note legend"><span class="st-fit">✓</span> má v logu · <span class="st-under">✗</span> nemá, může si ho vzít · '
             f'⛓ ✓ má v logu předquest · ⛓ nejdřív předchozí quest · lvl N zatím nízký level · v dungu = vezme se až uvnitř · hotovo = už odevzdal. '
-            f'Šedé questy nemá nikdo z vás. Řetězy, sdílení a start podle Wowheadu.</p>'
+            f'Šedé questy nemá nikdo z vás. Questy, předquesty, sdílení a start podle průvodců Warcraft Tavern; '
+            f'ready check mají jen dungeony, které jsou v <code>quests.json</code>.</p>'
             f'<div class="rc-picker" role="tablist">{tabs}</div>'
             f'{"".join(ready_box(c, members, i) for i, c in enumerate(checks))}</section>')
 
@@ -582,7 +561,7 @@ h1{font-size:clamp(28px,6vw,44px);color:var(--gold)}
 .xp{display:grid;gap:3px;font-size:12px;color:var(--muted)}.xp small{color:var(--muted)}.xp-num{color:var(--text)}
 .xp-bar span{background:linear-gradient(90deg,#7b4bd1,#b58cff)!important}
 .rc{margin-bottom:18px}.rc-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
-.rc-head h3{font-size:18px}.rc-table tfoot th,.rc-table tfoot td{background:var(--panel2);font-weight:600}
+.rc-head h3{font-size:18px}.rc-source{margin-left:auto;font-size:13px}.rc-table tfoot th,.rc-table tfoot td{background:var(--panel2);font-weight:600}
 .rc-table tbody th a{color:var(--text)}.rc-table tr.q-none th a{color:var(--muted)}
 .rc-table tbody th small{display:block;color:var(--muted);font-weight:400;font-size:12px}
 .legend .st-fit{color:var(--ok)}.legend .st-under{color:var(--bad)}
@@ -605,7 +584,7 @@ table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520p
 .dungeons tr:last-child>*{border-bottom:0}
 .who-col{color:var(--cls)!important;text-align:center!important}
 .range{color:var(--gold);white-space:nowrap}
-.st{text-align:center!important;font-weight:600}.st-fit{color:var(--ok)}.st-under{color:var(--bad)}.st-over{color:var(--muted)}
+.st{text-align:center!important;font-weight:600;white-space:nowrap}.st-fit{color:var(--ok)}.st-under{color:var(--bad)}.st-over{color:var(--muted)}
 tr.best{background:#2c1611}tr.best th:first-child{box-shadow:inset 3px 0 var(--red)}
 .note,.missing{color:var(--muted);font-size:13px}.missing{color:var(--warn)}
 .prof-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
