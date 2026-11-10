@@ -292,7 +292,8 @@ def ready_check(token, region, rows, best, members, catalog):
             })
         # nejdřív questy, které někdo má, pak volné, nakonec ty, na které zatím nikdo nemůže
         quests.sort(key=lambda q: (q["unclaimed"], all(st in ("level", "chain") for st in q["status"].values())))
-        take = sum(1 for q in quests for st in q["status"].values() if st == "missing")
+        # ✋ = musí si někam dojít: pro quest, dokončit rozjetý řetěz nebo udělat předquesty
+        take = sum(1 for q in quests for st in q["status"].values() if st in ("missing", "pre", "chain"))
         share = sum(1 for q in quests for st in q["status"].values() if st == "share")
         if quests and (r is best or any(not q["unclaimed"] for q in quests)):
             checks.append({"title": title, "min": r["min"], "max": r["max"], "best": r is best,
@@ -582,13 +583,15 @@ def todo_cards(check, cols):
     cards = []
     for m in cols:
         s = m["slug"]
-        take, chain, get, give, low = [], [], [], [], []
+        take, chain, start, get, give, low = [], [], [], [], [], []
         for q in check["quests"]:
             st = q["status"][s]
             if st == "missing":
                 take.append(q)
             elif st == "pre":
                 chain.append(q)
+            elif st == "chain":
+                start.append(q)
             elif st == "share":
                 get.append(q)
             elif st == "active" and any(q["status"][o["slug"]] == "share" for o in cols):
@@ -596,10 +599,11 @@ def todo_cards(check, cols):
             elif st == "level":
                 low.append(q)
         lines = []
-        if not take and not chain:
+        if not take and not chain and not start:
             lines.append('<li class="t-ok">✓ nemusí nikam chodit</li>')
         lines += [f'<li class="t-take">dojde si: <b>{e(q["name"])}</b><small>{e(q["start"] or "")}</small></li>' for q in take]
         lines += [f'<li class="t-take">dokončí řetěz: <b>{e(q["name"])}</b><small>nejdřív {e(q["prev"])}</small></li>' for q in chain]
+        lines += [f'<li class="t-take">udělá předquesty: <b>{e(q["name"])}</b><small>nejdřív {e(q["prev"])}</small></li>' for q in start]
         if get:
             lines.append(f'<li class="t-get">u vchodu dostane: {e(", ".join(q["name"] for q in get))}</li>')
         if give:
