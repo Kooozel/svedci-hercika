@@ -199,47 +199,69 @@ def plan_dungeons(members, dungeons):
     return rows, best
 
 
-def ready_check(token, region, rows, best, members):
-    """Questy z dungeonů v dosahu: kdo je má v logu, kdo hotové a komu chybí."""
-    if not token:
-        return []
+def ready_check(token, region, rows, best, members, catalog):
+    """Dungeonové questy z dungeonů v dosahu a stav každého člena party."""
     with_quests = [m for m in members if "quests_active" in m]
-    if not with_quests:
+    if not token or not with_quests:
         return []
-    areas = {a["name"]: a["id"] for a in api_get(token, region, "/data/wow/quest/area/index", "static")["areas"]}
     active = {m["slug"]: {q["id"] for q in m["quests_active"]} for m in with_quests}
     done = {m["slug"]: set(m["quests_done"]) for m in with_quests}
-    faction = (with_quests[0].get("faction") or "").upper()
-    details, checks, seen = {}, [], set()
-    near = sorted((r for r in rows if r["near"]), key=lambda r: r is not best)
-    for r in near:
-        # křídla jako "Scarlet Monastery: Library" sdílí jednu oblast questů
-        title = r["name"] if r["name"] in areas else r["name"].split(":")[0]
-        area = areas.get(title)
-        if not area or area in seen:
+    levels = {m["slug"]: m["level"] for m in with_quests}
+    names = {q["id"]: q["name"] for qs in catalog.values() for q in qs}
+    xp_cache = {}
+
+    def quest_xp(qid):
+        if qid not in xp_cache:
+            try:
+                detail = api_get(token, region, f"/data/wow/quest/{qid}", "static")
+                xp_cache[qid] = (detail.get("rewards") or {}).get("experience")
+            except Exception:
+                xp_cache[qid] = None
+        return xp_cache[qid]
+
+    checks, seen = [], set()
+    for r in sorted((r for r in rows if r["near"]), key=lambda r: r is not best):
+        # křídla jako "Scarlet Monastery: Library" sdílí jeden seznam questů
+        title = r["name"] if r["name"] in catalog else r["name"].split(":")[0]
+        if title not in catalog or title in seen:
             continue
-        seen.add(area)
-        relevant, others = [], {}
-        for q in api_get(token, region, f"/data/wow/quest/area/{area}", "static").get("quests") or []:
-            qid = q["id"]
-            if qid not in details:
-                details[qid] = api_get(token, region, f"/data/wow/quest/{qid}", "static")
-            req_faction = ((details[qid].get("requirements") or {}).get("faction") or {}).get("type")
-            if req_faction and req_faction != faction:
-                continue
-            xp = (details[qid].get("rewards") or {}).get("experience")
-            status = {slug: "active" if qid in active[slug] else "done" if qid in done[slug] else "missing"
-                      for slug in active}
+        seen.add(title)
+        quests, unclaimed_names = [], set()
+        for q in catalog[title]:
+            qid, series = q["id"], q.get("series") or []
+            step = series.index(qid) if qid in series else None
+            prev = series[step - 1] if step else None
+            status = {}
+            for slug in active:
+                if qid in active[slug]:
+                    status[slug] = "active"
+                elif qid in done[slug]:
+                    status[slug] = "done"
+                elif q.get("req") and levels[slug] < q["req"]:
+                    status[slug] = "level"
+                elif prev and prev not in done[slug]:
+                    status[slug] = "chain"
+                else:
+                    status[slug] = "missing"
             if all(st == "done" for st in status.values()):
                 continue
-            if all(st == "missing" for st in status.values()):
-                if xp:
-                    others[q["name"]] = max(xp, others.get(q["name"], 0))
-                continue
-            relevant.append({"id": qid, "name": q["name"], "xp": xp, "status": status})
-        if relevant:
+            unclaimed = not any(st in ("active", "done") for st in status.values())
+            if unclaimed:
+                # varianty se stejným názvem (opakovatelné kroky řetězu) stačí ukázat jednou
+                if q["name"] in unclaimed_names:
+                    continue
+                unclaimed_names.add(q["name"])
+            quests.append({
+                "id": qid, "name": q["name"], "xp": quest_xp(qid), "req": q.get("req"),
+                "sharable": q.get("sharable"), "status": status, "unclaimed": unclaimed,
+                "step": [step + 1, len(series)] if step is not None else None,
+                "prev": (names.get(prev) or "předchozí quest") if prev else None,
+            })
+        # nejdřív questy, které někdo má, pak volné, nakonec ty, na které zatím nikdo nemůže
+        quests.sort(key=lambda q: (q["unclaimed"], all(st in ("level", "chain") for st in q["status"].values())))
+        if quests and (r is best or any(not q["unclaimed"] for q in quests)):
             checks.append({"title": title, "min": r["min"], "max": r["max"], "best": r is best,
-                           "quests": relevant, "others": sorted(others.items()), "members": list(active)})
+                           "quests": quests, "members": list(active)})
     return checks
 
 
@@ -328,11 +350,25 @@ def dungeon_table(rows, best, members):
             f'<tbody>{"".join(body)}</tbody></table></div>')
 
 
-QUEST_CELL = {
-    "active": '<td class="st st-fit" title="má v logu">✓</td>',
-    "done": '<td class="st st-over" title="už odevzdal">hotovo</td>',
-    "missing": '<td class="st st-under" title="nemá">✗</td>',
-}
+def quest_cell(q, st):
+    if st == "active":
+        return '<td class="st st-fit" title="má v logu">✓</td>'
+    if st == "done":
+        return '<td class="st st-over" title="už odevzdal">hotovo</td>'
+    if st == "level":
+        return f'<td class="st st-over" title="quest jde vzít od levelu {q["req"]}">lvl {q["req"]}</td>'
+    if st == "chain":
+        return f'<td class="st st-over" title="nejdřív: {e(q["prev"])}">⛓</td>'
+    return '<td class="st st-under" title="nemá, může si ho vzít">✗</td>'
+
+
+def quest_meta(q):
+    bits = [f'{q["xp"]:,} XP'.replace(",", "\u00a0") if q["xp"] else None,
+            f'od lvl {q["req"]}' if q["req"] else None,
+            "nesdílitelný" if q["sharable"] is False else None,
+            (f'krok {q["step"][0]}/{q["step"][1]}' + (f', po: {e(q["prev"])}' if q["prev"] else ""))
+            if q["step"] else None]
+    return " · ".join(b for b in bits if b)
 
 
 def ready_box(check, members):
@@ -342,27 +378,22 @@ def ready_box(check, members):
                    for m in cols)
     body = []
     for q in check["quests"]:
-        xp = f'{q["xp"]:,}'.replace(",", "\u00a0") if q["xp"] else "?"
-        cells = "".join(QUEST_CELL[q["status"][m["slug"]]] for m in cols)
-        body.append(f'<tr><th scope="row"><a href="https://www.wowhead.com/forever/quest={q["id"]}" target="_blank" '
-                    f'rel="noopener">{e(q["name"])}</a></th><td class="range">{xp}</td>{cells}</tr>')
+        cells = "".join(quest_cell(q, q["status"][m["slug"]]) for m in cols)
+        cls = ' class="q-none"' if q["unclaimed"] else ""
+        body.append(f'<tr{cls}><th scope="row"><a href="https://www.wowhead.com/forever/quest={q["id"]}" target="_blank" '
+                    f'rel="noopener">{e(q["name"])}</a><small>{quest_meta(q)}</small></th>{cells}</tr>')
     totals = "".join(
         f'<td class="st">{sum(q["xp"] or 0 for q in check["quests"] if q["status"][m["slug"]] == "active"):,}</td>'
         .replace(",", "\u00a0") for m in cols)
-    missing = sum(1 for q in check["quests"] for st in q["status"].values() if st == "missing")
-    flag = ('<span class="flag flag-ok">✓ všichni mají všechno</span>' if not missing
-            else f'<span class="flag flag-bad">✗ chybí {missing}×</span>')
-    others = (f'<details class="others"><summary>Další questy, které nikdo nemá ({len(check["others"])})</summary>'
-              f'<p>{", ".join(f"{e(n)} <small>{xp:,} XP</small>".replace(",", "\u00a0") for n, xp in check["others"])}</p>'
-              f'<p class="note">Questy pro Hordu, které nikdo nemá. Některé navazují na jiný quest nebo jsou jen pro určitou class.</p></details>'
-              if check["others"] else "")
+    take = sum(1 for q in check["quests"] for st in q["status"].values() if st == "missing")
+    flag = ('<span class="flag flag-ok">✓ nikomu nic nechybí</span>' if not take
+            else f'<span class="flag flag-bad">✗ k vyzvednutí {take}×</span>')
     best = '<span class="chip chip-new">doporučený</span>' if check["best"] else ""
     return f'''<article class="rc">
   <header class="rc-head"><h3>{e(check["title"])}{best}</h3><span class="range">level {check["min"]}–{check["max"]}</span>{flag}</header>
-  <div class="table-wrap"><table class="dungeons rc-table"><thead><tr><th>Quest</th><th>XP</th>{head}</tr></thead>
+  <div class="table-wrap"><table class="dungeons rc-table"><thead><tr><th>Quest</th>{head}</tr></thead>
   <tbody>{"".join(body)}</tbody>
-  <tfoot><tr><th scope="row">XP z questů v logu</th><td></td>{totals}</tr></tfoot></table></div>
-  {others}
+  <tfoot><tr><th scope="row">XP z questů v logu</th>{totals}</tr></tfoot></table></div>
 </article>'''
 
 
@@ -403,8 +434,10 @@ def ready_section(checks, members):
     if not checks:
         return ""
     return (f'<section><h2 class="sec">Ready check před dungeonem</h2>'
-            f'<p class="note">Dungeonové questy z dungeonů v dosahu, které má někdo z vás v logu nebo už odevzdal. '
-            f'Kdo má ✗, ať si quest vezme, než vyrazíte.</p>'
+            f'<p class="note legend"><span class="st-fit">✓</span> má v logu · <span class="st-under">✗</span> nemá, může si ho vzít · '
+            f'⛓ nejdřív předchozí quest · lvl N zatím nízký level · hotovo = už odevzdal. '
+            f'Šedé questy nemá nikdo z vás. Řetězy a sdílení podle Wowheadu, '
+            f'jestli quest začíná až v dungeonu, data neříkají.</p>'
             f'{"".join(ready_box(c, members) for c in checks)}</section>')
 
 
@@ -501,8 +534,9 @@ h1{font-size:clamp(28px,6vw,44px);color:var(--gold)}
 .xp-bar span{background:linear-gradient(90deg,#7b4bd1,#b58cff)!important}
 .rc{margin-bottom:18px}.rc-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
 .rc-head h3{font-size:18px}.rc-table tfoot th,.rc-table tfoot td{background:var(--panel2);font-weight:600}
-.rc-table tbody th a{color:var(--text)}.others{margin-top:8px;font-size:13px}
-.others summary{cursor:pointer;color:var(--muted)}.others p{margin:6px 0;color:var(--muted)}
+.rc-table tbody th a{color:var(--text)}.rc-table tr.q-none th a{color:var(--muted)}
+.rc-table tbody th small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.legend .st-fit{color:var(--ok)}.legend .st-under{color:var(--bad)}
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
 .dungeons th,.dungeons td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
@@ -551,7 +585,8 @@ def main():
         sys.exit("Nepodařilo se načíst žádnou postavu, stránku neměním.")
     rows, best = plan_dungeons(ok, dungeons)
     try:
-        checks = ready_check(token, region, rows, best, ok)
+        catalog = json.loads((ROOT / "quests.json").read_text(encoding="utf-8"))["dungeons"]
+        checks = ready_check(token, region, rows, best, ok, catalog)
     except Exception as exc:  # ready check je bonus, stránka musí vzniknout i bez něj
         print(f"Ready check: {exc}", file=sys.stderr)
         checks = []

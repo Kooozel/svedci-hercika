@@ -11,6 +11,8 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Dungeony:** seznam a rozsahy levelů jsou podle
   [Wowhead pro Forever](https://www.wowhead.com/forever/guide/dungeons-overview-locations-details), opravíš je v `dungeons.json`.
   `new` označí nový dungeon z Forever, `alliance_side` dungeon na území Aliance, který se na stránce nezobrazuje.
+- **Questy pro ready check:** `quests.json`, ručně sebrané z Wowhead Forever (Wowhead automatické stahování blokuje).
+  `series` je pořadí řetězu, `sharable` jestli jde quest sdílet, `req` od kterého levelu. Nový dungeon doplníš sem.
 
 Po pushnutí do `main` se stránka přegeneruje hned.
 

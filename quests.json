@@ -1,0 +1,577 @@
+{
+ "_info": "Dungeonové questy pro Hordu podle Wowhead Forever (sebráno 2026-11-10). series = pořadí řetězu, sharable = jde sdílet v partě. U vyšších dungeonů chybí detaily.",
+ "dungeons": {
+  "Ragefire Chasm": [
+   {
+    "id": 5722,
+    "name": "Searching for the Lost Satchel",
+    "req": 9,
+    "sharable": true,
+    "series": [
+     5722,
+     5724
+    ]
+   },
+   {
+    "id": 5723,
+    "name": "Testing an Enemy's Strength",
+    "req": 9,
+    "sharable": true
+   },
+   {
+    "id": 5724,
+    "name": "Returning the Lost Satchel",
+    "req": 9,
+    "sharable": false,
+    "series": [
+     5722,
+     5724
+    ]
+   },
+   {
+    "id": 5725,
+    "name": "The Power to Destroy...",
+    "req": 9,
+    "sharable": true
+   },
+   {
+    "id": 5728,
+    "name": "Hidden Enemies",
+    "req": 9,
+    "sharable": true,
+    "series": [
+     5727,
+     5728,
+     5729,
+     5730
+    ]
+   },
+   {
+    "id": 5761,
+    "name": "Slaying the Beast",
+    "req": 9,
+    "sharable": true
+   }
+  ],
+  "Ruins of Lordaeron": [
+   {
+    "id": 92401,
+    "name": "A Frightened Request",
+    "req": 15,
+    "sharable": true
+   },
+   {
+    "id": 92421,
+    "name": "Light's Justice",
+    "req": 15,
+    "sharable": true
+   },
+   {
+    "id": 92422,
+    "name": "The Wrath of Rath'mael",
+    "req": 15,
+    "sharable": true
+   },
+   {
+    "id": 95204,
+    "name": "Crest of Lordaeron",
+    "req": 15,
+    "sharable": false
+   },
+   {
+    "id": 95216,
+    "name": "The New Plague",
+    "req": 15,
+    "sharable": true
+   },
+   {
+    "id": 97287,
+    "name": "Shrewd Negotiations",
+    "req": 24,
+    "sharable": false,
+    "series": [
+     92434,
+     96984,
+     97287
+    ]
+   },
+   {
+    "id": 97288,
+    "name": "Unending Torment",
+    "req": 15,
+    "sharable": false,
+    "series": [
+     97288,
+     97289,
+     97290,
+     97291,
+     97292
+    ]
+   },
+   {
+    "id": 97289,
+    "name": "Unending Torment",
+    "req": 15,
+    "sharable": false,
+    "series": [
+     97288,
+     97289,
+     97290,
+     97291,
+     97292
+    ]
+   },
+   {
+    "id": 97291,
+    "name": "Unending Torment",
+    "req": 15,
+    "sharable": true,
+    "series": [
+     97288,
+     97289,
+     97290,
+     97291,
+     97292
+    ]
+   },
+   {
+    "id": 97292,
+    "name": "Unending Torment",
+    "req": 15,
+    "sharable": false,
+    "series": [
+     97288,
+     97289,
+     97290,
+     97291,
+     97292
+    ]
+   }
+  ],
+  "Wailing Caverns": [
+   {
+    "id": 914,
+    "name": "Leaders of the Fang",
+    "req": 10,
+    "sharable": true,
+    "series": [
+     1489,
+     1490,
+     914
+    ]
+   },
+   {
+    "id": 959,
+    "name": "Trouble at the Docks",
+    "req": 14,
+    "sharable": true
+   },
+   {
+    "id": 962,
+    "name": "Serpentbloom",
+    "req": 14,
+    "sharable": true
+   },
+   {
+    "id": 1486,
+    "name": "Deviate Hides",
+    "req": 13,
+    "sharable": true
+   },
+   {
+    "id": 1487,
+    "name": "Deviate Eradication",
+    "req": 15,
+    "sharable": true
+   },
+   {
+    "id": 1489,
+    "name": "Hamuul Runetotem",
+    "req": 10,
+    "sharable": true,
+    "series": [
+     1489,
+     1490,
+     914
+    ]
+   },
+   {
+    "id": 1490,
+    "name": "Nara Wildmane",
+    "req": 10,
+    "sharable": true,
+    "series": [
+     1489,
+     1490,
+     914
+    ]
+   },
+   {
+    "id": 1491,
+    "name": "Smart Drinks",
+    "req": 13,
+    "sharable": true
+   },
+   {
+    "id": 3366,
+    "name": "The Glowing Shard",
+    "req": 15,
+    "sharable": false
+   },
+   {
+    "id": 6981,
+    "name": "The Glowing Shard",
+    "req": 15,
+    "sharable": false
+   },
+   {
+    "id": 7944,
+    "name": "Your Fortune Awaits You...",
+    "req": 10,
+    "sharable": false
+   }
+  ],
+  "Shadowfang Keep": [
+   {
+    "id": 1013,
+    "name": "The Book of Ur",
+    "req": 16,
+    "sharable": true
+   },
+   {
+    "id": 1014,
+    "name": "Arugal Must Die",
+    "req": 18,
+    "sharable": true
+   },
+   {
+    "id": 1098,
+    "name": "Deathstalkers in Shadowfang",
+    "req": 18,
+    "sharable": true
+   }
+  ],
+  "Excavation Site: Wetlands": [
+   {
+    "id": 95663,
+    "name": "Dragonmaw Rumors",
+    "req": 24,
+    "sharable": true,
+    "series": [
+     95663,
+     95682
+    ]
+   },
+   {
+    "id": 95664,
+    "name": "Elder Knowledge",
+    "req": 24,
+    "sharable": false,
+    "series": [
+     95664,
+     98823
+    ]
+   },
+   {
+    "id": 95682,
+    "name": "Open the Maw",
+    "req": 24,
+    "sharable": true,
+    "series": [
+     95663,
+     95682
+    ]
+   },
+   {
+    "id": 95697,
+    "name": "Changing Tastes",
+    "req": 24,
+    "sharable": true
+   },
+   {
+    "id": 98823,
+    "name": "Earthen Echo",
+    "req": 24,
+    "sharable": false,
+    "series": [
+     95664,
+     98823
+    ]
+   }
+  ],
+  "Blackfathom Deeps": [
+   {
+    "id": 909,
+    "name": "Baron Aquanis",
+    "req": 25,
+    "sharable": false
+   },
+   {
+    "id": 6561,
+    "name": "Blackfathom Villainy",
+    "req": 18,
+    "sharable": true
+   },
+   {
+    "id": 6562,
+    "name": "Trouble in the Deeps",
+    "req": 17,
+    "sharable": true,
+    "series": [
+     6562,
+     6563
+    ]
+   },
+   {
+    "id": 6563,
+    "name": "The Essence of Aku'Mai",
+    "req": 17,
+    "sharable": true,
+    "series": [
+     6562,
+     6563
+    ]
+   },
+   {
+    "id": 6564,
+    "name": "Allegiance to the Old Gods",
+    "req": 17,
+    "sharable": false,
+    "series": [
+     6564,
+     6565
+    ]
+   },
+   {
+    "id": 6565,
+    "name": "Allegiance to the Old Gods",
+    "req": 17,
+    "sharable": true,
+    "series": [
+     6564,
+     6565
+    ]
+   },
+   {
+    "id": 6921,
+    "name": "Amongst the Ruins",
+    "req": 21,
+    "sharable": true
+   },
+   {
+    "id": 6922,
+    "name": "Baron Aquanis",
+    "req": 21,
+    "sharable": false
+   }
+  ],
+  "City of Dalaran": [
+   {
+    "id": 96984,
+    "name": "Heart of Disruption",
+    "req": 24,
+    "sharable": false,
+    "series": [
+     92434,
+     96984,
+     97287
+    ]
+   },
+   {
+    "id": 96986,
+    "name": "The Grave Knight",
+    "req": 24,
+    "sharable": true
+   },
+   {
+    "id": 96987,
+    "name": "Opportunistic Education",
+    "req": 24,
+    "sharable": true
+   },
+   {
+    "id": 96988,
+    "name": "Source of Power",
+    "req": 24,
+    "sharable": true
+   }
+  ],
+  "Scarlet Monastery": [
+   {
+    "id": 1048,
+    "name": "Into The Scarlet Monastery",
+    "req": 33
+   },
+   {
+    "id": 1049,
+    "name": "Compendium of the Fallen",
+    "req": 28
+   },
+   {
+    "id": 1051,
+    "name": "Vorrel's Revenge",
+    "req": 25
+   },
+   {
+    "id": 1113,
+    "name": "Hearts of Zeal",
+    "req": 30
+   },
+   {
+    "id": 1160,
+    "name": "Test of Lore",
+    "req": 26
+   }
+  ],
+  "Gnomeregan": [
+   {
+    "id": 2841,
+    "name": "Rig Wars",
+    "req": 25
+   },
+   {
+    "id": 2842,
+    "name": "Chief Engineer Scooty",
+    "req": 20
+   },
+   {
+    "id": 2904,
+    "name": "A Fine Mess",
+    "req": 20
+   },
+   {
+    "id": 2945,
+    "name": "Grime-Encrusted Ring",
+    "req": 28
+   },
+   {
+    "id": 2949,
+    "name": "Return of the Ring",
+    "req": 28
+   },
+   {
+    "id": 2952,
+    "name": "The Sparklematic 5200!",
+    "req": 25
+   }
+  ],
+  "Razorfen Kraul": [
+   {
+    "id": 1102,
+    "name": "A Vengeful Fate",
+    "req": 29
+   },
+   {
+    "id": 1109,
+    "name": "Going, Going, Guano!",
+    "req": 30
+   },
+   {
+    "id": 1144,
+    "name": "Willix the Importer",
+    "req": 22
+   },
+   {
+    "id": 1221,
+    "name": "Blueleaf Tubers",
+    "req": 20
+   },
+   {
+    "id": 6522,
+    "name": "An Unholy Alliance",
+    "req": 28
+   }
+  ],
+  "The Drowned City": [
+   {
+    "id": 95775,
+    "name": "The Drowned City",
+    "req": 30
+   },
+   {
+    "id": 95776,
+    "name": "The Only Good Brinescale...",
+    "req": 30
+   },
+   {
+    "id": 95789,
+    "name": "Shady Saltseers",
+    "req": 34
+   },
+   {
+    "id": 95791,
+    "name": "The Saltseer Captain",
+    "req": 34
+   },
+   {
+    "id": 96774,
+    "name": "Ancient Gurubashi Idol",
+    "req": 30
+   }
+  ],
+  "Krol'dok Stronghold": [
+   {
+    "id": 94968,
+    "name": "Eye of Mugg",
+    "req": 40
+   },
+   {
+    "id": 94972,
+    "name": "Tome of Twilight",
+    "req": 39
+   },
+   {
+    "id": 94973,
+    "name": "Krol'dok Moulding",
+    "req": 38
+   },
+   {
+    "id": 94974,
+    "name": "Key Ingredients",
+    "req": 38
+   },
+   {
+    "id": 94975,
+    "name": "A Token of Vengeance",
+    "req": 38
+   }
+  ],
+  "Razorfen Downs": [
+   {
+    "id": 3341,
+    "name": "Bring the End",
+    "req": 37
+   },
+   {
+    "id": 3523,
+    "name": "Scourge of the Downs",
+    "req": 32
+   },
+   {
+    "id": 3525,
+    "name": "Extinguishing the Idol",
+    "req": 32
+   },
+   {
+    "id": 6521,
+    "name": "An Unholy Alliance",
+    "req": 28
+   },
+   {
+    "id": 6626,
+    "name": "A Host of Evil",
+    "req": 28
+   },
+   {
+    "id": 93604,
+    "name": "Agamaggan's Blood",
+    "req": 35
+   },
+   {
+    "id": 97196,
+    "name": "The Coldbringer's Eye",
+    "req": 34
+   }
+  ]
+ }
+}
