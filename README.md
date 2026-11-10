@@ -1,6 +1,7 @@
 # Svědci Herčíka
 
-Přehled naší party ve WoW Forever: levely, spec, role, profese a který dungeon sedí všem.
+Přehled naší party ve WoW Forever: levely a XP, spec, role, profese, který dungeon sedí všem
+a ready check dungeonových questů (kdo má quest v logu, kdo hotový a komu chybí). Ready check potřebuje API klíče.
 Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka se přegeneruje každé ráno v 6:00 (v létě v 7:00) přes GitHub Actions.
 
 ## Úpravy

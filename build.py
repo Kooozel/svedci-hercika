@@ -34,6 +34,13 @@ ROLES = {
 }
 ROLE_LABEL = {"tank": "Tank", "heal": "Healer", "dps": "DPS"}
 
+# XP potřebné na další level (index = level - 1); Forever má stejnou křivku jako Classic, součet 4 084 700
+XP_TO_NEXT = [400, 900, 1400, 2100, 2800, 3600, 4500, 5400, 6500, 7600, 8800, 10100, 11400, 12900, 14400, 16000,
+              17700, 19400, 21300, 23200, 25200, 27300, 29400, 31700, 34000, 36400, 38900, 41400, 44300, 47400,
+              50800, 54500, 58600, 62800, 67100, 71600, 76100, 80800, 85700, 90700, 95800, 101000, 106300, 111800,
+              117500, 123200, 129100, 135100, 141200, 147500, 153900, 160400, 167100, 173900, 180800, 187900,
+              195000, 202300, 209800]
+
 CLASS_COLOR = {
     "warrior": "#C69B6D", "paladin": "#F48CBA", "hunter": "#AAD372", "rogue": "#FFF468",
     "priest": "#F0F0F0", "shaman": "#2E8FFF", "mage": "#3FC7EB", "warlock": "#8788EE",
@@ -58,11 +65,16 @@ def api_token():
     return http_json(req)["access_token"]
 
 
+def api_get(token, region, path, kind):
+    """kind je profile, static nebo dynamic; Forever má namespace {kind}-forever-{region}."""
+    url = (f"https://{region}.api.blizzard.com{urllib.parse.quote(path)}"
+           f"?namespace={kind}-forever-{region}&locale=en_GB")
+    return http_json(urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"}))
+
+
 def fetch_api(token, region, slug):
     def get(sub=""):
-        path = urllib.parse.quote(f"/profile/wow/character/{slug}{sub}")
-        url = f"https://{region}.api.blizzard.com{path}?namespace=profile-forever-{region}&locale=en_GB"
-        return http_json(urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"}))
+        return api_get(token, region, f"/profile/wow/character/{slug}{sub}", "profile")
 
     c = get()
     groups = get("/specializations").get("specialization_groups") or []
@@ -71,6 +83,8 @@ def fetch_api(token, region, slug):
              for s in active.get("specializations") or [] if s.get("spent_points")]
     profs = get("/professions")
     assets = {a["key"]: a["value"] for a in get("/character-media").get("assets") or []}
+    quests = get("/quests")
+    done = get("/quests/completed").get("quests") or []
     login = c.get("last_login_timestamp")
     return member(
         slug=slug, region=region, name=c["name"], surname=c.get("surname", ""), level=c["level"],
@@ -82,6 +96,9 @@ def fetch_api(token, region, slug):
         professions=[(p["profession"]["name"], group == "primaries", p.get("tiers") or [],
                       "skill_points", "max_skill_points")
                      for group in ("primaries", "secondaries") for p in profs.get(group) or []],
+        xp=c.get("experience"),
+        quests_active=[{"id": q["id"], "name": q["name"]} for q in quests.get("in_progress") or []],
+        quests_done=[q["id"] for q in done],
         source="api",
     )
 
@@ -110,7 +127,7 @@ def fetch_armory(region, slug):
     )
 
 
-def member(*, slug, region, name, surname, cls, specs, professions, **rest):
+def member(*, slug, region, name, surname, cls, specs, professions, level, xp=None, **rest):
     # Body můžou být ve víc stromech; hlavní spec je ten s nejvíc body.
     spec_name, spec_points = max(specs, key=lambda s: s[1], default=(None, 0))
     cls_slug = cls.lower()
@@ -131,20 +148,15 @@ def member(*, slug, region, name, surname, cls, specs, professions, **rest):
         "spec_points": spec_points,
         "roles": ROLES.get((cls_slug, spec_slug), ["dps"]) if spec_name else [],
         "professions": profs,
+        "level": level,
+        "xp": xp,
+        "xp_next": XP_TO_NEXT[level - 1] if xp is not None and level <= len(XP_TO_NEXT) else None,
         **rest,
     }
 
 
-def load_party(party):
+def load_party(party, token):
     region = party["region"]
-    try:
-        token = api_token()
-    except Exception as exc:
-        print(f"API token: {exc}, jedu jen přes Armory", file=sys.stderr)
-        token = None
-    if not token:
-        print("Bez API klíčů, data beru z Armory", file=sys.stderr)
-
     members = []
     for i, slug in enumerate(party["characters"]):
         try:
@@ -187,6 +199,50 @@ def plan_dungeons(members, dungeons):
     return rows, best
 
 
+def ready_check(token, region, rows, best, members):
+    """Questy z dungeonů v dosahu: kdo je má v logu, kdo hotové a komu chybí."""
+    if not token:
+        return []
+    with_quests = [m for m in members if "quests_active" in m]
+    if not with_quests:
+        return []
+    areas = {a["name"]: a["id"] for a in api_get(token, region, "/data/wow/quest/area/index", "static")["areas"]}
+    active = {m["slug"]: {q["id"] for q in m["quests_active"]} for m in with_quests}
+    done = {m["slug"]: set(m["quests_done"]) for m in with_quests}
+    faction = (with_quests[0].get("faction") or "").upper()
+    details, checks, seen = {}, [], set()
+    near = sorted((r for r in rows if r["near"]), key=lambda r: r is not best)
+    for r in near:
+        # křídla jako "Scarlet Monastery: Library" sdílí jednu oblast questů
+        title = r["name"] if r["name"] in areas else r["name"].split(":")[0]
+        area = areas.get(title)
+        if not area or area in seen:
+            continue
+        seen.add(area)
+        relevant, others = [], {}
+        for q in api_get(token, region, f"/data/wow/quest/area/{area}", "static").get("quests") or []:
+            qid = q["id"]
+            if qid not in details:
+                details[qid] = api_get(token, region, f"/data/wow/quest/{qid}", "static")
+            req_faction = ((details[qid].get("requirements") or {}).get("faction") or {}).get("type")
+            if req_faction and req_faction != faction:
+                continue
+            xp = (details[qid].get("rewards") or {}).get("experience")
+            status = {slug: "active" if qid in active[slug] else "done" if qid in done[slug] else "missing"
+                      for slug in active}
+            if all(st == "done" for st in status.values()):
+                continue
+            if all(st == "missing" for st in status.values()):
+                if xp:
+                    others[q["name"]] = max(xp, others.get(q["name"], 0))
+                continue
+            relevant.append({"id": qid, "name": q["name"], "xp": xp, "status": status})
+        if relevant:
+            checks.append({"title": title, "min": r["min"], "max": r["max"], "best": r is best,
+                           "quests": relevant, "others": sorted(others.items()), "members": list(active)})
+    return checks
+
+
 # ---------- HTML ----------
 
 def e(value):
@@ -217,6 +273,12 @@ def card(m):
     avatar = (f'<img class="avatar" src="{e(m["avatar"])}" alt="" loading="lazy">'
               if m["avatar"] else '<div class="avatar"></div>')
     profs = "".join(prof_bar(p) for p in m["professions"]) or '<li class="muted">žádné profese</li>'
+    xp = ""
+    if m.get("xp_next"):
+        pct = min(100, round(100 * m["xp"] / m["xp_next"]))
+        xp = (f'<div class="xp"><span class="xp-num">{m["xp"]:,} / {m["xp_next"]:,} XP'
+              f' <small>({pct} %, chybí {m["xp_next"] - m["xp"]:,})</small></span>'
+              f'<span class="bar xp-bar"><span style="width:{pct}%"></span></span></div>').replace(",", "\u00a0")
     return f'''<article class="card" style="--cls:{color}">
   <header class="card-head">
     {avatar}
@@ -226,6 +288,7 @@ def card(m):
     </div>
     <div class="lvl"><span>{m["level"]}</span><small>level</small></div>
   </header>
+  {xp}
   <div class="meta">
     <span>{spec}</span>{role_chips(m["roles"])}
     <span class="ilvl">ilvl {e(m["ilvl"])}</span>
@@ -265,6 +328,44 @@ def dungeon_table(rows, best, members):
             f'<tbody>{"".join(body)}</tbody></table></div>')
 
 
+QUEST_CELL = {
+    "active": '<td class="st st-fit" title="má v logu">✓</td>',
+    "done": '<td class="st st-over" title="už odevzdal">hotovo</td>',
+    "missing": '<td class="st st-under" title="nemá">✗</td>',
+}
+
+
+def ready_box(check, members):
+    by_slug = {m["slug"]: m for m in members}
+    cols = [by_slug[s] for s in check["members"]]
+    head = "".join(f'<th class="who-col" style="--cls:{CLASS_COLOR.get(m["class_slug"], "#ccc")}">{e(m["name"].split()[0])}</th>'
+                   for m in cols)
+    body = []
+    for q in check["quests"]:
+        xp = f'{q["xp"]:,}'.replace(",", "\u00a0") if q["xp"] else "?"
+        cells = "".join(QUEST_CELL[q["status"][m["slug"]]] for m in cols)
+        body.append(f'<tr><th scope="row"><a href="https://www.wowhead.com/forever/quest={q["id"]}" target="_blank" '
+                    f'rel="noopener">{e(q["name"])}</a></th><td class="range">{xp}</td>{cells}</tr>')
+    totals = "".join(
+        f'<td class="st">{sum(q["xp"] or 0 for q in check["quests"] if q["status"][m["slug"]] == "active"):,}</td>'
+        .replace(",", "\u00a0") for m in cols)
+    missing = sum(1 for q in check["quests"] for st in q["status"].values() if st == "missing")
+    flag = ('<span class="flag flag-ok">✓ všichni mají všechno</span>' if not missing
+            else f'<span class="flag flag-bad">✗ chybí {missing}×</span>')
+    others = (f'<details class="others"><summary>Další questy, které nikdo nemá ({len(check["others"])})</summary>'
+              f'<p>{", ".join(f"{e(n)} <small>{xp:,} XP</small>".replace(",", "\u00a0") for n, xp in check["others"])}</p>'
+              f'<p class="note">Questy pro Hordu, které nikdo nemá. Některé navazují na jiný quest nebo jsou jen pro určitou class.</p></details>'
+              if check["others"] else "")
+    best = '<span class="chip chip-new">doporučený</span>' if check["best"] else ""
+    return f'''<article class="rc">
+  <header class="rc-head"><h3>{e(check["title"])}{best}</h3><span class="range">level {check["min"]}–{check["max"]}</span>{flag}</header>
+  <div class="table-wrap"><table class="dungeons rc-table"><thead><tr><th>Quest</th><th>XP</th>{head}</tr></thead>
+  <tbody>{"".join(body)}</tbody>
+  <tfoot><tr><th scope="row">XP z questů v logu</th><td></td>{totals}</tr></tfoot></table></div>
+  {others}
+</article>'''
+
+
 def best_box(best, members):
     if not best:
         return ""
@@ -298,7 +399,16 @@ def professions_box(members):
     return f'<ul class="prof-list">{"".join(rows)}</ul>{miss}'
 
 
-def render(party, members, rows, best, built):
+def ready_section(checks, members):
+    if not checks:
+        return ""
+    return (f'<section><h2 class="sec">Ready check před dungeonem</h2>'
+            f'<p class="note">Dungeonové questy z dungeonů v dosahu, které má někdo z vás v logu nebo už odevzdal. '
+            f'Kdo má ✗, ať si quest vezme, než vyrazíte.</p>'
+            f'{"".join(ready_box(c, members) for c in checks)}</section>')
+
+
+def render(party, members, rows, best, built, checks):
     ok = [m for m in members if m["ok"]]
     has_tank = any("tank" in m["roles"] for m in ok)
     has_heal = any("heal" in m["roles"] for m in ok)
@@ -332,6 +442,7 @@ def render(party, members, rows, best, built):
   </header>
   <div class="flags">{flag("Tank", has_tank)}{flag("Healer", has_heal)}<span class="flag">Levely {lvl_range}</span></div>
   {best_box(best, ok)}
+  {ready_section(checks, ok)}
   <section><h2 class="sec">Postavy</h2><div class="cards">{"".join(card(m) for m in members)}</div></section>
   <section><h2 class="sec">Dungeony</h2>{dungeon_table([r for r in rows if r["near"]], best, ok)}
     <details class="all-dungeons"><summary>Všechny dungeony ({len(rows)})</summary>{dungeon_table(rows, best, ok)}</details>
@@ -386,6 +497,12 @@ h1{font-size:clamp(28px,6vw,44px);color:var(--gold)}
 .bar{grid-column:1/-1;height:4px;background:var(--panel2);border-radius:2px;overflow:hidden}
 .bar span{display:block;height:100%;background:var(--cls)}
 .updated{margin:auto 0 0;color:var(--muted);font-size:12px}
+.xp{display:grid;gap:3px;font-size:12px;color:var(--muted)}.xp small{color:var(--muted)}.xp-num{color:var(--text)}
+.xp-bar span{background:linear-gradient(90deg,#7b4bd1,#b58cff)!important}
+.rc{margin-bottom:18px}.rc-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.rc-head h3{font-size:18px}.rc-table tfoot th,.rc-table tfoot td{background:var(--panel2);font-weight:600}
+.rc-table tbody th a{color:var(--text)}.others{margin-top:8px;font-size:13px}
+.others summary{cursor:pointer;color:var(--muted)}.others p{margin:6px 0;color:var(--muted)}
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
 .dungeons th,.dungeons td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
@@ -419,18 +536,34 @@ def main():
     party = json.loads((ROOT / "party.json").read_text(encoding="utf-8"))
     dungeons = [d for d in json.loads((ROOT / "dungeons.json").read_text(encoding="utf-8"))
                 if not d.get("alliance_side")]
-    members = load_party(party)
+    region = party["region"]
+    try:
+        token = api_token()
+    except Exception as exc:
+        print(f"API token: {exc}, jedu jen přes Armory", file=sys.stderr)
+        token = None
+    if not token:
+        print("Bez API klíčů, data beru z Armory", file=sys.stderr)
+
+    members = load_party(party, token)
     ok = [m for m in members if m["ok"]]
     if not ok:
         sys.exit("Nepodařilo se načíst žádnou postavu, stránku neměním.")
     rows, best = plan_dungeons(ok, dungeons)
+    try:
+        checks = ready_check(token, region, rows, best, ok)
+    except Exception as exc:  # ready check je bonus, stránka musí vzniknout i bez něj
+        print(f"Ready check: {exc}", file=sys.stderr)
+        checks = []
     built = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     OUT.mkdir(exist_ok=True)
-    (OUT / "index.html").write_text(render(party, members, rows, best, built), encoding="utf-8")
-    (OUT / "party.json").write_text(json.dumps({"built": built, "members": members}, ensure_ascii=False, indent=2),
-                                    encoding="utf-8")
-    print(f"Hotovo: {len(ok)}/{len(members)} postav, nejlepší dungeon: {best['name'] if best else '-'}")
+    (OUT / "index.html").write_text(render(party, members, rows, best, built, checks), encoding="utf-8")
+    public = [{k: v for k, v in m.items() if k != "quests_done"} for m in members]
+    (OUT / "party.json").write_text(json.dumps({"built": built, "members": public, "ready_check": checks},
+                                               ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Hotovo: {len(ok)}/{len(members)} postav, nejlepší dungeon: {best['name'] if best else '-'}, "
+          f"ready check: {len(checks)} dungeonů")
 
 
 if __name__ == "__main__":
