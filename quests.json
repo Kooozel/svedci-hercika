@@ -59,35 +59,36 @@
     "name": "A Frightened Request",
     "req": 15,
     "sharable": true,
-    "start": "Tabitha Heartweaver"
+    "start": "Tabitha Heartweaver (The Sepulcher, Silverpine Forest)"
    },
    {
     "id": 92421,
     "name": "Light's Justice",
     "req": 15,
     "sharable": true,
-    "start": "Morbin Lightbane"
+    "start": "Morbin Lightbane (Undercity)"
    },
    {
     "id": 92422,
     "name": "The Wrath of Rath'mael",
     "req": 15,
     "sharable": true,
-    "start": "Deathguard Kristof"
+    "start": "Deathguard Kristof (Brill, Tirisfal Glades)"
    },
    {
     "id": 95204,
     "name": "Crest of Lordaeron",
     "req": 15,
     "sharable": false,
-    "start": "dungeon"
+    "start": "dungeon",
+    "note": "crest se objevuje na víc místech: za dveřmi u The Baron, v budově u Bjorkovy trasy, u zdí s gargoyly"
    },
    {
     "id": 95216,
     "name": "The New Plague",
     "req": 15,
     "sharable": true,
-    "start": "Theodore Griffs"
+    "start": "Theodore Griffs (Apothecarium, Undercity)"
    },
    {
     "id": 97287,

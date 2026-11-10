@@ -270,7 +270,7 @@ def ready_check(token, region, rows, best, members, catalog):
                 unclaimed_names.add(q["name"])
             quests.append({
                 "id": qid, "name": q["name"], "xp": quest_xp(qid), "req": q.get("req"),
-                "sharable": q.get("sharable"), "status": status, "unclaimed": unclaimed, "start": q.get("start"),
+                "sharable": q.get("sharable"), "status": status, "unclaimed": unclaimed, "start": q.get("start"), "note": q.get("note"),
                 "step": [step + 1, len(series)] if step is not None else None,
                 "prev": (names.get(prev) or "předchozí quest") if prev else None,
             })
@@ -388,7 +388,8 @@ def quest_meta(q):
     bits = [f'{q["xp"]:,} XP'.replace(",", "\u00a0") if q["xp"] else None,
             f'od lvl {q["req"]}' if q["req"] else None,
             f'start: {e(q["start"])}' if q["start"] and q["start"] != "dungeon" else None,
-            (f'řetěz, nejdřív: {e(q["prev"])}' if q["prev"] else None)]
+            (f'řetěz, nejdřív: {e(q["prev"])}' if q["prev"] else None),
+            e(q["note"]) if q.get("note") else None]
     return " · ".join(b for b in bits if b)
 
 
