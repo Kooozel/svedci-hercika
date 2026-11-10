@@ -396,12 +396,19 @@ def ready_box(check, members, idx):
     for q in check["quests"]:
         cells = "".join(quest_cell(q, q["status"][m["slug"]]) for m in cols)
         cls = ' class="q-none"' if q["unclaimed"] else ""
-        share = {True: '<span class="share share-yes" title="kdo ho má, může ho v partě nasdílet ostatním">↗ sdílitelný</span>',
-                 False: '<span class="share share-no" title="nejde nasdílet, každý si ho musí vzít sám">✋ každý sám</span>'}.get(q["sharable"], "")
+        # Quest z řetězu nejde nasdílet tomu, kdo nemá hotový předquest, takže ho bereme jako nesdílitelný.
+        sharable = q["sharable"] and not q["prev"]
+        if q["prev"]:
+            share = (f'<span class="share share-no" title="navazuje na {e(q["prev"])}, '
+                     f'každý si ho musí vzít sám">✋ každý sám · řetěz</span>')
+        else:
+            share = {True: '<span class="share share-yes" title="kdo ho má, může ho v partě nasdílet ostatním">↗ sdílitelný</span>',
+                     False: '<span class="share share-no" title="nejde nasdílet, každý si ho musí vzít sám">✋ každý sám</span>'
+                     }.get(q["sharable"], "")
         holders = [m["name"].split()[0] for m in cols if q["status"][m["slug"]] == "active"]
         takers = [m for m in cols if q["status"][m["slug"]] == "missing"]
         hint = (f'<span class="share-hint">nasdílí {e(", ".join(holders))}</span>'
-                if q["sharable"] and holders and takers else "")
+                if sharable and holders and takers else "")
         body.append(f'<tr{cls}><th scope="row"><div class="q-name"><a href="https://www.wowhead.com/forever/quest={q["id"]}" '
                     f'target="_blank" rel="noopener">{e(q["name"])}</a>{share}{hint}</div><small>{quest_meta(q)}</small></th>{cells}</tr>')
     totals = "".join(
