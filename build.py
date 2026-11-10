@@ -244,6 +244,12 @@ def ready_check(token, region, rows, best, members, catalog):
             if prev and home.get(prev, title) != title:
                 continue
             earlier = set(series[:step]) if step else set()
+            required = {prev} if prev else set()
+            prev_name = (names.get(prev) or "předchozí quest") if prev else None
+            if q.get("pre"):  # předquesty mimo dungeon, které v řetězu z Wowheadu nejsou
+                earlier |= set(q["pre"]["ids"])
+                required = set(q["pre"]["ids"])
+                prev_name = q["pre"]["name"]
             status = {}
             for slug in active:
                 if qid in active[slug]:
@@ -254,7 +260,7 @@ def ready_check(token, region, rows, best, members, catalog):
                     status[slug] = "level"
                 elif earlier & active[slug]:
                     status[slug] = "pre"
-                elif prev and prev not in done[slug]:
+                elif required and not required <= done[slug]:
                     status[slug] = "chain"
                 elif q.get("start") == "dungeon":
                     status[slug] = "inside"
@@ -272,7 +278,7 @@ def ready_check(token, region, rows, best, members, catalog):
                 "id": qid, "name": q["name"], "xp": quest_xp(qid), "req": q.get("req"),
                 "sharable": q.get("sharable"), "status": status, "unclaimed": unclaimed, "start": q.get("start"), "note": q.get("note"),
                 "step": [step + 1, len(series)] if step is not None else None,
-                "prev": (names.get(prev) or "předchozí quest") if prev else None,
+                "prev": prev_name,
             })
         # nejdřív questy, které někdo má, pak volné, nakonec ty, na které zatím nikdo nemůže
         quests.sort(key=lambda q: (q["unclaimed"], all(st in ("level", "chain") for st in q["status"].values())))

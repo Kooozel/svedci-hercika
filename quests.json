@@ -1,5 +1,5 @@
 {
- "_info": "Dungeonové questy pro Hordu podle Wowhead Forever (sebráno 2026-11-10). series = pořadí řetězu, sharable = jde sdílet v partě. U vyšších dungeonů chybí detaily. start = NPC, u kterého quest začíná, nebo \"dungeon\" když začíná předmětem v dungeonu (zatím jen RoL, WC, SFK).",
+ "_info": "Dungeonové questy pro Hordu podle Wowhead Forever (sebráno 2026-11-10). series = pořadí řetězu, sharable = jde sdílet v partě. U vyšších dungeonů chybí detaily. start = NPC, u kterého quest začíná, nebo \"dungeon\" když začíná předmětem v dungeonu (zatím jen RoL, WC, SFK). pre = předquesty mimo dungeon (name, ids). RoL ověřeno podle Warcraft Tavern.",
  "dungeons": {
   "Ragefire Chasm": [
    {
@@ -59,36 +59,49 @@
     "name": "A Frightened Request",
     "req": 15,
     "sharable": true,
-    "start": "Tabitha Heartweaver (The Sepulcher, Silverpine Forest)"
+    "start": "Tabitha Heartweaver (The Sepulcher, Silverpine Forest 44.6 42.9)"
    },
    {
     "id": 92421,
     "name": "Light's Justice",
     "req": 15,
     "sharable": true,
-    "start": "Morbin Lightbane (Undercity)"
+    "start": "Morbin Lightbane (Royal Quarter, Undercity 57.8 89.7)"
    },
    {
     "id": 92422,
     "name": "The Wrath of Rath'mael",
     "req": 15,
-    "sharable": true,
-    "start": "Deathguard Kristof (Brill, Tirisfal Glades)"
+    "sharable": false,
+    "start": "Deathguard Kristof (mezi Brill a Undercity, 65.2 60.1)",
+    "pre": {
+     "name": "Rear Guard Patrol (2 díly, Deathguard Linnea hned vedle)",
+     "ids": [
+      99156
+     ]
+    }
    },
    {
     "id": 95204,
     "name": "Crest of Lordaeron",
-    "req": 15,
+    "req": 16,
     "sharable": false,
     "start": "dungeon",
-    "note": "crest se objevuje na víc místech: za dveřmi u The Baron, v budově u Bjorkovy trasy, u zdí s gargoyly"
+    "note": "crest je na jednom z 5 míst: krypta u fontány (za banshee), věž u Bjorka, zeď za Bjorkem, věž vlevo od pavouků, věž za The Abandoned"
    },
    {
     "id": 95216,
     "name": "The New Plague",
-    "req": 15,
-    "sharable": true,
-    "start": "Theodore Griffs (Apothecarium, Undercity)"
+    "req": 16,
+    "sharable": false,
+    "start": "Theodore Griffs (Apothecarium, Undercity 46.7 71.9)",
+    "pre": {
+     "name": "A Recipe For Death (3 díly, Apothecary Renferrel v The Sepulcher)",
+     "ids": [
+      450,
+      451
+     ]
+    }
    },
    {
     "id": 97287,
@@ -104,7 +117,7 @@
    {
     "id": 97288,
     "name": "Unending Torment",
-    "req": 15,
+    "req": 16,
     "sharable": false,
     "series": [
      97288,
@@ -113,7 +126,8 @@
      97291,
      97292
     ],
-    "start": "dungeon"
+    "start": "dungeon",
+    "note": "Abominable Head padá z The Baron (King's Alley), další kroky jsou v Undercity a dávají hodně XP"
    },
    {
     "id": 97289,
