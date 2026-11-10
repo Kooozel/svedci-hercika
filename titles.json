@@ -1,0 +1,130 @@
+{
+ "_info": "Tituly za včerejší večer. Klíč je anglický název statistiky z Blizzard API (nebo _xp, _lvl). forms = tvary čísla pro 1 / 2–4 / 5+, {n} je číslo. V line je {v} vyskloňované číslo. min = od kolika se titul dává, bonus = jak moc je vtipný (vyšší vyhrává). Varianty se střídají podle dne, stejná statistika nikdy dva dny po sobě.",
+ "stats": {
+  "_lvl": {"emoji": "🎉", "min": 1, "bonus": 0.9, "forms": ["+{n} level", "+{n} levely", "+{n} levelů"], "titles": [
+   {"name": "Oslavenec", "line": "{v}. Dort je v Orgrimmaru."},
+   {"name": "Ding!", "line": "{v}. Ten zvuk nikdy neomrzí."},
+   {"name": "Povýšený", "line": "{v}. Talentový bod čeká na rozmyšlení."},
+   {"name": "Rostoucí legenda", "line": "{v}. Ještě pár a bude se o něm zpívat."}
+  ]},
+  "Resurrected by priests": {"emoji": "👼", "min": 1, "bonus": 0.8, "forms": ["{n}× oživen", "{n}× oživen", "{n}× oživen"], "titles": [
+   {"name": "Lazar", "line": "{v} priestem. Vstaň a choď."},
+   {"name": "Věčný návrat", "line": "{v} priestem. Healer už si vede čárky."},
+   {"name": "Zachráněná duše", "line": "{v} priestem. Poděkování v podobě piva se nosí."}
+  ]},
+  "Total waves": {"emoji": "👋", "min": 1, "bonus": 0.8, "forms": ["{n}× zamával", "{n}× zamával", "{n}× zamával"], "titles": [
+   {"name": "Přátelská duše", "line": "{v}. Azeroth je hned vlídnější."},
+   {"name": "Uvítací výbor", "line": "{v}. Každý NPC si zaslouží pozdrav."},
+   {"name": "Diplomat", "line": "{v}. Mír začíná mávnutím."}
+  ]},
+  "Critters killed": {"emoji": "🐇", "min": 1, "bonus": 0.8, "forms": ["{n} zabité zvířátko", "{n} zabitá zvířátka", "{n} zabitých zvířátek"], "titles": [
+   {"name": "Postrach králíků", "line": "{v}. Druidi o tom vědí."},
+   {"name": "Lovec veverek", "line": "{v}. Nevinnost nezná slitování."},
+   {"name": "Ekoterorista", "line": "{v}. Cenarion Circle píše stížnost."},
+   {"name": "Zabiják roztomilosti", "line": "{v}. Ty oči už se ti budou zdát."}
+  ]},
+  "Total deaths": {"emoji": "🪦", "min": 1, "bonus": 0.7, "forms": ["{n} smrt", "{n} smrti", "{n} smrtí"], "titles": [
+   {"name": "Kaskadér", "line": "{v}. Pády jsou jeho specialita."},
+   {"name": "Kamarád Spirit Healera", "line": "{v}. Už si tykají."},
+   {"name": "Zkoušeč podlahy", "line": "{v}. Podlaha drží, potvrzeno."},
+   {"name": "Pravidelný host hřbitova", "line": "{v}. Má tam vlastní lavičku."},
+   {"name": "Nesmrtelný (skoro)", "line": "{v}. Pokaždé se vrátil."}
+  ]},
+  "Quests abandoned": {"emoji": "🗑️", "min": 1, "bonus": 0.6, "forms": ["{n} vzdaný quest", "{n} vzdané questy", "{n} vzdaných questů"], "titles": [
+   {"name": "Ten, který to vzdal", "line": "{v}. Někdy je moudré odejít."},
+   {"name": "Uklízeč questlogu", "line": "{v}. Místo pro nové dobrodružství."},
+   {"name": "Realista", "line": "{v}. Patnáct kančích jater nikdo nepotřebuje."}
+  ]},
+  "Beverages consumed": {"emoji": "🍺", "min": 3, "bonus": 0.4, "forms": ["{n} nápoj", "{n} nápoje", "{n} nápojů"], "titles": [
+   {"name": "Štamgast", "line": "{v}. Hospodský mu drží židli."},
+   {"name": "Žíznivý poutník", "line": "{v}. Hydratace je základ."},
+   {"name": "Sommelier z Orgrimmaru", "line": "{v}. Rozezná ročník podle mana regenu."},
+   {"name": "Velbloud", "line": "{v}. A pořád má žízeň."}
+  ]},
+  "Food eaten": {"emoji": "🍗", "min": 3, "bonus": 0.4, "forms": ["{n} jídlo", "{n} jídla", "{n} jídel"], "titles": [
+   {"name": "Hodovník", "line": "{v}. Svačina je taky taktika."},
+   {"name": "Gurmán", "line": "{v}. Pečená kančí žebra dvakrát, prosím."},
+   {"name": "Bezedný žaludek", "line": "{v}. Vegetariánem nebude."},
+   {"name": "Ochutnávač", "line": "{v}. Nic nezůstalo v batohu."}
+  ]},
+  "Need rolls made on loot": {"emoji": "🎲", "min": 2, "bonus": 0.4, "forms": ["{n}× need", "{n}× need", "{n}× need"], "titles": [
+   {"name": "Lovec štěstí", "line": "{v}. Potřebuje to. Všechno."},
+   {"name": "Muž v nouzi", "line": "{v}. Ten plášť se mu fakt hodí."},
+   {"name": "Kostkař", "line": "{v}. Kostky jsou jeho kamarádi."}
+  ]},
+  "Greed rolls made on loot": {"emoji": "💰", "min": 2, "bonus": 0.4, "forms": ["{n}× greed", "{n}× greed", "{n}× greed"], "titles": [
+   {"name": "Chamtivec", "line": "{v}. Zlato se samo nesebere."},
+   {"name": "Obchodník", "line": "{v}. Vendor ho zdraví jménem."},
+   {"name": "Skromný sběratel", "line": "{v}. Nepotřebuje, ale vezme."}
+  ]},
+  "Times camped": {"emoji": "⛺", "min": 1, "bonus": 0.4, "forms": ["{n}× tábořil", "{n}× tábořil", "{n}× tábořil"], "titles": [
+   {"name": "Trampík", "line": "{v}. Kytara chybí, ale jinak dobrý."},
+   {"name": "Skaut", "line": "{v}. Oheň rozdělá i v Barrens."},
+   {"name": "Nomád", "line": "{v}. Domov je tam, kde je stan."}
+  ]},
+  "Bandages used": {"emoji": "🩹", "min": 2, "bonus": 0.3, "forms": ["{n} obvaz", "{n} obvazy", "{n} obvazů"], "titles": [
+   {"name": "Zdravotník", "line": "{v}. Healer si může odpočinout."},
+   {"name": "Samoobsluha", "line": "{v}. Kdo se nezalepí sám, toho nezalepí nikdo."},
+   {"name": "Mumie", "line": "{v}. Pod tím vším je prý hrdina."}
+  ]},
+  "Health potions consumed": {"emoji": "🧪", "min": 2, "bonus": 0.3, "forms": ["{n} lektvar", "{n} lektvary", "{n} lektvarů"], "titles": [
+   {"name": "Věrný zákazník alchymistů", "line": "{v}. Má věrnostní kartičku."},
+   {"name": "Červená láhev", "line": "{v}. Chutná po jahodách a strachu."},
+   {"name": "Panikář", "line": "{v}. Na poslední chvíli, jako vždy."}
+  ]},
+  "Items disenchanted": {"emoji": "✨", "min": 2, "bonus": 0.3, "forms": ["{n}× disenchant", "{n}× disenchant", "{n}× disenchant"], "titles": [
+   {"name": "Drtič itemů", "line": "{v}. Z modrého se stal prach."},
+   {"name": "Kouzelný mlýnek", "line": "{v}. Co nepotřebuješ, rozemele."},
+   {"name": "Alchymista prachu", "line": "{v}. Zelené itemy se třesou."}
+  ]},
+  "Flight paths taken": {"emoji": "🦅", "min": 2, "bonus": 0.3, "forms": ["{n} let gryfem", "{n} lety gryfem", "{n} letů gryfem"], "titles": [
+   {"name": "Turista", "line": "{v}. Wyverna už zná jeho váhu."},
+   {"name": "Cestovatel", "line": "{v}. Ideální čas skočit pro kafe."},
+   {"name": "Pilot", "line": "{v}. Oficiálně nejvíc ve vzduchu."}
+  ]},
+  "Number of times hearthed": {"emoji": "🏠", "min": 2, "bonus": 0.2, "forms": ["{n}× hearthstone", "{n}× hearthstone", "{n}× hearthstone"], "titles": [
+   {"name": "Stesk po domově", "line": "{v}. Nejlépe je doma."},
+   {"name": "Domácí typ", "line": "{v}. Hospoda ho čeká."},
+   {"name": "Teleportér", "line": "{v}. Proč chodit pěšky."}
+  ]},
+  "Total 5-player dungeons entered": {"emoji": "🏰", "min": 1, "bonus": 0.2, "forms": ["{n} dungeon", "{n} dungeony", "{n} dungeonů"], "titles": [
+   {"name": "Jeskyňář", "line": "{v}. Tma mu nevadí."},
+   {"name": "Průzkumník podzemí", "line": "{v}. Tam, kam slunce nesvítí."},
+   {"name": "Dobrodruh", "line": "{v}. Pro tohle se to hraje."}
+  ]},
+  "Quests completed": {"emoji": "📜", "min": 3, "bonus": 0.1, "forms": ["{n} quest", "{n} questy", "{n} questů"], "titles": [
+   {"name": "Pošťák Azerothu", "line": "{v}. Každý vykřičník je jeho."},
+   {"name": "Pilný dělník", "line": "{v}. NPC ho mají rádi."},
+   {"name": "Úkolníček", "line": "{v}. Questlog prázdný, srdce plné."}
+  ]},
+  "Creatures killed": {"emoji": "⚔️", "min": 20, "bonus": 0.1, "forms": ["{n} padlý nepřítel", "{n} padlí nepřátelé", "{n} padlých nepřátel"], "titles": [
+   {"name": "Řezník", "line": "{v}. Respawn nestíhá."},
+   {"name": "Grinder", "line": "{v}. XP se samo nenasbírá."},
+   {"name": "Mlýnek na moby", "line": "{v}. Kanci hlásí ztráty."}
+  ]},
+  "_xp": {"emoji": "⭐", "min": 1000, "bonus": 0.0, "forms": ["+{n} XP", "+{n} XP", "+{n} XP"], "titles": [
+   {"name": "Rychlík", "line": "{v}. Žlutá lišta se hýbe."},
+   {"name": "Sběrač zkušeností", "line": "{v}. Pomalu, ale jistě."},
+   {"name": "Pracant", "line": "{v}. Večer nebyl promarněný."}
+  ]}
+ },
+ "discovery": {"emoji": "🧭", "min": 1, "bonus": 0.5, "titles": [
+  {"name": "Objevitel", "line": "Nová statistika: {stat} ({n}×)."},
+  {"name": "Průkopník", "line": "Jako první v partě: {stat} ({n}×)."}
+ ]},
+ "discovery_skip": ["Highest", "Most ", "Continent", "Creature type", "Different", "learned", "known", "maximum", "skill", "Average", "used most", "that grant", "Killing Blows", "factions"],
+ "sleepers": [
+  {"emoji": "😴", "name": "Věrný spáč", "line": "Včera mimo Azeroth."},
+  {"emoji": "🛋️", "name": "Strážce gauče", "line": "Někdo musí hlídat obývák."},
+  {"emoji": "🍼", "name": "Táta ve službě", "line": "Důležitější quest doma."},
+  {"emoji": "🌙", "name": "Odpočívající hrdina", "line": "Rested XP se nabírá."},
+  {"emoji": "🪑", "name": "Rezerva na lavičce", "line": "Připraven naskočit."},
+  {"emoji": "📺", "name": "Divák", "line": "Dneska jen Netflix."},
+  {"emoji": "🧸", "name": "Uspávač", "line": "Děti usnuly, on taky."}
+ ],
+ "quiet": [
+  {"emoji": "🚶", "name": "Tichý poutník", "line": "Byl ve hře, ale nic se nestalo."},
+  {"emoji": "🎣", "name": "Zen mistr", "line": "Jen tak se poflakoval po Azerothu."},
+  {"emoji": "🏦", "name": "Bankéř", "line": "Asi přerovnával banku."}
+ ]
+}

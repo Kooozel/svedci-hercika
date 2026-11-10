@@ -1,0 +1,4 @@
+{
+ "_info": "Kronika výprav, nejnovější nahoře se řadí sám. Pole zápisu: date (RRRR-MM-DD), title, dungeon (nepovinné), party (slugy postav z party.json), text (seznam odstavců), facts (krátká čísla a fakta pod zápisem). Na hlavní stránce je jen první odstavec posledního zápisu, celý text je na kronika.html.",
+ "entries": []
+}

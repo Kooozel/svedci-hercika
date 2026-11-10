@@ -10,6 +10,15 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   (malými písmeny, diakritika zůstává, třeba `horaes-velký`). `size` je počet míst v partě (prázdná se ukážou jako volná).
 - **Novinky od včerejška:** skript si stáhne `party.json` z nasazené stránky (`site_url`) a porovná levely, XP,
   profese a výbavu se stavem z posledního běhu před dneškem.
+- **Tituly a počítadla:** ze statistik postav (smrti, jídlo, need rolly, lety…) dostane každý titul za včerejší večer,
+  bez žebříčku a bez opakování stejné statistiky dva dny po sobě. Kdo nehrál, dostane hezký titul.
+  Tituly a jejich varianty jsou v `titles.json` (klidně připiš další), počítadla za partu jsou `COUNTERS` v `build.py`.
+  Statistika, kterou `titles.json` nezná, dostane obecný titul „Objevitel“.
+- **Kronika:** zápisy z výprav v `kronika.json`. Na hlavní stránce je první odstavec posledního zápisu,
+  celá kronika je na `kronika.html`. Píše se ručně (s Claudem) po výpravě.
+- **Denní historie:** ranní plánovaný běh commitne `history/RRRR-MM-DD.json` se stavem všech postav
+  (levely, XP, statistiky, výbava). Z rozdílu dvou dnů se pozná, co se ten večer stalo. Kvůli tomu má workflow
+  právo zápisu do repozitáře, takže si před vlastním pushem udělej `git pull`.
 - **Dungeony:** seznam a rozsahy levelů jsou podle
   [Wowhead pro Forever](https://www.wowhead.com/forever/guide/dungeons-overview-locations-details), opravíš je v `dungeons.json`.
   `new` označí nový dungeon z Forever, `alliance_side` dungeon na území Aliance, který se na stránce nezobrazuje.

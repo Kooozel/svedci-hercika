@@ -3,12 +3,14 @@
 import base64
 import html
 import json
+import math
 import os
 import re
 import sys
 import time
 import urllib.parse
 import urllib.request
+import zlib
 from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -108,6 +110,10 @@ def fetch_api(token, region, slug):
                          for i in get("/equipment").get("equipped_items") or []]
     except Exception as exc:
         print(f"{slug}: výbava ({exc})", file=sys.stderr)
+    try:  # statistiky jsou pro tituly a počítadla, bez nich stránka jede dál
+        extra["stats"] = flat_stats(get("/achievements/statistics"))
+    except Exception as exc:
+        print(f"{slug}: statistiky ({exc})", file=sys.stderr)
     if c["character_class"]["name"] == "Hunter":
         try:
             pets = get("/hunter-pets").get("hunter_pets") or []
@@ -133,6 +139,22 @@ def fetch_api(token, region, slug):
         source="api",
         **extra,
     )
+
+
+def flat_stats(data):
+    """Strom kategorií statistik zploští na {anglický název: počet}; API vrací jen nenulové."""
+    out = {}
+
+    def walk(cat):
+        for s in cat.get("statistics") or []:
+            if isinstance(s.get("quantity"), (int, float)):
+                out[s["name"]] = int(s["quantity"])
+        for sub in cat.get("sub_categories") or []:
+            walk(sub)
+
+    for cat in data.get("categories") or []:
+        walk(cat)
+    return out
 
 
 # ---------- veřejná Armory (záloha) ----------
@@ -307,7 +329,8 @@ def ready_check(token, region, rows, best, members, catalog):
 def snapshot(m):
     return {"level": m["level"], "xp": m.get("xp"),
             "gear": [g["name"] for g in m["gear"]] if "gear" in m else None,
-            "profs": {p["name"]: p["skill"] for p in m.get("professions") or []}}
+            "profs": {p["name"]: p["skill"] for p in m.get("professions") or []},
+            "stats": m.get("stats"), "updated": m.get("updated")}
 
 
 def local_day(ts):
@@ -326,7 +349,7 @@ def load_baseline(party, built):
         return None
     if local_day(prev["built"]) == local_day(built) and prev.get("baseline"):
         return prev["baseline"]
-    return {"at": prev["built"],
+    return {"at": prev["built"], "titles": prev.get("titles") or {},
             "members": {m["slug"]: snapshot(m) for m in prev.get("members") or [] if m.get("ok")}}
 
 
@@ -355,6 +378,135 @@ def changes(m, base):
             out.append(f'{e(p["name"])} +{p["skill"] - old}')
     if b.get("gear") is not None and "gear" in m:
         out += [item_link(g) for g in m["gear"] if g["slot"] not in GEAR_SKIP and g["name"] not in b["gear"]]
+    return out
+
+
+# ---------- tituly a počítadla party ----------
+
+def pl(n, forms):
+    """Česká množná čísla: forms = (1, 2–4, 5+), "{n}" se nahradí číslem."""
+    form = forms[0] if n == 1 else forms[1] if 2 <= n <= 4 else forms[2]
+    return form.replace("{n}", num(n))
+
+
+# počítadla za celou partu: statistika, emoji, popisek
+COUNTERS = [
+    ("Total deaths", "🪦", "smrtí"), ("Quests completed", "📜", "questů"),
+    ("Creatures killed", "⚔️", "padlých nepřátel"), ("Food eaten", "🍗", "snědených jídel"),
+    ("Beverages consumed", "🍺", "vypitých nápojů"), ("Flight paths taken", "🦅", "letů gryfem"),
+    ("Number of times hearthed", "🏠", "hearthstonů"), ("Need rolls made on loot", "🎲", "need rollů"),
+    ("Quests abandoned", "🗑️", "vzdaných questů"), ("Critters killed", "🐇", "zabitých zvířátek"),
+]
+
+
+def milestones(n):
+    """Kulatá čísla 1, 2,5, 5 × 10^k, nejmenší větší než n."""
+    step = 10
+    while True:
+        for m in (step, step * 5 // 2, step * 5):
+            if m > n:
+                return m
+        step *= 10
+
+
+def last_milestone(n):
+    best, step = 0, 10
+    while step <= n:
+        for m in (step, step * 5 // 2, step * 5):
+            if m <= n:
+                best = m
+        step *= 10
+    return best
+
+
+def has_daily(base):
+    """Má včerejší stav statistiky? První den po zapnutí titulů ještě ne."""
+    return any((b or {}).get("stats") is not None for b in ((base or {}).get("members") or {}).values())
+
+
+def evening_values(m, base):
+    """Hodnoty pro tituly: rozdíl proti včerejšku, nebo součty za celou dobu (bez včerejších statistik)."""
+    b = ((base or {}).get("members") or {}).get(m["slug"]) or {}
+    now = m.get("stats") or {}
+    if has_daily(base):
+        old = b.get("stats") or {}
+        vals = {k: v - old.get(k, 0) for k, v in now.items() if v > old.get(k, 0)}
+        if b and m["level"] <= len(XP_TO_NEXT) and m.get("xp") is not None and b.get("xp") is not None:
+            gained = xp_total(m["level"], m["xp"]) - xp_total(b["level"], b["xp"])
+            if gained > 0:
+                vals["_xp"] = gained
+            if m["level"] > b["level"]:
+                vals["_lvl"] = m["level"] - b["level"]
+        played = bool(vals) or bool(m.get("updated") and b.get("updated") and m["updated"] > b["updated"])
+        return vals, played
+    return dict(now), True
+
+
+def pick_variant(variants, today, slug):
+    """Varianta podle dne a postavy: každý den jiná, ale při opakovaném buildu stejná."""
+    return variants[(today.toordinal() + zlib.crc32(slug.encode())) % len(variants)]
+
+
+def evening_titles(members, base, today, catalog):
+    """Každý dostane jeden titul, žádná statistika se nedá dvakrát a nikdo nedostane stejnou jako včera."""
+    with_stats = [m for m in members if m.get("stats") is not None]
+    yesterday = (base or {}).get("titles") or {}
+    values, played = {}, {}
+    for m in with_stats:
+        values[m["slug"]], played[m["slug"]] = evening_values(m, base)
+    stats = catalog.get("stats") or {}
+    rules = dict(stats)
+    # objevy: statistika, kterou seznam nezná, se ukáže obecným titulem (jen za včerejšek, ne za celou dobu)
+    disc, skip = catalog.get("discovery"), catalog.get("discovery_skip") or []
+    if disc and has_daily(base):
+        for s in values:
+            for stat in values[s]:
+                if stat not in rules and not stat.startswith("_") and not any(w in stat for w in skip):
+                    rules[stat] = {**disc, "discovery": True}
+    candidates = []
+    for stat, rule in rules.items():
+        top = max((values[s].get(stat, 0) for s in values), default=0)
+        for s in values:
+            v = values[s].get(stat, 0)
+            if v >= rule["min"] and played[s] and yesterday.get(s) != stat:
+                # podíl na nejlepším + vtipnost + velikost čísla (185 nápojů přebije 2 zvířátka)
+                score = v / top + rule["bonus"] + 0.1 * math.log2(v / rule["min"])
+                candidates.append((score, v / rule["min"], s, stat, v))
+    out, used = {}, set()
+    for _, _, s, stat, v in sorted(candidates, reverse=True):
+        if s in out or stat in used:
+            continue
+        rule = rules[stat]
+        t = pick_variant(rule["titles"], today, s)
+        if rule.get("discovery"):
+            line = t["line"].replace("{stat}", stat).replace("{n}", num(v))
+        else:
+            line = t["line"].replace("{v}", pl(v, rule["forms"]))
+        out[s] = {"key": stat, "emoji": rule["emoji"], "title": t["name"], "detail": line}
+        used.add(stat)
+    for m in with_stats:
+        s = m["slug"]
+        if s in out:
+            continue
+        group = "quiet" if played[s] else "sleepers"
+        pool = [(f"{group}:{i}", t) for i, t in enumerate(catalog.get(group) or [])
+                if f"{group}:{i}" != yesterday.get(s)] or [(group, {"emoji": "🙂", "name": "Hrdina", "line": ""})]
+        key, t = pick_variant(pool, today, s)
+        out[s] = {"key": key, "emoji": t["emoji"], "title": t["name"], "detail": t["line"]}
+    return out
+
+
+def party_counters(members, base):
+    olds = base["members"] if has_daily(base) else {}
+    out = []
+    for stat, emoji, label in COUNTERS:
+        total = sum((m.get("stats") or {}).get(stat, 0) for m in members)
+        before = sum(((olds.get(m["slug"]) or {}).get("stats") or {}).get(stat, 0)
+                     for m in members) if olds else None
+        crossed = last_milestone(total) if before is not None and last_milestone(total) > before else None
+        out.append({"emoji": emoji, "label": label, "total": total,
+                    "delta": total - before if before is not None else None,
+                    "next": milestones(total), "crossed": crossed})
     return out
 
 
@@ -523,6 +675,37 @@ def news_box(members, base):
     body = f'<ul>{"".join(rows)}</ul>' if rows else '<p class="muted">Nic nového, nikdo nehrál.</p>'
     return (f'<section class="news"><p class="eyebrow">Novinky od <time data-ts="{e(base["at"])}">{e(base["at"])}</time></p>'
             f'{body}</section>')
+
+
+def evening_box(members, base, titles, counters):
+    if not titles:
+        return ""
+    daily = has_daily(base)
+    cards = "".join(
+        f'<li class="title" style="--cls:{cls_color(m)}"><span class="t-emoji">{t["emoji"]}</span>'
+        f'<span class="t-who">{e(first(m))}</span><b class="t-name">{e(t["title"])}</b>'
+        f'<small>{e(t["detail"])}</small></li>'
+        for m in members if (t := titles.get(m["slug"])))
+    tiles = []
+    for c in counters:
+        if not c["total"]:
+            continue
+        if c["crossed"]:
+            foot = f'<small class="c-hit">🎉 právě {num(c["crossed"])}!</small>'
+        else:
+            delta = f'+{num(c["delta"])} od včera · ' if c["delta"] else ""
+            foot = f'<small>{delta}další milník {num(c["next"])}</small>'
+        tiles.append(f'<li class="ctr{" ctr-hit" if c["crossed"] else ""}"><span class="c-emoji">{c["emoji"]}</span>'
+                     f'<b>{num(c["total"])}</b><span>{e(c["label"])}</span>{foot}</li>')
+    hit = any(c["crossed"] for c in counters)
+    summary = " · ".join(f'<b>{num(c["total"])}</b> {e(c["label"])}' for c in counters[:3])
+    head = "Tituly za včerejší večer" if daily else "Tituly za celou dobu"
+    note = ("Každý má jeden titul, žádný se neopakuje dva dny po sobě. Není to žebříček."
+            if daily else "Od zítřka se tituly budou dávat za včerejší večer.")
+    return (f'<section id="evening"><h2 class="sec">{head}</h2><ul class="titles">{cards}</ul>'
+            f'<details class="counters-box"{" open" if hit else ""}><summary>Parta dohromady · {summary}</summary>'
+            f'<ul class="counters">{"".join(tiles)}</ul></details>'
+            f'<p class="note">{note} Počítá se ze statistik Blizzard API, které se aktualizují, když se postava odhlásí.</p></section>')
 
 
 # ---------- ready check ----------
@@ -700,7 +883,74 @@ def dungeon_table(rows, best, members):
             f'<tbody>{"".join(body)}</tbody></table></div>')
 
 
-def render(party, members, rows, best, built, checks, base):
+def page_head(title):
+    return f'''<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{e(title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>{CSS}</style>
+</head>
+<body>'''
+
+
+# ---------- kronika ----------
+
+MONTHS = ["", "ledna", "února", "března", "dubna", "května", "června", "července", "srpna", "září", "října",
+          "listopadu", "prosince"]
+
+
+def cz_date(iso):
+    d = datetime.strptime(iso, "%Y-%m-%d")
+    return f"{d.day}. {MONTHS[d.month]} {d.year}"
+
+
+def chronicle_entry(entry, members, full=True):
+    by_slug = {m["slug"]: m for m in members}
+    who = " ".join(f'<span class="k-who" style="--cls:{cls_color(by_slug[s])}">{e(first(by_slug[s]))}</span>'
+                   for s in entry.get("party") or [] if s in by_slug)
+    paras = entry.get("text") or []
+    if not full:
+        paras = paras[:1]
+    body = "".join(f"<p>{e(p)}</p>" for p in paras)
+    facts = "".join(f"<li>{e(f)}</li>" for f in entry.get("facts") or [])
+    dungeon = f' · {e(entry["dungeon"])}' if entry.get("dungeon") else ""
+    return (f'<article class="k-entry" id="k-{e(entry["date"])}"><p class="eyebrow">{cz_date(entry["date"])}{dungeon}</p>'
+            f'<h3>{e(entry["title"])}</h3>{f"<p class=k-party>{who}</p>" if who else ""}<div class="k-text">{body}</div>'
+            f'{f"<ul class=k-facts>{facts}</ul>" if facts and full else ""}</article>')
+
+
+def chronicle_box(entries, members):
+    if not entries:
+        return ('<section id="kronika"><h2 class="sec">Kronika</h2><p class="muted k-empty">Kronika je zatím prázdná. '
+                'První zápis přibude po příští výpravě.</p></section>')
+    latest = entries[0]
+    more = len(latest.get("text") or []) > 1 or latest.get("facts") or len(entries) > 1
+    count = pl(len(entries), ("{n} zápis", "{n} zápisy", "{n} zápisů"))
+    link = (f'<p class="k-more"><a href="kronika.html#k-{e(latest["date"])}">Číst dál a celá kronika ({count}) →</a></p>'
+            if more else "")
+    return (f'<section id="kronika"><h2 class="sec">Kronika</h2><div class="k-latest">'
+            f'{chronicle_entry(latest, members, full=False)}{link}</div></section>')
+
+
+def render_chronicle(party, entries, members):
+    body = "".join(chronicle_entry(x, members) for x in entries) or '<p class="muted">Zatím žádné zápisy.</p>'
+    return f'''{page_head("Kronika · " + party["title"])}
+<main>
+  <header class="top"><div><p class="eyebrow"><a href="index.html">← {e(party["title"])}</a></p><h1>Kronika</h1></div></header>
+  <div class="k-list">{body}</div>
+  <footer>Zápisy jsou v <code>kronika.json</code>, píšou se po výpravách.</footer>
+</main>
+</body>
+</html>
+'''
+
+
+def render(party, members, rows, best, built, checks, base, titles, counters, chronicle):
     ok = [m for m in members if m["ok"]]
     has_tank = any("tank" in m["roles"] for m in ok)
     has_heal = any("heal" in m["roles"] for m in ok)
@@ -713,18 +963,7 @@ def render(party, members, rows, best, built, checks, base):
         return f'<span class="flag {"flag-ok" if good else "flag-bad"}">{"✓" if good else "✗"} {label}</span>'
 
     cards = "".join(f'<div id="char-{e(m["slug"])}">{card(m)}</div>' for m in members)
-    return f'''<!doctype html>
-<html lang="cs">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{e(party["title"])}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<style>{CSS}</style>
-</head>
-<body>
+    return f'''{page_head(party["title"])}
 <main>
   <header class="top">
     <div>
@@ -739,6 +978,8 @@ def render(party, members, rows, best, built, checks, base):
   {party_strip(members, party.get("size", len(members)))}
   <div class="hero">{next_box(rows, best, ok)}{news_box(ok, base)}</div>
   {ready_section(checks, ok)}
+  {chronicle_box(chronicle, ok)}
+  {evening_box(ok, base, titles, counters)}
   <section><h2 class="sec">Postavy</h2><div class="cards">{cards}</div></section>
   <section><h2 class="sec">Profese</h2>{professions_box(ok)}</section>
   <section><details class="all-dungeons"><summary>Všechny dungeony podle levelu ({len(rows)})</summary>
@@ -857,6 +1098,32 @@ tr.best{background:#2c1611}tr.best th:first-child{box-shadow:inset 3px 0 var(--r
 .all-dungeons{margin-top:30px}.all-dungeons summary{cursor:pointer;color:var(--gold);font:600 16px Cinzel,serif;margin-bottom:10px}
 footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
 code{background:var(--panel2);padding:1px 5px;border-radius:4px}
+.sub{font-size:15px;color:var(--muted);margin:18px 0 10px}
+.titles,.counters{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.titles{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.title{background:linear-gradient(160deg,#2c2014,var(--panel));border:1px solid #5a4422;border-radius:12px;padding:12px 14px;
+display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center}
+.t-emoji{grid-row:1/4;font-size:30px;line-height:1}
+.t-who{color:var(--cls);font-weight:600;font-size:13px}
+.t-name{font:700 16px Cinzel,Georgia,serif;color:var(--gold)}
+.title small{color:var(--muted);font-size:12px}
+.counters{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.ctr{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;font-size:13px}
+.ctr b{font:700 22px Cinzel,Georgia,serif;color:var(--text)}
+.c-emoji{font-size:18px}.ctr small{color:var(--muted);font-size:11px;margin-top:2px}
+.ctr-hit{border-color:var(--gold);background:#2c2014}.c-hit{color:var(--gold)!important;font-weight:600}
+.counters-box{margin-top:14px}.counters-box summary{cursor:pointer;color:var(--muted);font-size:14px;margin-bottom:10px}
+.counters-box summary b{color:var(--text)}
+.k-latest,.k-entry{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;padding:16px 20px}
+.k-latest .k-entry{background:none;border:0;padding:0}
+.k-list{display:grid;gap:14px;margin-top:20px}
+.k-entry h3{font-size:20px;color:var(--gold);margin-bottom:6px}
+.k-party{margin:0 0 8px;display:flex;gap:10px;font-size:13px}.k-who{color:var(--cls);font-weight:600}
+.k-text p{margin:0 0 10px;font-family:Georgia,serif;font-size:16px;line-height:1.65}
+.k-text p:first-child::first-letter{font:700 2.4em/1 Cinzel,serif;float:left;margin:4px 6px 0 0;color:var(--gold)}
+.k-facts{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.k-facts li{font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--muted)}
+.k-more{margin:6px 0 0;font-size:14px}.k-empty{font-style:italic}
 """
 
 JS = """
@@ -902,12 +1169,26 @@ def main():
         checks = []
     built = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     base = load_baseline(party, built)
+    catalog_titles = json.loads((ROOT / "titles.json").read_text(encoding="utf-8"))
+    titles = evening_titles(ok, base, local_day(built), catalog_titles)
+    counters = party_counters(ok, base)
+
+    kronika = ROOT / "kronika.json"
+    chronicle = sorted(json.loads(kronika.read_text(encoding="utf-8")).get("entries") or [] if kronika.exists() else [],
+                       key=lambda x: x["date"], reverse=True)
 
     OUT.mkdir(exist_ok=True)
-    (OUT / "index.html").write_text(render(party, members, rows, best, built, checks, base), encoding="utf-8")
+    (OUT / "kronika.html").write_text(render_chronicle(party, chronicle, ok), encoding="utf-8")
+    # denní snímek pro history/, ranní běh na GitHubu ho commitne (podklad pro kroniku)
+    (OUT / "snapshot.json").write_text(json.dumps(
+        {"date": local_day(built).isoformat(), "built": built,
+         "members": {m["slug"]: {"name": m["name"], **snapshot(m)} for m in ok}},
+        ensure_ascii=False, indent=1), encoding="utf-8")
+    (OUT / "index.html").write_text(render(party, members, rows, best, built, checks, base, titles, counters, chronicle), encoding="utf-8")
     public = [{k: v for k, v in m.items() if k != "quests_done"} for m in members]
     (OUT / "party.json").write_text(json.dumps({"built": built, "members": public, "ready_check": checks,
-                                                "baseline": base}, ensure_ascii=False, indent=2), encoding="utf-8")
+                                                "baseline": base,
+                                                "titles": {s: t["key"] for s, t in titles.items()}}, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Hotovo: {len(ok)}/{len(members)} postav, nejlepší dungeon: {best['name'] if best else '-'}, "
           f"ready check: {len(checks)} dungeonů")
 
