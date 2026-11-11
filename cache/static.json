@@ -1,0 +1,1666 @@
+{
+"items": {
+"10045": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134591.jpg",
+"inv": "LEGS",
+"kind": "Armor",
+"level": 7,
+"name": "Simple Linen Pants",
+"quality": "COMMON",
+"req": 2,
+"sub": "Cloth"
+},
+"10046": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132539.jpg",
+"inv": "FEET",
+"kind": "Armor",
+"level": 9,
+"name": "Simple Linen Boots",
+"quality": "COMMON",
+"req": 4,
+"sub": "Cloth"
+},
+"10047": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134591.jpg",
+"inv": "LEGS",
+"kind": "Armor",
+"level": 15,
+"name": "Simple Kilt",
+"quality": "UNCOMMON",
+"req": 10,
+"sub": "Cloth"
+},
+"10421": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132624.jpg",
+"inv": "CHEST",
+"kind": "Armor",
+"level": 10,
+"name": "Rough Copper Vest",
+"quality": "UNCOMMON",
+"req": 2,
+"sub": "Mail"
+},
+"11287": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135139.jpg",
+"inv": "RANGEDRIGHT",
+"kind": "Weapon",
+"level": 15,
+"name": "Lesser Magic Wand",
+"quality": "UNCOMMON",
+"req": 5,
+"sub": "Wand"
+},
+"118": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134829.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 5,
+"name": "Minor Healing Potion",
+"quality": "COMMON",
+"req": 1,
+"sub": "Potions"
+},
+"1251": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133685.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 1,
+"name": "Linen Bandage",
+"quality": "COMMON",
+"req": 0,
+"sub": "Bandages"
+},
+"20744": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134711.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Minor Wizard Oil",
+"quality": "COMMON",
+"req": 5,
+"sub": "Other"
+},
+"2302": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132538.jpg",
+"inv": "FEET",
+"kind": "Armor",
+"level": 8,
+"name": "Handstitched Leather Boots",
+"quality": "COMMON",
+"req": 3,
+"sub": "Leather"
+},
+"2304": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133611.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 5,
+"name": "Light Armor Kit",
+"quality": "COMMON",
+"req": 1,
+"sub": "Permanent"
+},
+"2318": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134252.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 10,
+"name": "Light Leather",
+"quality": "COMMON",
+"req": 0,
+"sub": "Leather"
+},
+"2320": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132891.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 5,
+"name": "Coarse Thread",
+"quality": "COMMON",
+"req": 0,
+"sub": "Cloth"
+},
+"2321": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132912.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 20,
+"name": "Fine Thread",
+"quality": "COMMON",
+"req": 0,
+"sub": "Cloth"
+},
+"247786": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132841.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 5,
+"name": "Mote of Magic",
+"quality": "COMMON",
+"req": 0,
+"sub": "Enchanting"
+},
+"247789": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135645.jpg",
+"inv": "RANGEDRIGHT",
+"kind": "Weapon",
+"level": 6,
+"name": "Novice's Practice Wand",
+"quality": "COMMON",
+"req": 1,
+"sub": "Wand"
+},
+"250515": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132506.jpg",
+"inv": "WAIST",
+"kind": "Armor",
+"level": 17,
+"name": "Protector's Chain Belt",
+"quality": "RARE",
+"req": 12,
+"sub": "Mail"
+},
+"250620": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132554.jpg",
+"inv": "FEET",
+"kind": "Armor",
+"level": 15,
+"name": "Gemmed Copper Boots",
+"quality": "RARE",
+"req": 10,
+"sub": "Mail"
+},
+"253664": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/348520.jpg",
+"inv": "BAG",
+"kind": "Container",
+"level": 5,
+"name": "Linen Reagent Bag",
+"quality": "COMMON",
+"req": 0,
+"sub": "Reagent Bag"
+},
+"253885": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/236919.jpg",
+"inv": "WAIST",
+"kind": "Armor",
+"level": 15,
+"name": "Novice Arcanist's Sash",
+"quality": "RARE",
+"req": 10,
+"sub": "Cloth"
+},
+"253887": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/236918.jpg",
+"inv": "WAIST",
+"kind": "Armor",
+"level": 15,
+"name": "Novice Ardent's Sash",
+"quality": "RARE",
+"req": 10,
+"sub": "Cloth"
+},
+"2568": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135009.jpg",
+"inv": "CHEST",
+"kind": "Armor",
+"level": 8,
+"name": "Brown Linen Vest",
+"quality": "COMMON",
+"req": 3,
+"sub": "Cloth"
+},
+"2569": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132543.jpg",
+"inv": "FEET",
+"kind": "Armor",
+"level": 13,
+"name": "Linen Boots",
+"quality": "UNCOMMON",
+"req": 8,
+"sub": "Cloth"
+},
+"2570": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133766.jpg",
+"inv": "CLOAK",
+"kind": "Armor",
+"level": 6,
+"name": "Linen Cloak",
+"quality": "COMMON",
+"req": 1,
+"sub": "Cloth"
+},
+"2576": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135030.jpg",
+"inv": "BODY",
+"kind": "Armor",
+"level": 7,
+"name": "White Linen Shirt",
+"quality": "COMMON",
+"req": 0,
+"sub": "Miscellaneous"
+},
+"2578": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132715.jpg",
+"inv": "CHEST",
+"kind": "Armor",
+"level": 14,
+"name": "Barbaric Linen Vest",
+"quality": "UNCOMMON",
+"req": 9,
+"sub": "Cloth"
+},
+"2580": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133759.jpg",
+"inv": "CLOAK",
+"kind": "Armor",
+"level": 12,
+"name": "Reinforced Linen Cape",
+"quality": "UNCOMMON",
+"req": 7,
+"sub": "Cloth"
+},
+"2584": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133762.jpg",
+"inv": "CLOAK",
+"kind": "Armor",
+"level": 16,
+"name": "Woolen Cape",
+"quality": "UNCOMMON",
+"req": 11,
+"sub": "Cloth"
+},
+"2679": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133974.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 10,
+"name": "Charred Wolf Meat",
+"quality": "COMMON",
+"req": 1,
+"sub": "Food & Drink"
+},
+"2680": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134021.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 10,
+"name": "Spiced Wolf Meat",
+"quality": "COMMON",
+"req": 1,
+"sub": "Food & Drink"
+},
+"2681": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133974.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 10,
+"name": "Roasted Boar Meat",
+"quality": "COMMON",
+"req": 1,
+"sub": "Food & Drink"
+},
+"279944": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135243.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 4,
+"name": "Sharpening Wheel",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
+"279960": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134419.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 4,
+"name": "Lodestone",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
+"279968": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133681.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 4,
+"name": "First Aid Kit",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
+"279972": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132484.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 4,
+"name": "Faction Banner",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
+"279976": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/4631367.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 4,
+"name": "Enchanted Lute",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
+"279978": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134250.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 4,
+"name": "Camp Tent",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
+"279979": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132761.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 4,
+"name": "Camp Chair",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
+"279981": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/7808148.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 4,
+"name": "Basic Campfire Kit",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
+"2840": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133216.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 10,
+"name": "Copper Bar",
+"quality": "COMMON",
+"req": 0,
+"sub": "Metal & Stone"
+},
+"2841": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133227.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 20,
+"name": "Bronze Bar",
+"quality": "COMMON",
+"req": 0,
+"sub": "Metal & Stone"
+},
+"2853": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132602.jpg",
+"inv": "WRIST",
+"kind": "Armor",
+"level": 7,
+"name": "Copper Bracers",
+"quality": "COMMON",
+"req": 2,
+"sub": "Mail"
+},
+"2857": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132492.jpg",
+"inv": "WAIST",
+"kind": "Armor",
+"level": 18,
+"name": "Runed Copper Belt",
+"quality": "UNCOMMON",
+"req": 13,
+"sub": "Mail"
+},
+"2862": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135248.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 5,
+"name": "Rough Sharpening Stone",
+"quality": "COMMON",
+"req": 1,
+"sub": "Other"
+},
+"2863": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135249.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Coarse Sharpening Stone",
+"quality": "COMMON",
+"req": 5,
+"sub": "Other"
+},
+"2996": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132890.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 10,
+"name": "Bolt of Linen Cloth",
+"quality": "COMMON",
+"req": 0,
+"sub": "Cloth"
+},
+"2997": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132913.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 25,
+"name": "Bolt of Woolen Cloth",
+"quality": "COMMON",
+"req": 0,
+"sub": "Cloth"
+},
+"3239": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135255.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 5,
+"name": "Rough Weightstone",
+"quality": "COMMON",
+"req": 1,
+"sub": "Other"
+},
+"3240": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135256.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Coarse Weightstone",
+"quality": "COMMON",
+"req": 5,
+"sub": "Other"
+},
+"3470": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135243.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 10,
+"name": "Rough Grinding Stone",
+"quality": "COMMON",
+"req": 0,
+"sub": "Metal & Stone"
+},
+"3478": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135244.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 20,
+"name": "Coarse Grinding Stone",
+"quality": "COMMON",
+"req": 0,
+"sub": "Metal & Stone"
+},
+"3576": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133219.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 20,
+"name": "Tin Bar",
+"quality": "COMMON",
+"req": 0,
+"sub": "Metal & Stone"
+},
+"4238": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133622.jpg",
+"inv": "BAG",
+"kind": "Container",
+"level": 5,
+"name": "Linen Bag",
+"quality": "COMMON",
+"req": 0,
+"sub": "Bag"
+},
+"4240": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133639.jpg",
+"inv": "BAG",
+"kind": "Container",
+"level": 15,
+"name": "Woolen Bag",
+"quality": "COMMON",
+"req": 0,
+"sub": "Bag"
+},
+"4307": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132939.jpg",
+"inv": "HAND",
+"kind": "Armor",
+"level": 10,
+"name": "Heavy Linen Gloves",
+"quality": "UNCOMMON",
+"req": 5,
+"sub": "Cloth"
+},
+"4308": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132611.jpg",
+"inv": "WRIST",
+"kind": "Armor",
+"level": 12,
+"name": "Green Linen Bracers",
+"quality": "UNCOMMON",
+"req": 7,
+"sub": "Cloth"
+},
+"4309": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134587.jpg",
+"inv": "LEGS",
+"kind": "Armor",
+"level": 14,
+"name": "Handstitched Linen Britches",
+"quality": "UNCOMMON",
+"req": 9,
+"sub": "Cloth"
+},
+"4312": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132543.jpg",
+"inv": "FEET",
+"kind": "Armor",
+"level": 16,
+"name": "Soft-soled Linen Boots",
+"quality": "UNCOMMON",
+"req": 11,
+"sub": "Cloth"
+},
+"4343": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134586.jpg",
+"inv": "LEGS",
+"kind": "Armor",
+"level": 10,
+"name": "Brown Linen Pants",
+"quality": "UNCOMMON",
+"req": 5,
+"sub": "Cloth"
+},
+"4344": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135006.jpg",
+"inv": "BODY",
+"kind": "Armor",
+"level": 7,
+"name": "Brown Linen Shirt",
+"quality": "COMMON",
+"req": 0,
+"sub": "Miscellaneous"
+},
+"5957": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132760.jpg",
+"inv": "CHEST",
+"kind": "Armor",
+"level": 10,
+"name": "Handstitched Leather Vest",
+"quality": "UNCOMMON",
+"req": 3,
+"sub": "Leather"
+},
+"6214": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133055.jpg",
+"inv": "TWOHWEAPON",
+"kind": "Weapon",
+"level": 16,
+"name": "Heavy Copper Maul",
+"quality": "UNCOMMON",
+"req": 11,
+"sub": "Mace"
+},
+"6217": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133942.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 5,
+"name": "Copper Rod",
+"quality": "COMMON",
+"req": 0,
+"sub": "Enchanting"
+},
+"6218": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135225.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 5,
+"name": "Runed Copper Rod",
+"quality": "COMMON",
+"req": 1,
+"sub": "Enchanting"
+},
+"6238": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132662.jpg",
+"inv": "ROBE",
+"kind": "Armor",
+"level": 10,
+"name": "Brown Linen Robe",
+"quality": "UNCOMMON",
+"req": 5,
+"sub": "Cloth"
+},
+"6888": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132834.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 10,
+"name": "Herb Baked Egg",
+"quality": "COMMON",
+"req": 1,
+"sub": "Food & Drink"
+},
+"7026": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132494.jpg",
+"inv": "WAIST",
+"kind": "Armor",
+"level": 9,
+"name": "Linen Belt",
+"quality": "COMMON",
+"req": 4,
+"sub": "Cloth"
+},
+"7276": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133150.jpg",
+"inv": "CLOAK",
+"kind": "Armor",
+"level": 9,
+"name": "Handstitched Leather Cloak",
+"quality": "COMMON",
+"req": 4,
+"sub": "Cloth"
+},
+"7277": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132607.jpg",
+"inv": "WRIST",
+"kind": "Armor",
+"level": 9,
+"name": "Handstitched Leather Bracers",
+"quality": "COMMON",
+"req": 4,
+"sub": "Leather"
+},
+"7279": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133581.jpg",
+"inv": "BAG",
+"kind": "Quiver",
+"level": 5,
+"name": "Small Leather Ammo Pouch",
+"quality": "COMMON",
+"req": 1,
+"sub": "Ammo Pouch"
+}
+},
+"recipes": {
+"13137": {
+"item": 20744,
+"name": "Minor Wizard Oil",
+"reagents": [
+[
+10940,
+1
+],
+[
+17034,
+1
+],
+[
+3371,
+1
+]
+]
+},
+"1353": {
+"item": 2302,
+"name": "Handstitched Leather Boots",
+"reagents": [
+[
+2318,
+2
+],
+[
+2320,
+1
+]
+]
+},
+"1356": {
+"item": 2304,
+"name": "Light Armor Kit",
+"reagents": [
+[
+2318,
+1
+]
+]
+},
+"1535": {
+"item": 2679,
+"name": "Charred Wolf Meat",
+"reagents": [
+[
+2672,
+1
+]
+]
+},
+"1536": {
+"item": 2680,
+"name": "Spiced Wolf Meat",
+"reagents": [
+[
+2672,
+1
+],
+[
+2678,
+1
+]
+]
+},
+"1537": {
+"item": 2681,
+"name": "Roasted Boar Meat",
+"reagents": [
+[
+769,
+1
+]
+]
+},
+"1570": {
+"item": null,
+"name": "Mining",
+"reagents": []
+},
+"1600": {
+"item": 2841,
+"name": "Smelt Bronze",
+"reagents": [
+[
+2840,
+1
+],
+[
+3576,
+1
+]
+]
+},
+"1631": {
+"item": 2862,
+"name": "Rough Sharpening Stone",
+"reagents": [
+[
+2835,
+1
+]
+]
+},
+"1634": {
+"item": 2853,
+"name": "Copper Bracers",
+"reagents": [
+[
+2840,
+2
+]
+]
+},
+"1636": {
+"item": 2863,
+"name": "Coarse Sharpening Stone",
+"reagents": [
+[
+2836,
+1
+]
+]
+},
+"1637": {
+"item": 2857,
+"name": "Runed Copper Belt",
+"reagents": [
+[
+2840,
+10
+]
+]
+},
+"1708": {
+"item": 2318,
+"name": "Light Leather",
+"reagents": [
+[
+2934,
+3
+]
+]
+},
+"1798": {
+"item": 3239,
+"name": "Rough Weightstone",
+"reagents": [
+[
+2835,
+1
+]
+]
+},
+"1800": {
+"item": 3240,
+"name": "Coarse Weightstone",
+"reagents": [
+[
+2836,
+1
+]
+]
+},
+"1838": {
+"item": 1251,
+"name": "Linen Bandage",
+"reagents": [
+[
+2589,
+1
+]
+]
+},
+"1848": {
+"item": 3576,
+"name": "Smelt Tin",
+"reagents": [
+[
+2771,
+1
+]
+]
+},
+"1856": {
+"item": 3470,
+"name": "Rough Grinding Stone",
+"reagents": [
+[
+2835,
+2
+]
+]
+},
+"1861": {
+"item": 3478,
+"name": "Coarse Grinding Stone",
+"reagents": [
+[
+2836,
+2
+]
+]
+},
+"2359": {
+"item": 2996,
+"name": "Bolt of Linen Cloth",
+"reagents": [
+[
+2589,
+2
+]
+]
+},
+"2360": {
+"item": 2570,
+"name": "Linen Cloak",
+"reagents": [
+[
+2996,
+1
+],
+[
+2320,
+1
+]
+]
+},
+"2361": {
+"item": 2568,
+"name": "Brown Linen Vest",
+"reagents": [
+[
+2996,
+1
+],
+[
+2320,
+1
+]
+]
+},
+"2363": {
+"item": 2569,
+"name": "Linen Boots",
+"reagents": [
+[
+2996,
+3
+],
+[
+2320,
+1
+],
+[
+2318,
+1
+]
+]
+},
+"2365": {
+"item": 2576,
+"name": "White Linen Shirt",
+"reagents": [
+[
+2996,
+1
+],
+[
+2320,
+1
+],
+[
+2324,
+1
+]
+]
+},
+"2367": {
+"item": 2580,
+"name": "Reinforced Linen Cape",
+"reagents": [
+[
+2996,
+2
+],
+[
+2320,
+3
+]
+]
+},
+"2368": {
+"item": 2578,
+"name": "Barbaric Linen Vest",
+"reagents": [
+[
+2996,
+4
+],
+[
+2318,
+1
+],
+[
+2321,
+1
+]
+]
+},
+"2370": {
+"item": 2997,
+"name": "Bolt of Woolen Cloth",
+"reagents": [
+[
+2592,
+3
+]
+]
+},
+"2371": {
+"item": 2584,
+"name": "Woolen Cape",
+"reagents": [
+[
+2997,
+1
+],
+[
+2321,
+1
+]
+]
+},
+"2378": {
+"item": 4307,
+"name": "Heavy Linen Gloves",
+"reagents": [
+[
+2996,
+2
+],
+[
+2320,
+1
+]
+]
+},
+"2379": {
+"item": 4308,
+"name": "Green Linen Bracers",
+"reagents": [
+[
+2996,
+3
+],
+[
+2320,
+2
+],
+[
+2605,
+1
+]
+]
+},
+"2380": {
+"item": 4309,
+"name": "Handstitched Linen Britches",
+"reagents": [
+[
+2996,
+4
+],
+[
+2321,
+2
+]
+]
+},
+"2383": {
+"item": 4312,
+"name": "Soft-soled Linen Boots",
+"reagents": [
+[
+2996,
+5
+],
+[
+2318,
+2
+],
+[
+2321,
+1
+]
+]
+},
+"2408": {
+"item": 4343,
+"name": "Brown Linen Pants",
+"reagents": [
+[
+2996,
+2
+],
+[
+2320,
+1
+]
+]
+},
+"2409": {
+"item": 4344,
+"name": "Brown Linen Shirt",
+"reagents": [
+[
+2996,
+1
+],
+[
+2320,
+1
+]
+]
+},
+"3324": {
+"item": 2840,
+"name": "Smelt Copper",
+"reagents": [
+[
+2770,
+1
+]
+]
+},
+"4001": {
+"item": 4238,
+"name": "Linen Bag",
+"reagents": [
+[
+2996,
+3
+],
+[
+2320,
+3
+]
+]
+},
+"4002": {
+"item": 4240,
+"name": "Woolen Bag",
+"reagents": [
+[
+2997,
+3
+],
+[
+2321,
+1
+]
+]
+},
+"4156": {
+"item": 5957,
+"name": "Handstitched Leather Vest",
+"reagents": [
+[
+2318,
+3
+],
+[
+2320,
+1
+]
+]
+},
+"4285": {
+"item": 6214,
+"name": "Heavy Copper Maul",
+"reagents": [
+[
+2840,
+12
+],
+[
+2880,
+2
+],
+[
+2318,
+2
+]
+]
+},
+"4289": {
+"item": null,
+"name": "Enchant Bracer - Inferior Stamina",
+"reagents": [
+[
+247786,
+1
+]
+]
+},
+"4290": {
+"item": null,
+"name": "Enchant Chest - Inferior Stamina",
+"reagents": [
+[
+10940,
+1
+]
+]
+},
+"4291": {
+"item": 6218,
+"name": "Runed Copper Rod",
+"reagents": [
+[
+6217,
+1
+],
+[
+247786,
+1
+]
+]
+},
+"4293": {
+"item": null,
+"name": "Enchant Bracer - Minor Deflect",
+"reagents": [
+[
+10938,
+1
+]
+]
+},
+"4297": {
+"item": null,
+"name": "Enchant Chest - Minor Intellect",
+"reagents": [
+[
+10938,
+1
+]
+]
+},
+"4302": {
+"item": 6238,
+"name": "Brown Linen Robe",
+"reagents": [
+[
+2996,
+3
+],
+[
+2320,
+1
+]
+]
+},
+"4344": {
+"item": null,
+"name": "Fishing",
+"reagents": []
+},
+"4767": {
+"item": null,
+"name": "Skinning",
+"reagents": []
+},
+"4786": {
+"item": 6888,
+"name": "Herb Baked Egg",
+"reagents": [
+[
+6889,
+1
+],
+[
+2678,
+1
+]
+]
+},
+"4848": {
+"item": 7026,
+"name": "Linen Belt",
+"reagents": [
+[
+2996,
+1
+],
+[
+2320,
+1
+]
+]
+},
+"4987": {
+"item": 7276,
+"name": "Handstitched Leather Cloak",
+"reagents": [
+[
+2318,
+2
+],
+[
+2320,
+1
+]
+]
+},
+"4988": {
+"item": 7277,
+"name": "Handstitched Leather Bracers",
+"reagents": [
+[
+2318,
+2
+],
+[
+2320,
+3
+]
+]
+},
+"4990": {
+"item": 7279,
+"name": "Small Leather Ammo Pouch",
+"reagents": [
+[
+2318,
+3
+],
+[
+2320,
+4
+]
+]
+},
+"52640": {
+"item": 279981,
+"name": "Basic Campfire",
+"reagents": [
+[
+4470,
+1
+]
+]
+},
+"52641": {
+"item": 279968,
+"name": "First Aid Kit",
+"reagents": [
+[
+1251,
+3
+],
+[
+159,
+1
+]
+]
+},
+"52643": {
+"item": 279960,
+"name": "Lodestone",
+"reagents": [
+[
+2835,
+1
+],
+[
+2840,
+1
+]
+]
+},
+"52644": {
+"item": 279979,
+"name": "Camp Chair",
+"reagents": [
+[
+2318,
+3
+],
+[
+4470,
+2
+]
+]
+},
+"52645": {
+"item": 279944,
+"name": "Sharpening Wheel",
+"reagents": [
+[
+2835,
+1
+],
+[
+2840,
+1
+]
+]
+},
+"52647": {
+"item": 279978,
+"name": "Camp Tent",
+"reagents": [
+[
+2318,
+5
+]
+]
+},
+"52648": {
+"item": 279972,
+"name": "Faction Banner",
+"reagents": [
+[
+2996,
+1
+],
+[
+2320,
+1
+]
+]
+},
+"52649": {
+"item": 279976,
+"name": "Enchanted Lute",
+"reagents": [
+[
+4470,
+1
+],
+[
+10940,
+1
+]
+]
+},
+"54191": {
+"item": 118,
+"name": "Minor Healing Potion",
+"reagents": [
+[
+3371,
+1
+],
+[
+2678,
+1
+],
+[
+2447,
+1
+]
+]
+},
+"54212": {
+"item": 6217,
+"name": "Copper Rod",
+"reagents": [
+[
+2840,
+1
+]
+]
+},
+"54213": {
+"item": 247786,
+"name": "Dust to Motes",
+"reagents": [
+[
+10940,
+1
+]
+]
+},
+"54214": {
+"item": 247789,
+"name": "Novice's Practice Wand",
+"reagents": [
+[
+4470,
+1
+],
+[
+247786,
+1
+]
+]
+},
+"54692": {
+"item": 250620,
+"name": "Gemmed Copper Boots",
+"reagents": [
+[
+2840,
+2
+],
+[
+818,
+2
+],
+[
+774,
+2
+],
+[
+2318,
+4
+]
+]
+},
+"54727": {
+"item": 250515,
+"name": "Protector's Chain Belt",
+"reagents": [
+[
+2840,
+12
+],
+[
+3470,
+4
+],
+[
+249427,
+2
+],
+[
+818,
+2
+]
+]
+},
+"55366": {
+"item": 253664,
+"name": "Linen Reagent Bag",
+"reagents": [
+[
+2996,
+6
+],
+[
+2320,
+6
+]
+]
+},
+"55423": {
+"item": 253885,
+"name": "Novice Arcanist's Sash",
+"reagents": [
+[
+2996,
+8
+],
+[
+2321,
+2
+],
+[
+2455,
+2
+]
+]
+},
+"55424": {
+"item": 253887,
+"name": "Novice Ardent's Sash",
+"reagents": [
+[
+2996,
+12
+],
+[
+2321,
+2
+],
+[
+118,
+2
+]
+]
+},
+"6576": {
+"item": 10045,
+"name": "Simple Linen Pants",
+"reagents": [
+[
+2996,
+1
+],
+[
+2320,
+1
+]
+]
+},
+"6577": {
+"item": 10046,
+"name": "Simple Linen Boots",
+"reagents": [
+[
+2996,
+2
+],
+[
+2318,
+1
+],
+[
+2320,
+1
+]
+]
+},
+"6578": {
+"item": 10047,
+"name": "Simple Kilt",
+"reagents": [
+[
+2996,
+4
+],
+[
+2321,
+1
+]
+]
+},
+"6636": {
+"item": 10421,
+"name": "Rough Copper Vest",
+"reagents": [
+[
+2840,
+4
+]
+]
+},
+"7316": {
+"item": null,
+"name": "Disenchant",
+"reagents": []
+},
+"7999": {
+"item": 11287,
+"name": "Lesser Magic Wand",
+"reagents": [
+[
+4470,
+1
+],
+[
+10938,
+1
+]
+]
+}
+}
+}

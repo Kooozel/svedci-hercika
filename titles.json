@@ -137,6 +137,11 @@
    {"name": "Pilný učeň", "line": "{skill} {v}. Celý večer u řemesla."},
    {"name": "Řemeslník roku", "line": "{skill} {v}. Cech je hrdý."}
   ]},
+  "_explore": {"emoji": "🗺️", "min": 2, "bonus": 0.55, "forms": ["{n} nové místo", "{n} nová místa", "{n} nových míst"], "titles": [
+   {"name": "Kartograf", "line": "{v} v {zone}. Mapa už nemá bílá místa, jen šedá."},
+   {"name": "Ztracený turista", "line": "{v} v {zone}. Prý hledal cestu zpátky."},
+   {"name": "Průzkumník", "line": "{v} v {zone}. Nikdo neví, co tam dělal."}
+  ]},
   "_xp": {"emoji": "⭐", "min": 1000, "bonus": 0.0, "forms": ["+{n} XP", "+{n} XP", "+{n} XP"], "titles": [
    {"name": "Rychlík", "line": "{v}. Žlutá lišta se hýbe."},
    {"name": "Sběrač zkušeností", "line": "{v}. Pomalu, ale jistě."},
@@ -161,6 +166,10 @@
   {"emoji": "🪑", "name": "Rezerva na lavičce", "line": "Připraven naskočit."},
   {"emoji": "📺", "name": "Divák", "line": "Dneska jen Netflix."},
   {"emoji": "🧸", "name": "Uspávač", "line": "Děti usnuly, on taky."}
+ ],
+ "newcomers": [
+  {"emoji": "🆕", "name": "Nováček", "line": "Vítej v partě. Tituly začnou od zítřka."},
+  {"emoji": "🎒", "name": "Čerstvá posila", "line": "Batoh sbalený, questlog prázdný."}
  ],
  "quiet": [
   {"emoji": "🚶", "name": "Tichý poutník", "line": "Byl ve hře, ale nic se nestalo."},

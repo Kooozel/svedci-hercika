@@ -8,12 +8,32 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 
 - **Přidat postavu:** do `party.json` připiš konec jejího odkazu na Armory, tedy `jmeno-prijmeni`
   (malými písmeny, diakritika zůstává, třeba `horaes-velký`). `size` je počet míst v partě (prázdná se ukážou jako volná).
-- **Novinky od včerejška:** skript si stáhne `party.json` z nasazené stránky (`site_url`) a porovná levely, XP,
-  profese a výbavu se stavem z posledního běhu před dneškem.
+- **Role:** odhadují se podle specu. Když někdo hraje jinak (Johnie tankuje s body v Holy), přepiš to v `party.json`
+  v `roles`, třeba `"johnie-rotking": "tank"` (tank / heal / dps).
+- **Novinky od včerejška:** porovná levely, XP, profese, výbavu a achievementy s posledním snímkem v `history/`
+  před dneškem (ranní stav před včerejším večerem). Večerní push ho neposune. Bez historie se vezme `party.json`
+  z nasazené stránky (`site_url`).
 - **Tituly a počítadla:** ze statistik postav (smrti, jídlo, need rolly, lety…) dostane každý titul za včerejší večer,
   bez žebříčku a bez opakování stejné statistiky dva dny po sobě. Kdo nehrál, dostane hezký titul.
   Tituly a jejich varianty jsou v `titles.json` (klidně připiš další), počítadla za partu jsou `COUNTERS` v `build.py`.
-  Statistika, kterou `titles.json` nezná, dostane obecný titul „Objevitel“.
+  Statistika, kterou `titles.json` nezná, dostane obecný titul „Objevitel“. Vlastní klíče: `_lvl`, `_xp`, `_skill`,
+  `_explore` (objevená místa z achievementů Explore, `{zone}`).
+  Nový člen party dostane první den uvítací titul z `newcomers`.
+- **Příští výprava:** dungeon jako pásmo na stupnici levelů, postavy jako tečky (vybledlé = mimo rozsah),
+  pod tím další dva dungeony a souhrn ready checku.
+- **Postavy:** klik na postavu ve skupinovce otevře pod ní její kartu: render uprostřed, kolem výbava jako okno
+  postavy ve hře (rámeček barvy kvality, ▼ nejslabší kus, prázdné sloty čárkovaně), vedle staty z API
+  (Health, atributy, obrana a útok/kouzla/léčení podle role), profese a pet. Kdo se odhlásil s Resurrection
+  Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu, jinak se otevře ta
+  z „Já jsem“ v ready checku.
+- **Ready check:** „Já jsem“ schová úkoly ostatních, pamatuje si to prohlížeč.
+- **Profese:** „Co vyrobit pro partu“ ukáže jen upgrady, které někdo z party umí vyrobit (prázdný slot nebo vyšší
+  item level, class je unese, level stačí; nejlepší kus na slot), u nich suroviny, které musí dodat někdo jiný
+  (kůže od skinnera, Copper Rod od kováře…), kusy bez enchantu, které umí enchanter z party, a profese na stropu
+  skillu. Pod tím je přehled profesí. Detaily receptů a předmětů se ukládají do `cache/static.json`, takže se
+  z API stahuje jen to nové (ranní běh cache commitne). Smazáním souboru se stáhne znovu.
+  Nové recepty se ukážou v novinkách.
+- **Soukromí:** na stránku a do historie jde jen den posledního přihlášení, ne přesný čas.
 - **Kronika:** zápisy z výprav v `kronika.json`. Na hlavní stránce je první odstavec posledního zápisu,
   celá kronika je na `kronika.html`. Píše se ručně (s Claudem) po výpravě.
 - **Denní historie:** ranní plánovaný běh commitne `history/RRRR-MM-DD.json` se stavem všech postav
@@ -36,7 +56,12 @@ Po pushnutí do `main` se stránka přegeneruje hned.
 python3 build.py
 ```
 
-Stránka vznikne v `site/index.html`. Stačí Python 3, nic dalšího. Bez API klíčů se data vezmou z Armory.
+Stránka vznikne v `site/index.html`. Stačí Python 3, nic dalšího. Testy (bez sítě a klíčů, běží i v Actions):
+
+```bash
+python3 -m unittest discover -s tests
+```
+ Bez API klíčů se data vezmou z Armory.
 S klíči (ze souboru mimo repozitář):
 
 ```bash

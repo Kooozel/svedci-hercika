@@ -8,5 +8,8 @@
     "zrza-jegod",
     "johnie-rotking",
     "horaes-velký"
-  ]
+  ],
+  "roles": {
+    "johnie-rotking": "tank"
+  }
 }

@@ -18,28 +18,29 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false  # push nesmí zrušit ranní běh dřív, než uloží historii
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: python3 -m unittest discover -s tests
       - run: python3 build.py
         env:
           BNET_CLIENT_ID: ${{ secrets.BNET_CLIENT_ID }}
           BNET_CLIENT_SECRET: ${{ secrets.BNET_CLIENT_SECRET }}
-      - name: Uložit denní historii
-        # plánovaný i ruční běh; uloží se první běh dne, pozdější ho nepřepíšou
+      - name: Uložit denní historii a cache receptů
+        # plánovaný i ruční běh; historii uloží první běh dne, pozdější ji nepřepíšou.
+        # cache/static.json (recepty a předměty z API) se commitne, když přibylo něco nového.
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           day=$(python3 -c "import json; print(json.load(open('site/snapshot.json'))['date'])")
           mkdir -p history
-          [ -f "history/$day.json" ] && { echo "history/$day.json už existuje"; exit 0; }
-          cp site/snapshot.json "history/$day.json"
+          if [ -f "history/$day.json" ]; then echo "history/$day.json už existuje"; else cp site/snapshot.json "history/$day.json"; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
-          git add history
+          git add history cache
           git diff --cached --quiet || { git commit -m "Historie $day" && git pull --rebase && git push; }
       - uses: actions/upload-pages-artifact@v3
         with:
