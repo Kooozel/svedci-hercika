@@ -2,8 +2,11 @@ name: Stránka party
 
 on:
   schedule:
-    # 5:00 UTC = 6:00 v zimě (SEČ), 7:00 v létě (SELČ)
-    - cron: "0 5 * * *"
+    # GitHub plánované běhy v celou hodinu často zpozdí nebo zahodí, proto necelé minuty a záložní běh.
+    # 4:17 UTC = 5:17 v zimě (SEČ), 6:17 v létě (SELČ); záloha o hodinu později.
+    # Historii uloží jen první běh dne, druhý jen obnoví stránku.
+    - cron: "17 4 * * *"
+    - cron: "23 5 * * *"
   push:
     branches: [main]
   workflow_dispatch:
