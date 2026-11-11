@@ -27,10 +27,12 @@ jobs:
           BNET_CLIENT_ID: ${{ secrets.BNET_CLIENT_ID }}
           BNET_CLIENT_SECRET: ${{ secrets.BNET_CLIENT_SECRET }}
       - name: Uložit denní historii
-        if: github.event_name == 'schedule'
+        # plánovaný i ruční běh; uloží se první běh dne, pozdější ho nepřepíšou
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           day=$(python3 -c "import json; print(json.load(open('site/snapshot.json'))['date'])")
           mkdir -p history
+          [ -f "history/$day.json" ] && { echo "history/$day.json už existuje"; exit 0; }
           cp site/snapshot.json "history/$day.json"
           git config user.name "github-actions[bot]"
           git config user.email "41898299+github-actions[bot]@users.noreply.github.com"

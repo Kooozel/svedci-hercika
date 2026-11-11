@@ -425,12 +425,22 @@ def has_daily(base):
 
 
 def evening_values(m, base):
-    """Hodnoty pro tituly: rozdíl proti včerejšku, nebo součty za celou dobu (bez včerejších statistik)."""
+    """Hodnoty pro tituly: rozdíl proti včerejšku, nebo součty za celou dobu (bez včerejších statistik).
+    Vrací (hodnoty, hrál?, info) a v info je nejvíc zlepšené řemeslo a statistiky, které má postava poprvé."""
     b = ((base or {}).get("members") or {}).get(m["slug"]) or {}
     now = m.get("stats") or {}
+    info = {"skill": None, "firsts": set()}
     if has_daily(base):
         old = b.get("stats") or {}
         vals = {k: v - old.get(k, 0) for k, v in now.items() if v > old.get(k, 0)}
+        if b.get("stats") is not None:
+            info["firsts"] = {k for k in vals if not old.get(k)}
+        # řemesla: "Highest Mining skill", "First Aid skill"… vyhrává největší skok
+        skills = {k: v for k, v in vals.items() if k.endswith(" skill")}
+        if skills:
+            best = max(skills, key=skills.get)
+            vals["_skill"] = skills[best]
+            info["skill"] = best.removeprefix("Highest ").removesuffix(" skill")
         if b and m["level"] <= len(XP_TO_NEXT) and m.get("xp") is not None and b.get("xp") is not None:
             gained = xp_total(m["level"], m["xp"]) - xp_total(b["level"], b["xp"])
             if gained > 0:
@@ -438,8 +448,8 @@ def evening_values(m, base):
             if m["level"] > b["level"]:
                 vals["_lvl"] = m["level"] - b["level"]
         played = bool(vals) or bool(m.get("updated") and b.get("updated") and m["updated"] > b["updated"])
-        return vals, played
-    return dict(now), True
+        return vals, played, info
+    return dict(now), True, info
 
 
 def pick_variant(variants, today, slug):
@@ -451,17 +461,20 @@ def evening_titles(members, base, today, catalog):
     """Každý dostane jeden titul, žádná statistika se nedá dvakrát a nikdo nedostane stejnou jako včera."""
     with_stats = [m for m in members if m.get("stats") is not None]
     yesterday = (base or {}).get("titles") or {}
-    values, played = {}, {}
+    values, played, info = {}, {}, {}
     for m in with_stats:
-        values[m["slug"]], played[m["slug"]] = evening_values(m, base)
+        values[m["slug"]], played[m["slug"]], info[m["slug"]] = evening_values(m, base)
     stats = catalog.get("stats") or {}
     rules = dict(stats)
-    # objevy: statistika, kterou seznam nezná, se ukáže obecným titulem (jen za včerejšek, ne za celou dobu)
+    daily = has_daily(base)
+    # objev: statistika, kterou ještě nikdo z party neměl a titles.json ji nezná
     disc, skip = catalog.get("discovery"), catalog.get("discovery_skip") or []
-    if disc and has_daily(base):
+    known = set().union(*[set((b or {}).get("stats") or {}) for b in ((base or {}).get("members") or {}).values()])
+    if disc and daily:
         for s in values:
             for stat in values[s]:
-                if stat not in rules and not stat.startswith("_") and not any(w in stat for w in skip):
+                if (stat not in rules and stat not in known and not stat.startswith("_")
+                        and not any(w in stat for w in skip)):
                     rules[stat] = {**disc, "discovery": True}
     candidates = []
     for stat, rule in rules.items():
@@ -472,6 +485,18 @@ def evening_titles(members, base, today, catalog):
                 # podíl na nejlepším + vtipnost + velikost čísla (185 nápojů přebije 2 zvířátka)
                 score = v / top + rule["bonus"] + 0.1 * math.log2(v / rule["min"])
                 candidates.append((score, v / rule["min"], s, stat, v))
+    # premiéra: postava něco udělala úplně poprvé (Johnie snědl první jídlo), klíč _first:<statistika>
+    first = catalog.get("first")
+    if first and daily:
+        for s in values:
+            for stat in info[s]["firsts"]:
+                key = "_first:" + stat
+                if stat in stats and not stat.startswith("_") and played[s] and yesterday.get(s) != key:
+                    rules[key] = {**first, "forms": stats[stat]["forms"]}
+                    # čím víc to ostatní dělají, tím vtipnější premiéra (první jídlo > první vzdaný quest)
+                    others = sum(((b or {}).get("stats") or {}).get(stat, 0)
+                                 for slug, b in base["members"].items() if slug != s)
+                    candidates.append((1 + first["bonus"] + 0.05 * math.log2(1 + others), 1, s, key, values[s][stat]))
     out, used = {}, set()
     for _, _, s, stat, v in sorted(candidates, reverse=True):
         if s in out or stat in used:
@@ -481,7 +506,7 @@ def evening_titles(members, base, today, catalog):
         if rule.get("discovery"):
             line = t["line"].replace("{stat}", stat).replace("{n}", num(v))
         else:
-            line = t["line"].replace("{v}", pl(v, rule["forms"]))
+            line = t["line"].replace("{v}", pl(v, rule["forms"])).replace("{skill}", info[s]["skill"] or "")
         out[s] = {"key": stat, "emoji": rule["emoji"], "title": t["name"], "detail": line}
         used.add(stat)
     for m in with_stats:

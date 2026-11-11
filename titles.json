@@ -102,6 +102,41 @@
    {"name": "Grinder", "line": "{v}. XP se samo nenasbírá."},
    {"name": "Mlýnek na moby", "line": "{v}. Kanci hlásí ztráty."}
   ]},
+  "Deaths from drowning": {"emoji": "🫧", "min": 1, "bonus": 0.95, "forms": ["{n}× se utopil", "{n}× se utopil", "{n}× se utopil"], "titles": [
+   {"name": "Kamarád murloců", "line": "{v}. Mrglglgl!"},
+   {"name": "Ponorka", "line": "{v}. Dech mu došel dřív než odvaha."},
+   {"name": "Kapitán Titanic", "line": "{v}. Hudba hrála až do konce."},
+   {"name": "Neplavec", "line": "{v}. Příště kroužky na ruce."}
+  ]},
+  "Deaths from falling": {"emoji": "🪂", "min": 1, "bonus": 0.95, "forms": ["{n}× spadl", "{n}× spadl", "{n}× spadl"], "titles": [
+   {"name": "Zkoušeč gravitace", "line": "{v}. Gravitace funguje."},
+   {"name": "Skokan", "line": "{v}. Ta zkratka to nebyla."},
+   {"name": "Ikarus", "line": "{v}. Slow Fall je pro slabochy."}
+  ]},
+  "Deaths from fire and lava": {"emoji": "🌋", "min": 1, "bonus": 0.95, "forms": ["{n}× uhořel", "{n}× uhořel", "{n}× uhořel"], "titles": [
+   {"name": "Grilmajstr", "line": "{v}. Medium rare."},
+   {"name": "Lávový plavec", "line": "{v}. Bylo to teplejší, než vypadalo."}
+  ]},
+  "Deaths from fatigue": {"emoji": "🌊", "min": 1, "bonus": 0.95, "forms": ["{n}× vyčerpáním", "{n}× vyčerpáním", "{n}× vyčerpáním"], "titles": [
+   {"name": "Mořeplavec", "line": "Smrt {v}. Moře je velké."},
+   {"name": "Ztracen na moři", "line": "Smrt {v}. Kompas by se hodil."}
+  ]},
+  "Total deaths from other players": {"emoji": "🗡️", "min": 1, "bonus": 1.0, "forms": ["{n}× zabit hráčem", "{n}× zabit hráčem", "{n}× zabit hráčem"], "titles": [
+   {"name": "Oběť Aliance", "line": "{v}. Pomsta bude sladká."},
+   {"name": "Mučedník Hordy", "line": "{v}. Lok'tar ogar, i v hrobě."},
+   {"name": "Terč", "line": "{v}. Někdo z Aliance má dobrý den."}
+  ]},
+  "Total deaths in 5-player dungeons": {"emoji": "🏚️", "min": 1, "bonus": 0.75, "forms": ["{n} smrt v dungeonu", "{n} smrti v dungeonu", "{n} smrtí v dungeonu"], "titles": [
+   {"name": "Hrdina podzemí", "line": "{v}. Někdo musí jít první."},
+   {"name": "Pull magnet", "line": "{v}. Moby ho prostě milují."},
+   {"name": "Obětní beránek", "line": "{v}. Pro dobro party."}
+  ]},
+  "_skill": {"emoji": "🔨", "min": 10, "bonus": 0.45, "forms": ["+{n} bod", "+{n} body", "+{n} bodů"], "titles": [
+   {"name": "Mistr řemesla", "line": "{skill} {v}. Kovadlina ještě dýmá."},
+   {"name": "Grinder profesí", "line": "{skill} {v}. Trenér už mu nestačí."},
+   {"name": "Pilný učeň", "line": "{skill} {v}. Celý večer u řemesla."},
+   {"name": "Řemeslník roku", "line": "{skill} {v}. Cech je hrdý."}
+  ]},
   "_xp": {"emoji": "⭐", "min": 1000, "bonus": 0.0, "forms": ["+{n} XP", "+{n} XP", "+{n} XP"], "titles": [
    {"name": "Rychlík", "line": "{v}. Žlutá lišta se hýbe."},
    {"name": "Sběrač zkušeností", "line": "{v}. Pomalu, ale jistě."},
@@ -112,7 +147,12 @@
   {"name": "Objevitel", "line": "Nová statistika: {stat} ({n}×)."},
   {"name": "Průkopník", "line": "Jako první v partě: {stat} ({n}×)."}
  ]},
- "discovery_skip": ["Highest", "Most ", "Continent", "Creature type", "Different", "learned", "known", "maximum", "skill", "Average", "used most", "that grant", "Killing Blows", "factions"],
+ "discovery_skip": ["Highest", "Most ", "Continent", "Creature type", "Different", "learned", "known", "maximum", "skill", "Average", "used most", "that grant", "Killing Blows", "factions", "Total kills", "Materials produced", "opposite faction", "raid and dungeon deaths"],
+ "first": {"emoji": "🎬", "min": 1, "bonus": 0.85, "titles": [
+  {"name": "Premiéra", "line": "Poprvé v životě: {v}."},
+  {"name": "Konečně!", "line": "Poprvé v životě: {v}. Historický okamžik."},
+  {"name": "Nový začátek", "line": "Poprvé v životě: {v}. Ani to nebolelo."}
+ ]},
  "sleepers": [
   {"emoji": "😴", "name": "Věrný spáč", "line": "Včera mimo Azeroth."},
   {"emoji": "🛋️", "name": "Strážce gauče", "line": "Někdo musí hlídat obývák."},
