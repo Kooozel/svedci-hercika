@@ -127,7 +127,7 @@ def fetch_api(token, region, slug):
         slug=slug, region=region, name=c["name"], surname=c.get("surname", ""), level=c["level"],
         ilvl=c.get("average_item_level"), race=c["race"]["name"], cls=c["character_class"]["name"],
         specs=specs, ruleset=(c.get("ruleset") or {}).get("name"), faction=(c.get("faction") or {}).get("name"),
-        avatar=assets.get("avatar"),
+        avatar=assets.get("avatar"), render=assets.get("main-raw"), cls_id=c["character_class"]["id"],
         updated=datetime.fromtimestamp(login / 1000, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ") if login else None,
         updated_label="Naposledy ve hře",
         professions=[(p["profession"]["name"], group == "primaries", p.get("tiers") or [],
@@ -155,6 +155,28 @@ def flat_stats(data):
     for cat in data.get("categories") or []:
         walk(cat)
     return out
+
+
+def add_icons(token, region, members):
+    """Ikony výbavy a class z Game Data API (media). Chybějící ikona nevadí, item se ukáže bez ní."""
+    cache = {}
+
+    def icon(kind, oid):
+        if (kind, oid) not in cache:
+            try:
+                assets = api_get(token, region, f"/data/wow/media/{kind}/{oid}", "static").get("assets") or []
+                cache[kind, oid] = next((a["value"] for a in assets if a["key"] == "icon"), None)
+            except Exception:
+                cache[kind, oid] = None
+        return cache[kind, oid]
+
+    for m in members:
+        if not m.get("ok") or m.get("source") != "api":
+            continue
+        for g in m.get("gear") or []:
+            g["icon"] = icon("item", g["id"])
+        if m.get("cls_id"):
+            m["class_icon"] = icon("playable-class", m["cls_id"])
 
 
 # ---------- veřejná Armory (záloha) ----------
@@ -560,8 +582,11 @@ def role_chips(roles):
 
 
 def item_link(g):
-    return (f'<a class="item" style="color:{QUALITY_COLOR.get(g["quality"], "#ccc")}" '
-            f'href="https://www.wowhead.com/forever/item={g["id"]}" target="_blank" rel="noopener">{e(g["name"])}</a>')
+    color = QUALITY_COLOR.get(g["quality"], "#ccc")
+    icon = (f'<img class="ic" src="{e(g["icon"])}" alt="" style="border-color:{color}">'
+            if g.get("icon") else "")
+    return (f'<a class="item" style="color:{color}" '
+            f'href="https://www.wowhead.com/forever/item={g["id"]}" target="_blank" rel="noopener">{icon}{e(g["name"])}</a>')
 
 
 def gear_info(m):
@@ -631,12 +656,18 @@ def card(m):
     pet = m.get("pet")
     pet = (f'<p class="pet">Pet: <b>{e(pet["name"])}</b> <small>{e(pet["creature"] or "")}, lvl {pet["level"]}</small></p>'
            if pet else "")
-    return f'''<article class="card" style="--cls:{cls_color(m)}">
+    # celotělový render (main-raw) jako banner; dokud ho Blizzard nevyrenderuje, zůstane malý avatar
+    render = (f'<div class="render" style="background-image:url(\'{e(m["render"])}\'),'
+              f'radial-gradient(circle at 50% 65%,color-mix(in srgb,var(--cls) 30%,transparent),transparent 65%)"></div>'
+              if m.get("render") else "")
+    cls_icon = f'<img class="ic ic-cls" src="{e(m["class_icon"])}" alt="">' if m.get("class_icon") else ""
+    return f'''<article class="card{" has-render" if render else ""}" style="--cls:{cls_color(m)}">
+  {render}
   <header class="card-head">
-    {avatar(m)}
+    {"" if render else avatar(m)}
     <div class="who">
       <h3><a href="{e(m["url"])}" target="_blank" rel="noopener">{e(m["name"])}</a></h3>
-      <p class="cls">{e(m["race"])} <b>{e(m["class"])}</b></p>
+      <p class="cls">{e(m["race"])} {cls_icon}<b>{e(m["class"])}</b></p>
     </div>
     <div class="lvl">{m["level"]}</div>
   </header>
@@ -1149,6 +1180,12 @@ display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center}
 .k-facts{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
 .k-facts li{font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--muted)}
 .k-more{margin:6px 0 0;font-size:14px}.k-empty{font-style:italic}
+.ic{width:16px;height:16px;border-radius:3px;border:1px solid var(--line);vertical-align:-3px;margin-right:5px}
+.ic-cls{margin:0 3px 0 2px;border-color:var(--cls)}
+.gear-list .ic{width:18px;height:18px;vertical-align:-4px}
+.card.has-render{padding-top:0;overflow:hidden}
+.render{height:210px;margin:0 -14px;background-repeat:no-repeat;background-size:auto 150%,cover;
+background-position:center 42%,center;background-color:var(--panel2);box-shadow:inset 0 -40px 40px -20px var(--panel)}
 """
 
 JS = """
@@ -1185,6 +1222,8 @@ def main():
     ok = [m for m in members if m["ok"]]
     if not ok:
         sys.exit("Nepodařilo se načíst žádnou postavu, stránku neměním.")
+    if token:
+        add_icons(token, region, members)
     rows, best = plan_dungeons(ok, dungeons)
     try:
         catalog = json.loads((ROOT / "quests.json").read_text(encoding="utf-8"))["dungeons"]
