@@ -1,5 +1,5 @@
 {
-  "_info": "Bossové a loot dungeonů, ručně přepsané (s Claudem). Ukazují se jen u dungeonů v dosahu party. Boss: name, tip (co dělat), loot. Kus lootu: name, inv (inventory_type jako v API: WAIST, CHEST, LEGS, FEET, HAND, WRIST, CLOAK, FINGER, WEAPON, WEAPONMAINHAND, TWOHWEAPON, SHIELD), sub (Cloth / Leather / Mail / Plate / Shield / Dagger / Sword / Mace / Axe / Staff), level (item level), req (od levelu), stat (podle čeho se pozná, komu se hodí: Agility, Strength, Melee, Defense, Stamina, Spirit, Caster, Healing, Shadow, Frost, Fire, Arcane, Nature), stats (staty z Wowhead tooltipu, jen na ukázku). id je z Wowheadu (bez něj nefunguje tooltip), quality a icon taky. Když předmět zná i Blizzard API (nemá inv), stačí id a zbytek se doplní z cache/static.json. set: název setu ze sets (bonus podle počtu kusů). Boss s trash: true je loot z trashe. quests: odměny z questů (vybírá si každý sám).",
+  "_info": "Bossové a loot dungeonů, ručně přepsané (s Claudem). Ukazují se jen u dungeonů v dosahu party. Boss: name, tip (co dělat), loot. Kus lootu: name, inv (inventory_type jako v API: WAIST, CHEST, LEGS, FEET, HAND, WRIST, CLOAK, FINGER, WEAPON, WEAPONMAINHAND, TWOHWEAPON, SHIELD), sub (Cloth / Leather / Mail / Plate / Shield / Dagger / Sword / Mace / Axe / Staff), level (item level), req (od levelu), stat (podle čeho se pozná, komu se hodí: Agility, Strength, Melee, Defense, Stamina, Spirit, Caster, Healing, Shadow, Frost, Fire, Arcane, Nature, Junk = nikomu), stats (staty z Wowhead tooltipu, jen na ukázku). id je z Wowheadu (bez něj nefunguje tooltip), quality a icon taky. Když předmět zná i Blizzard API (nemá inv), stačí id a zbytek se doplní z cache/static.json. set: název setu ze sets (bonus podle počtu kusů). Boss s trash: true je loot z trashe. quests: odměny z questů (vybírá si každý sám).",
   "dungeons": {
     "Ruins of Lordaeron": {
       "source": "https://warcraft.wiki.gg/wiki/Ruins_of_Lordaeron_(instance)",
@@ -60,6 +60,57 @@
           {"id": 279865, "name": "Grave Shroud", "inv": "CLOAK", "level": 23, "stat": "Strength", "stats": "+3 Str, +3 Sta", "quality": "UNCOMMON", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_misc_cape_10.jpg"},
           {"id": 279867, "name": "Slain Baron's Signet", "inv": "FINGER", "level": 23, "stat": "Defense", "stats": "+3 Sta, +1 Defense", "quality": "UNCOMMON", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_jewelry_ring_19.jpg"}]}
       ]
+    },
+    "Wailing Caverns": {
+      "source": "https://www.method.gg/wow-forever/dungeons/wailing-caverns",
+      "tactics": "https://www.warcrafttavern.com/forever/guides/wailing-caverns/",
+      "checked": "2026-11-12",
+      "note": "Bossové a taktika podle Method a Warcraft Tavern (říjen 2026), ID, staty a odkud co padá podle Wowheadu. Night Watch Shortsword podle Method padá z Verdana, Wowhead zdroj neuvádí.",
+      "sets": {
+        "Embrace of the Viper": {"bonus": ["2: +10 Int", "3: +10 AP", "4: pod 25 % HP vrátí 100 HP a many za 5 s, jednou za 5 min", "5: melee útoky občas omráčí cíl na 1 s (Dream Venom)"]}
+      },
+      "bosses": [
+        {"name": "Lady Anacondra", "tip": "Objeví se na kruhu na římse uprostřed. Odtáhnout ji od raptorů a druidů. Sleep a Healing Touch přerušit (Johnie Hammer of Justice), uspaného dispelne Kozel. Thorns Aura vrací poškození do melee.", "loot": [
+           {"id": 5404, "name": "Serpent's Shoulders", "inv": "SHOULDER", "sub": "Leather", "level": 23, "req": 18, "stat": "Agility", "stats": "+5 Agi, +7 Spi", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_shoulder_08.jpg"},
+           {"id": 10412, "name": "Belt of the Fang", "inv": "WAIST", "sub": "Leather", "level": 21, "req": 16, "stat": "Agility", "stats": "+3 Agi, +5 Sta", "set": "Embrace of the Viper", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_belt_30.jpg"},
+           {"id": 273088, "name": "Snake Eye Kaleidoscope", "inv": "NECK", "level": 22, "req": 17, "stats": "+1 ke všem statům a resistům", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_misc_eye_01.jpg"}]},
+        {"name": "Lord Cobrahn", "tip": "Levá chodba. Nejdřív tři Deviate Pythony. Slumber uspí kohokoli i healera, Healing Touch přerušit. Na 50 % se promění v hada a dává jed (Johnie Purify).", "loot": [
+           {"id": 6465, "name": "Robe of the Moccasin", "inv": "CHEST", "sub": "Cloth", "level": 22, "req": 17, "stat": "Healing", "stats": "+10 Spi, +3 Str, +9 heal", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_chest_cloth_36.jpg"},
+           {"id": 6460, "name": "Cobrahn's Grasp", "inv": "WAIST", "sub": "Mail", "level": 22, "req": 17, "stat": "Melee", "stats": "+7 Str, +3 Agi", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_belt_03.jpg"},
+           {"id": 10410, "name": "Leggings of the Fang", "inv": "LEGS", "sub": "Leather", "level": 22, "req": 17, "stat": "Agility", "stats": "+9 Agi, +5 Str, +4 Sta", "set": "Embrace of the Viper", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_pants_11.jpg"}]},
+        {"name": "Kresh", "tip": "Volitelná želva v potoce. Jen kouše, ale má hodně armoru: tank ji otočí od party, víc bijí kouzla a wandy.", "loot": [
+           {"id": 6447, "name": "Worn Turtle Shell Shield", "inv": "SHIELD", "sub": "Shield", "level": 21, "req": 16, "stat": "Defense", "stats": "jen armor", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_shield_21.jpg"},
+           {"id": 13245, "name": "Kresh's Back", "inv": "SHIELD", "sub": "Shield", "level": 23, "req": 18, "stat": "Defense", "stats": "+5 Defense", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_shield_18.jpg"},
+           {"id": 273084, "name": "Cloak of Hermitic Bliss", "inv": "CLOAK", "level": 22, "req": 17, "stat": "Junk", "stats": "−25 % rychlost, +33 % plavání", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_misc_cape_17.jpg"}]},
+        {"name": "Lord Pythas", "tip": "Adds první (druid a Deviate Shambler), Shamblerovi přerušit Wild Regeneration. Healing Touch a Slumber jako u ostatních lordů, Thunderclap kolem něj zpomaluje: ranged stojí dál.", "loot": [
+           {"id": 6473, "name": "Armor of the Fang", "inv": "CHEST", "sub": "Leather", "level": 23, "req": 18, "stats": "+10 Spi, +3 Str, +3 Int", "set": "Embrace of the Viper", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_shirt_16.jpg"},
+           {"id": 6472, "name": "Stinging Viper", "inv": "WEAPON", "sub": "Mace", "level": 24, "req": 19, "stat": "Melee", "stats": "jed při zásahu", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_wand_10.jpg"},
+           {"id": 273089, "name": "Slither Cord", "inv": "WAIST", "sub": "Cloth", "level": 22, "req": 17, "stat": "Caster", "stats": "+3 mp5, únik z rootu", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_belt_21.jpg"}]},
+        {"name": "Deviate Faerie Dragon", "rare": true, "tip": "Rare, není tu vždycky. Sám nic neumí: nejdřív druidi kolem (Slumber), pak drak.", "loot": [
+           {"id": 6632, "name": "Feyscale Cloak", "inv": "CLOAK", "level": 21, "req": 16, "stat": "Caster", "stats": "+5 Sta, +3 spell dmg/heal", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_misc_cape_02.jpg"},
+           {"id": 5243, "name": "Firebelcher", "inv": "RANGEDRIGHT", "sub": "Wand", "level": 23, "req": 18, "stat": "Caster", "stats": "fire proc při zásahu", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_wand_11.jpg"}]},
+        {"name": "Skum", "tip": "Volitelný. Chained Bolt skáče mezi lidmi, stát od sebe. Na Nature je imunní, tank ho otočí od party.", "loot": [
+           {"id": 6449, "name": "Glowing Lizardscale Cloak", "inv": "CLOAK", "level": 23, "req": 18, "stat": "Agility", "stats": "+6 Agi, +2 nature res", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_chest_cloth_15.jpg"},
+           {"id": 6448, "name": "Tail Spike", "inv": "WEAPON", "sub": "Dagger", "level": 21, "req": 16, "stat": "Agility", "stats": "+3 Agi, +3 Str", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_weapon_shortblade_10.jpg"},
+           {"id": 273137, "name": "Skum's Bucket", "inv": "HOLDABLE", "level": 22, "req": 17, "stat": "Healing", "stats": "+10 heal, +3 Sta", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_misc_1h_bucket_c_01.jpg"}]},
+        {"name": "Lord Serpentis", "tip": "Healing Touch přerušit, uspaného dispelovat, Lightning Bolt jen bolí. Podle Method má dva druidy, podle Warcraft Tavern žádné.", "loot": [
+           {"id": 6459, "name": "Savage Trodders", "inv": "FEET", "sub": "Mail", "level": 23, "req": 18, "stat": "Stamina", "stats": "+7 Sta", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_boots_01.jpg"},
+           {"id": 10411, "name": "Footpads of the Fang", "inv": "FEET", "sub": "Leather", "level": 22, "req": 17, "stat": "Agility", "stats": "+6 Agi, +6 Sta", "set": "Embrace of the Viper", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_boots_04.jpg"},
+           {"id": 5970, "name": "Serpent Gloves", "inv": "HAND", "sub": "Cloth", "level": 23, "req": 18, "stat": "Caster", "stats": "+6 Agi, +7 spell dmg/heal", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_gauntlets_19.jpg"},
+           {"id": 6469, "name": "Venomstrike", "inv": "RANGED", "sub": "Bow", "level": 24, "req": 19, "stat": "Agility", "stats": "nature proc při zásahu", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_weapon_bow_10.jpg"}]},
+        {"name": "Verdan the Everliving", "tip": "U vodopádu. Grasping Vines znehybní na 10 s a nejde přerušit: Kozel stojí na max dosah a shieldne Johnieho, ranged aspoň 10 yardů od bosse.", "loot": [
+           {"id": 6631, "name": "Living Root", "inv": "TWOHWEAPON", "sub": "Staff", "level": 23, "req": 18, "stat": "Healing", "stats": "+45 heal, +5 Spi, +9 nature res", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_staff_25.jpg"},
+           {"id": 6630, "name": "Seedcloud Buckler", "inv": "SHIELD", "sub": "Shield", "level": 24, "req": 19, "stat": "Caster", "stats": "+5 Int, +5 spell dmg/heal", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_shield_10.jpg"},
+           {"id": 6629, "name": "Sporid Cape", "inv": "CLOAK", "level": 22, "req": 17, "stat": "Stamina", "stats": "+6 Sta, 1 nature dmg útočníkovi", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_misc_cape_17.jpg"},
+           {"id": 935, "name": "Night Watch Shortsword", "inv": "WEAPON", "sub": "Sword", "level": 20, "req": 15, "stat": "Stamina", "stats": "+4 Sta", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_sword_26.jpg"}]},
+        {"name": "Mutanus the Devourer", "tip": "Až po eskortě Disciple of Naralex (od vchodu, po zabití čtyř druidích lordů). Dvě vlny addů, pak boss: Terrify fearuje netanky (Kozel Fear Ward na sebe), Naralex's Nightmare uspí, přerušit.", "loot": [
+           {"id": 6463, "name": "Deep Fathom Ring", "inv": "FINGER", "level": 24, "req": 19, "stat": "Caster", "stats": "+3 Sta, spell penetrace 2", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_jewelry_ring_15.jpg"},
+           {"id": 6461, "name": "Slime-encrusted Pads", "inv": "SHOULDER", "sub": "Cloth", "level": 25, "req": 20, "stat": "Caster", "stats": "+3 mp5, +10 hp5", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_shoulder_05.jpg"},
+           {"id": 6627, "name": "Mutant Scale Breastplate", "inv": "CHEST", "sub": "Mail", "level": 23, "req": 18, "stat": "Strength", "stats": "+10 Str, +4 Sta", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_chest_plate08.jpg"}]},
+        {"name": "Trash", "trash": true, "tip": "Gloves of the Fang padají z Druids of the Fang. Druidi uspávají a léčí se, Deviate Viper dává jed.", "loot": [
+           {"id": 10413, "name": "Gloves of the Fang", "inv": "HAND", "sub": "Leather", "level": 19, "req": 14, "stat": "Agility", "stats": "+6 Agi, +4 Str", "set": "Embrace of the Viper", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_gauntlets_18.jpg"}]}
+      ],
+      "quests": []
     }
   }
 }

@@ -309,3 +309,9 @@ class BossLoot(unittest.TestCase):
         self.assertTrue(fit(heal, 1)["second"])  # mág: využije jen Int a Sta
         self.assertTrue(fit(frost, 0)["second"])  # priest frost damage nepotřebuje
         self.assertIsNone(fit(heal, 3))  # hunter cloth s healem vůbec
+
+    def test_tank_keeps_shield(self):
+        party = self.party()  # Johnie je tank
+        bucket = {"name": "B", "inv": "HOLDABLE", "level": 22, "stat": "Healing"}
+        self.assertIsNone(build.loot_fit(build.loot_item(bucket, FakeStatic({}, {})), party[2]))
+        self.assertIsNotNone(build.loot_fit(build.loot_item(bucket, FakeStatic({}, {})), party[0]))

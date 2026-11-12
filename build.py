@@ -560,6 +560,8 @@ SCHOOL_FOR = {"Shadow": {"priest", "warlock"}, "Frost": {"mage"}, "Arcane": {"ma
 def stat_fits(stat, m):
     """Hodí se hlavní stat kusu classe a roli? Bez statu nebo se Staminou ano (Classic: hybridi podle role)."""
     cls, heal = m["class_slug"], "heal" in (m.get("roles") or [])
+    if stat == "Junk":  # kus, který nikdo nechce (třeba plášť, co zpomaluje)
+        return False
     if stat in SCHOOL_FOR:  # spell damage jen jedné školy (frost pro mága, shadow pro priesta a warlocka)
         return cls in SCHOOL_FOR[stat]
     if stat == "Healing":  # paladin se léčí i jako tank nebo ret, druid a shaman jen v roli healera
@@ -609,6 +611,8 @@ def loot_fit(item, m):
         return None
     if ITEM_SLOTS[item["inv"]] == ["RANGED"] and cls in NO_RANGED:
         return None
+    if item["inv"] == "HOLDABLE" and "tank" in (m.get("roles") or []):
+        return None  # tank si štít za off-hand nevymění
     lvl = max(0, (item.get("req") or 0) - m["level"])
     if "gear" not in m:
         return {"gain": "?", "lvl": lvl, "second": second}
