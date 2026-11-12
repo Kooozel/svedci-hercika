@@ -590,9 +590,16 @@ def loot_item(raw, static):
 def loot_fit(item, m):
     """Komu se kus hodí. None = ne (classa ho neunese, jiný stat, slabší typ zbroje, caster s 2H bez staffu).
     Jinak gain: "empty" prázdný slot, číslo o kolik ilvl je lepší, None nosí stejné nebo lepší,
-    "?" neznámý item level nebo výbava; lvl = kolik levelů chybí na req."""
-    if item.get("inv") not in ITEM_SLOTS or not can_use(item, m) or not stat_fits(item.get("stat"), m):
+    "?" neznámý item level nebo výbava; lvl = kolik levelů chybí na req; second = druhá volba
+    (heal nebo spell damage jiné školy, caster z toho využije jen část)."""
+    if item.get("inv") not in ITEM_SLOTS or not can_use(item, m):
         return None
+    second = False
+    if not stat_fits(item.get("stat"), m):
+        if (item.get("stat") in SCHOOL_FOR or item.get("stat") == "Healing") and stat_fits("Caster", m):
+            second = True
+        else:
+            return None
     cls, sub = m["class_slug"], item.get("sub") or ""
     if item["inv"] in WEAPON_INV and item.get("stat") in (None, "Stamina") and cls in CASTERS:
         return None  # zbraň bez spell statů caster nepotřebuje, střílí wandem
@@ -604,11 +611,11 @@ def loot_fit(item, m):
         return None
     lvl = max(0, (item.get("req") or 0) - m["level"])
     if "gear" not in m:
-        return {"gain": "?", "lvl": lvl}
+        return {"gain": "?", "lvl": lvl, "second": second}
     gain = upgrade(item, {**m, "level": max(m["level"], item.get("req") or 0)})
     if gain is None and not item.get("level"):
         gain = "?"
-    return {"gain": gain, "lvl": lvl}
+    return {"gain": gain, "lvl": lvl, "second": second}
 
 
 def boss_loot(rows, best, members, static, catalog):
@@ -631,7 +638,8 @@ def boss_loot(rows, best, members, static, catalog):
 
         out.append({"title": title, "min": r["min"], "max": r["max"], "best": r is best,
                     "source": d.get("source"), "tactics": d.get("tactics"), "note": d.get("note"),
-                    "bosses": [{"name": b["name"], "tip": b.get("tip"), "rare": b.get("rare"),
+                    "sets": d.get("sets") or {},
+                    "bosses": [{"name": b["name"], "tip": b.get("tip"), "rare": b.get("rare"), "trash": b.get("trash"),
                                 "items": items(b.get("loot") or [])} for b in d.get("bosses") or []],
                     "quests": [{"quest": q["quest"], "items": items(q.get("loot") or [])}
                                for q in d.get("quests") or []]})
@@ -1568,7 +1576,8 @@ def craft_box(plan, members):
 def loot_who(fits, by_slug):
     """Štítky postav, kterým se kus hodí: upgrade barvou classy, ostatní tlumeně."""
     chips = []
-    order = sorted(fits.items(), key=lambda kv: (kv[1]["gain"] is None, kv[1]["gain"] == "?", list(by_slug).index(kv[0])))
+    order = sorted(fits.items(), key=lambda kv: (kv[1].get("second", False), kv[1]["gain"] is None, kv[1]["gain"] == "?",
+                                                 list(by_slug).index(kv[0])))
     for slug, f in order:
         m = by_slug[slug]
         g = f["gain"]
@@ -1580,6 +1589,10 @@ def loot_who(fits, by_slug):
             text, cls, tip = "prázdný slot", "", "ten slot má prázdný"
         else:
             text, cls, tip = f"+{g} ilvl", "", f"o {g} item levelů lepší než to, co nosí"
+        if f.get("second"):
+            cls += " lt-second"
+            tip = "druhá volba: heal nebo damage jiné školy nevyužije, " + tip
+            text = "2. volba · " + text
         lvl = f' <small>lvl {m["level"] + f["lvl"]}</small>' if f["lvl"] else ""
         if f["lvl"]:
             tip += f', nasadí až na levelu {m["level"] + f["lvl"]}'
@@ -1588,7 +1601,7 @@ def loot_who(fits, by_slug):
     return "".join(chips)
 
 
-def loot_line(entry, by_slug, contested=True):
+def loot_line(entry, by_slug, contested=True, sets=None):
     it, fits = entry["item"], entry["fits"]
     color = QUALITY_COLOR.get(it.get("quality"), "var(--text)")
     href = (f'https://www.wowhead.com/forever/item={it["id"]}' if it.get("id")
@@ -1601,7 +1614,10 @@ def loot_line(entry, by_slug, contested=True):
                                        it.get("stats") or it.get("stat"), it.get("level") and f'ilvl {it["level"]}',
                                        it.get("req") and f'od lvl {it["req"]}') if x)
     alt = f' <small class="lt-alt">(nebo {e(it["alt"])})</small>' if it.get("alt") else ""
-    ups = [s for s, f in fits.items() if f["gain"] not in (None, "?")]
+    ups = [s for s, f in fits.items() if f["gain"] not in (None, "?") and not f.get("second")]
+    if it.get("set"):
+        bonus = " · ".join((sets or {}).get(it["set"], {}).get("bonus") or [])
+        alt += f' <span class="lt-set" title="{e(bonus)}">set {e(it["set"])}</span>'
     flag = ('<span class="lt-flag" title="upgrade pro víc lidí, domluvte se před rollem">🎲 víc zájemců</span>'
             if contested and len(ups) > 1 else "")
     who = loot_who(fits, by_slug) or '<span class="lt-none">nikomu, disenchant nebo prodat</span>'
@@ -1619,10 +1635,20 @@ def loot_section(lists, members):
     for d in lists:
         bosses = []
         for b in d["bosses"]:
-            rare = '<span class="chip chip-rare">rare</span>' if b.get("rare") else ""
+            rare = ('<span class="chip chip-rare">rare</span>' if b.get("rare") else
+                    '<span class="chip chip-none">z trashe</span>' if b.get("trash") else "")
             tip = f'<p class="boss-tip">{e(b["tip"])}</p>' if b.get("tip") else ""
-            bosses.append(f'<article class="boss"><h4>{e(b["name"])}{rare}</h4>{tip}'
-                          f'<ul class="loot">{"".join(loot_line(x, by_slug) for x in b["items"])}</ul></article>')
+            bosses.append(f'<article class="boss{" boss-trash" if b.get("trash") else ""}"><h4>{e(b["name"])}{rare}</h4>{tip}'
+                          f'<ul class="loot">{"".join(loot_line(x, by_slug, sets=d["sets"]) for x in b["items"])}</ul></article>')
+        set_boxes = []
+        for name, st in d["sets"].items():
+            pieces = [(x["item"], b) for b in d["bosses"] for x in b["items"] if x["item"].get("set") == name]
+            rows_ = "".join(f'<li><a class="item" style="color:{QUALITY_COLOR.get(it.get("quality"), "var(--text)")}" '
+                            f'href="https://www.wowhead.com/forever/item={it["id"]}" target="_blank" rel="noopener">{e(it["name"])}</a>'
+                            f'<small>{e("trash" if b.get("trash") else b["name"])}</small></li>' for it, b in pieces)
+            bonus = "".join(f'<li>{e(x)}</li>' for x in st.get("bonus") or [])
+            set_boxes.append(f'<article class="set-box"><h4>Set {e(name)} <small>{len(pieces)} kusů v dungeonu</small></h4>'
+                             f'<div class="set-cols"><ul class="set-pieces">{rows_}</ul><ul class="set-bonus">{bonus}</ul></div></article>')
         quests = "".join(f'<li class="lq"><span class="lq-name">{e(q["quest"])}</span>'
                          f'<ul class="loot">{"".join(loot_line(x, by_slug, contested=False) for x in q["items"])}</ul></li>'
                          for q in d["quests"])
@@ -1631,19 +1657,19 @@ def loot_section(lists, members):
         best = '<span class="chip chip-new">příští výprava</span>' if d["best"] else ""
         note = f'<p class="note">{e(d["note"])}</p>' if d.get("note") else ""
         # spoiler: bossové a loot jsou schované, dokud si je někdo sám nerozklikne
-        n = len(d["bosses"])
+        n = sum(1 for b in d["bosses"] if not b.get("trash"))
         parts.append(f'<details class="loot-dg"><summary><div class="rc-head"><h3>{e(d["title"])}{best}</h3>'
                      f'<span class="range">level {d["min"]}–{d["max"]}</span>'
                      f'<span class="spoil">⚠ spoiler · {pl(n, ("{n} boss", "{n} bossové", "{n} bossů"))}, taktika a loot '
                      f'<span class="spoil-open">ukázat ▾</span><span class="spoil-close">schovat ▴</span></span></div></summary>'
                      f'<p class="rc-source loot-src">{src}</p>'
-                     f'<div class="bosses">{"".join(bosses)}</div>'
+                     f'<div class="bosses">{"".join(bosses)}</div>{"".join(set_boxes)}'
                      f'{f"<h3 class=sub-h>Odměny z questů (každý si vybírá sám)</h3><ul class=lq-list>{quests}</ul>" if quests else ""}'
                      f'{note}</details>')
     return (f'<section id="loot"><h2 class="sec">Bossové a loot</h2>{"".join(parts)}'
             f'<p class="note legend">U kusu jsou jen ti, kdo ho unesou a komu sedí staty (caster, heal, frost nebo shadow damage, agility, strength). '
             f'<b>+N ilvl</b> = o tolik item levelů lepší než to, co nosí · <b>prázdný slot</b> · <b>má lepší</b> = nosí stejné nebo lepší · '
-            f'<b>lvl N</b> = nasadí až na tom levelu · 🎲 upgrade pro víc lidí, domluvte se před rollem. Staty se neporovnávají, jen item level. '
+            f'<b>lvl N</b> = nasadí až na tom levelu · <b>2. volba</b> (tlumeně) = heal nebo damage jiné školy z kusu nevyužije, ale zbytek ano · 🎲 upgrade pro víc lidí, domluvte se před rollem. Staty se neporovnávají, jen item level. '
             f'Bossové a loot jsou schované jako spoiler, ukážou se po kliknutí. Přepisuješ je v <code>bosses.json</code>.</p></section>')
 
 
@@ -2081,6 +2107,14 @@ border:1px solid color-mix(in srgb,var(--cls) 40%,transparent)}
 .lt-none{font-size:12px;color:var(--muted)}
 .lt-flag{font-size:12px;padding:1px 8px;border-radius:999px;background:#4a3a14;color:var(--warn);font-weight:600}
 .lt-who.dim{opacity:.25}
+.lt-who.lt-second{opacity:.6;background:transparent;border-style:dashed;color:var(--muted)}
+.lt-set{font-size:11px;padding:0 7px;border-radius:999px;background:#2b2440;color:#c9b2ff;border:1px solid #4a3d70;cursor:help}
+.boss-trash{border-style:dashed}
+.set-box{margin-top:12px;background:var(--panel);border:1px solid #4a3d70;border-radius:12px;padding:12px 14px}
+.set-box h4{margin:0 0 8px;font:600 15px Cinzel,serif;color:#c9b2ff}.set-box h4 small{font:400 12px Inter,system-ui,sans-serif;color:var(--muted);margin-left:6px}
+.set-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:6px 20px}
+.set-pieces,.set-bonus{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:13px}
+.set-pieces small{color:var(--muted);margin-left:8px}.set-bonus li{color:var(--muted)}
 .lq-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px}
 .lq{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
 .lq-name{font-weight:600;font-size:14px}

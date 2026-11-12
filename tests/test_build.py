@@ -289,11 +289,23 @@ class BossLoot(unittest.TestCase):
         frost = {"name": "F", "inv": "TWOHWEAPON", "sub": "Staff", "level": 24, "stat": "Frost"}
         shadow = {"name": "S", "inv": "CHEST", "sub": "Cloth", "level": 20, "stat": "Shadow"}
         heal = {"name": "H", "inv": "TWOHWEAPON", "sub": "Sword", "level": 27, "stat": "Healing"}
-        who = lambda it: {m["slug"] for m in party if build.loot_fit(build.loot_item(it, FakeStatic({}, {})), m)}
-        self.assertEqual(who(frost), {"h"})  # frost staff jen mág
-        self.assertEqual(who(shadow), {"k"})  # shadow damage priest, ne mág
+        def who(it):  # jen hlavní volba, druhá má vlastní test
+            return {m["slug"] for m in party
+                    if (f := build.loot_fit(build.loot_item(it, FakeStatic({}, {})), m)) and not f["second"]}
+        self.assertEqual(who(frost), {"h"})  # frost staff hlavně mág
+        self.assertEqual(who(shadow), {"k"})  # shadow damage hlavně priest
         self.assertEqual(who(heal), {"j"})  # 2H meč s healem: priest ho neunese, paladin ano
         party[2]["roles"] = ["tank"]
         self.assertEqual(who(heal), {"j"})  # paladin se léčí i jako tank
         dagger = {"name": "D", "inv": "WEAPON", "sub": "Dagger", "level": 20, "stat": "Stamina"}
         self.assertEqual(who(dagger), {"z"})  # dagger jen se Staminou caster nechce
+
+    def test_second_choice(self):
+        party = self.party()
+        heal = {"name": "T", "inv": "FEET", "sub": "Cloth", "level": 24, "stat": "Healing"}
+        frost = {"name": "F", "inv": "TWOHWEAPON", "sub": "Staff", "level": 24, "stat": "Frost"}
+        fit = lambda it, i: build.loot_fit(build.loot_item(it, FakeStatic({}, {})), party[i])
+        self.assertFalse(fit(heal, 0)["second"])  # priest: heal je hlavně jeho
+        self.assertTrue(fit(heal, 1)["second"])  # mág: využije jen Int a Sta
+        self.assertTrue(fit(frost, 0)["second"])  # priest frost damage nepotřebuje
+        self.assertIsNone(fit(heal, 3))  # hunter cloth s healem vůbec
