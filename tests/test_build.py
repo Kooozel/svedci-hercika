@@ -282,3 +282,14 @@ class BossLoot(unittest.TestCase):
             for b in d["bosses"]:
                 for it in b["loot"]:
                     self.assertIn(it["inv"], build.ITEM_SLOTS, it["name"])
+
+    def test_spell_school_and_healing(self):
+        party = self.party()
+        party[2]["roles"] = ["heal"]  # paladin healer bere heal kusy
+        frost = {"name": "F", "inv": "TWOHWEAPON", "sub": "Staff", "level": 24, "stat": "Frost"}
+        shadow = {"name": "S", "inv": "CHEST", "sub": "Cloth", "level": 20, "stat": "Shadow"}
+        heal = {"name": "H", "inv": "TWOHWEAPON", "sub": "Sword", "level": 27, "stat": "Healing"}
+        who = lambda it: {m["slug"] for m in party if build.loot_fit(it, m)}
+        self.assertEqual(who(frost), {"h"})  # frost staff jen mág
+        self.assertEqual(who(shadow), {"k"})  # shadow damage priest, ne mág
+        self.assertEqual(who(heal), {"j"})  # 2H meč s healem: priest ho neunese, paladin healer ano

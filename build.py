@@ -553,11 +553,17 @@ def upgrade(item, m):
 
 WEAPON_INV = {"WEAPON", "WEAPONMAINHAND", "WEAPONOFFHAND", "TWOHWEAPON", "RANGED", "RANGEDRIGHT", "THROWN"}
 HYBRIDS = {"paladin", "shaman", "druid"}
+SCHOOL_FOR = {"Shadow": {"priest", "warlock"}, "Frost": {"mage"}, "Arcane": {"mage"}, "Fire": {"mage", "warlock"},
+              "Nature": {"druid", "shaman"}}
 
 
 def stat_fits(stat, m):
     """Hodí se hlavní stat kusu classe a roli? Bez statu nebo se Staminou ano (Classic: hybridi podle role)."""
     cls, heal = m["class_slug"], "heal" in (m.get("roles") or [])
+    if stat in SCHOOL_FOR:  # spell damage jen jedné školy (frost pro mága, shadow pro priesta a warlocka)
+        return cls in SCHOOL_FOR[stat]
+    if stat == "Healing":
+        return cls == "priest" or (cls in HYBRIDS and heal)
     if stat in ("Caster", "Spirit", "Intellect"):
         return cls in CASTERS or (cls in HYBRIDS and heal)
     if stat == "Agility":
@@ -1590,7 +1596,7 @@ def loot_line(entry, by_slug, contested=True):
     if it.get("inv") == "TWOHWEAPON":
         slot = "2H zbraň"
     meta = " · ".join(str(x) for x in (slot, it.get("sub") if it.get("sub") not in (None, "Miscellaneous") else None,
-                                       it.get("stat"), it.get("level") and f'ilvl {it["level"]}',
+                                       it.get("stats") or it.get("stat"), it.get("level") and f'ilvl {it["level"]}',
                                        it.get("req") and f'od lvl {it["req"]}') if x)
     alt = f' <small class="lt-alt">(nebo {e(it["alt"])})</small>' if it.get("alt") else ""
     ups = [s for s, f in fits.items() if f["gain"] not in (None, "?")]
@@ -1633,7 +1639,7 @@ def loot_section(lists, members):
                      f'{f"<h3 class=sub-h>Odměny z questů (každý si vybírá sám)</h3><ul class=lq-list>{quests}</ul>" if quests else ""}'
                      f'{note}</details>')
     return (f'<section id="loot"><h2 class="sec">Bossové a loot</h2>{"".join(parts)}'
-            f'<p class="note legend">U kusu jsou jen ti, kdo ho unesou a komu sedí stat (caster, agility, strength). '
+            f'<p class="note legend">U kusu jsou jen ti, kdo ho unesou a komu sedí staty (caster, heal, frost nebo shadow damage, agility, strength). '
             f'<b>+N ilvl</b> = o tolik item levelů lepší než to, co nosí · <b>prázdný slot</b> · <b>má lepší</b> = nosí stejné nebo lepší · '
             f'<b>lvl N</b> = nasadí až na tom levelu · 🎲 upgrade pro víc lidí, domluvte se před rollem. Staty se neporovnávají, jen item level. '
             f'Bossové a loot jsou schované jako spoiler, ukážou se po kliknutí. Přepisuješ je v <code>bosses.json</code>.</p></section>')
