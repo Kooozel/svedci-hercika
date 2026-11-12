@@ -182,5 +182,43 @@ class Crafting(unittest.TestCase):
         self.assertNotIn("CHEST", plan["enchants"])  # nikdo nemá hruď, není co enchantovat
 
 
+class ReadyCheckLimits(unittest.TestCase):
+    """Classové a rasové questy: kdo je nemůže vzít, má „na“ a nepočítá se do souhrnů."""
+
+    REQ = {1: {}, 2: {"classes": [{"name": "Paladin"}]}, 3: {"classes": [{"name": "Warlock"}]},
+           4: {"races": [{"name": "Orc"}, {"name": "Tauren"}]}}
+
+    def run_check(self):
+        party = [{"slug": "j", "class": "Paladin", "race": "Undead", "level": 25, "quests_active": [], "quests_done": []},
+                 {"slug": "h", "class": "Mage", "race": "Orc", "level": 25, "quests_active": [], "quests_done": []}]
+        catalog = {"D": {"quests": [{"id": i, "name": f"Q{i}", "sharable": True} for i in (1, 2, 3, 4)]}}
+        row = {"name": "D", "min": 20, "max": 30, "near": True}
+        orig = build.api_get
+        build.api_get = lambda token, region, path, kind: {"requirements": self.REQ[int(path.rsplit("/", 1)[1])]}
+        try:
+            return build.ready_check("t", "eu", [row], row, party, catalog)[0]
+        finally:
+            build.api_get = orig
+
+    def test_limits(self):
+        check = self.run_check()
+        by_id = {q["id"]: q for q in check["quests"]}
+        self.assertNotIn(3, by_id)  # warlock v partě není, quest se neukáže
+        self.assertEqual(by_id[2]["status"], {"j": "missing", "h": "na"})
+        self.assertEqual(by_id[2]["limit"]["text"], "jen Paladin")
+        self.assertEqual(by_id[4]["status"], {"j": "na", "h": "missing"})
+        self.assertEqual(by_id[4]["limit"]["text"], "ne pro Undead")
+        self.assertEqual(check["take"], 4)  # Q1 oba, Q2 jen paladin, Q4 jen orc
+        self.assertEqual([q["id"] for q in check["quests"]][-2:], [2, 4])  # omezené až za společnými
+
+    def test_render(self):
+        check = self.run_check()
+        members = [{"slug": "j", "name": "Johnie", "class_slug": "paladin"}, {"slug": "h", "name": "Horaes", "class_slug": "mage"}]
+        html = build.ready_box(check, members, 0)
+        self.assertIn('class="share share-cls"', html)
+        self.assertIn('q-cls" style="--cls:#F48CBA"', html)
+        self.assertIn('class="st st-na"', html)
+
+
 if __name__ == "__main__":
     unittest.main()

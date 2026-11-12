@@ -1,9 +1,10 @@
 {
- "_info": "Hordské dungeonové questy, ručně přepsané z průvodců Warcraft Tavern. Pole questu: id (Blizzard), req (od levelu), sharable, start (kde quest začíná, \"dungeon\" = předmětem uvnitř), pre (předquesty mimo dungeon: name + ids v pořadí, poslední musí být hotový), note. Dungeon bez záznamu ready check nemá.",
+ "_info": "Hordské dungeonové questy. Hlavní zdroj je Wowhead (source: průvodce dungeonu, souhrn https://www.wowhead.com/forever/guide/dungeons/every-dungeon-quest-location): které questy, ID, req, sharable, start, pre. Warcraft Tavern (tavern) jen na note, co a kde se dělá uvnitř. Blizzard API rozhoduje spory: ID musí existovat a mít typ Dungeon, ne Raid (Season of Discovery). Pole questu: id, req (od levelu), sharable, start (kde quest začíná, \"dungeon\" = až uvnitř, předmětem nebo od postavy), pre (předquesty mimo dungeon: name + ids v pořadí, poslední musí být hotový), note, volitelně classes / races (jinak se berou z API). Dungeon bez záznamu ready check nemá.",
  "dungeons": {
   "Ruins of Lordaeron": {
-   "source": "https://www.warcrafttavern.com/forever/guides/the-ruins-of-lordaeron-quests/",
-   "checked": "2026-11-10",
+   "source": "https://www.wowhead.com/forever/guide/ruins-of-lordaeron-dungeon-overview-location-rewards",
+   "tavern": "https://www.warcrafttavern.com/forever/guides/the-ruins-of-lordaeron-quests/",
+   "checked": "2026-11-12",
    "quests": [
     {"id": 92421, "name": "Light's Justice", "req": 15, "sharable": true,
      "start": "Morbin Lightbane (Royal Quarter, Undercity 57.8 89.7)"},
@@ -22,13 +23,14 @@
    ]
   },
   "Wailing Caverns": {
-   "source": "https://www.warcrafttavern.com/forever/guides/wailing-caverns-quests/",
-   "checked": "2026-11-10",
+   "source": "https://www.wowhead.com/forever/guide/wailing-caverns-dungeon-overview-location-rewards",
+   "tavern": "https://www.warcrafttavern.com/forever/guides/wailing-caverns-quests/",
+   "checked": "2026-11-12",
    "quests": [
     {"id": 962, "name": "Serpentbloom", "req": 14, "sharable": true,
      "start": "Apothecary Zamah (Spirit Rise, Thunder Bluff)",
      "note": "10 Serpentbloom roste uvnitř i venku před dungeonem"},
-    {"id": 914, "name": "Leaders of the Fang", "req": 10, "sharable": false,
+    {"id": 914, "name": "Leaders of the Fang", "req": 15, "sharable": false,
      "start": "Nara Wildmane (Elder Rise, Thunder Bluff)",
      "pre": {"name": "řetěz od Arch Druid Hamuul Runetotem (6 questů: The Barrens Oases … Nara Wildmane)", "ids": [1489, 1490]}},
     {"id": 1487, "name": "Deviate Eradication", "req": 15, "sharable": true,
@@ -42,13 +44,14 @@
     {"id": 1491, "name": "Smart Drinks", "req": 13, "sharable": false,
      "start": "Mebok Mizzyrix (Ratchet)",
      "pre": {"name": "Raptor Horns (Mebok Mizzyrix, Ratchet)", "ids": [865]}},
-    {"id": 3366, "name": "The Glowing Shard", "req": 15, "sharable": false, "start": "dungeon",
+    {"id": 6981, "name": "The Glowing Shard", "req": 10, "sharable": false, "start": "dungeon",
      "note": "Glowing Shard padá z Mutanus the Devourer, pak Sputtervalve v Ratchetu a Falla Sagewind nad dungeonem"}
    ]
   },
   "Shadowfang Keep": {
-   "source": "https://www.warcrafttavern.com/forever/guides/shadowfang-keep-quests/",
-   "checked": "2026-11-10",
+   "source": "https://www.wowhead.com/forever/guide/shadowfang-keep-dungeon-overview-location-rewards",
+   "tavern": "https://www.warcrafttavern.com/forever/guides/shadowfang-keep-quests/",
+   "checked": "2026-11-12",
    "quests": [
     {"id": 1098, "name": "Deathstalkers in Shadowfang", "req": 18, "sharable": true,
      "start": "High Executor Hadrec (The Sepulcher, Silverpine Forest)",
@@ -57,7 +60,142 @@
      "start": "Keeper Bel'dugur (Apothecarium, Undercity)",
      "note": "kniha stojí na polici v místnosti s Fenrusem, snadno se zapomene"},
     {"id": 1014, "name": "Arugal Must Die", "req": 18, "sharable": true,
-     "start": "Dalar Dawnweaver (The Sepulcher, Silverpine Forest)"}
+     "start": "Dalar Dawnweaver (The Sepulcher, Silverpine Forest)"},
+    {"id": 1740, "name": "The Orb of Soran'ruk", "req": 20, "sharable": true,
+     "start": "Doan Karhan (u Camp Taurajo, The Barrens 49 57)",
+     "note": "střepy z BFD i ze Shadowfang Keep, nasdílet jde jen jiným warlockům"},
+    {"id": 95036, "name": "A Moon-Kissed Blade", "req": 20, "sharable": false,
+     "start": "Lumina Windsinger (krypta v Silverpine Forest 43 40)",
+     "pre": {"name": "řetěz nemrtvého paladina od Diplomatic Incident (Bandarion Keep, Tirisfal) po The Debt, 7 questů", "ids": [91858, 91859, 91860, 91861, 91862, 96204, 95034]},
+     "note": "uvnitř se sebere Enchanted Silver Ingot. Dál je potřeba Whitestone Oak Lumber z Deadmines a Purified Kor Gem ze Seeking the Kor Gem (BFD), odevzdat Trevan Rol v Sepulcheru"}
+   ]
+  },
+  "Excavation Site: Wetlands": {
+   "source": "https://www.wowhead.com/forever/guide/excavation-site-wetlands-dungeon-overview-location-rewards",
+   "tavern": "https://www.warcrafttavern.com/forever/guides/excavation-site-wetlands-quests/",
+   "checked": "2026-11-12",
+   "quests": [
+    {"id": 95697, "name": "Changing Tastes", "req": 24, "sharable": true,
+     "start": "Borstan (The Drag, Orgrimmar 57.3 53.3, patro nad Zamjou)",
+     "note": "4 Thicket Raptor Meat z raptorů ve Stalker's Thicket za prvním bossem"},
+    {"id": 95682, "name": "Open the Maw", "req": 24,
+     "start": "Deathstalker Agent (Wetlands 51.4 59.2, za kopečkem)",
+     "pre": {"name": "Dragonmaw Rumors (Zaruk, Hammerfall, Arathi Highlands 74.4 35.6)", "ids": [95663]},
+     "note": "2 Dragonmaw Saboteur, 4 Dragonmaw Warder a Dragonmaw Dispatch z Thaumaturgista, odevzdat Agentovi cestou ven"},
+    {"id": 95664, "name": "Elder Knowledge", "req": 24, "start": "dungeon",
+     "note": "Titan Relic padá z posledního bosse Relic Guardian, odevzdat Bashana Runetotem (Elder Rise, Thunder Bluff), pak Earthen Echo v Mulgore"}
+   ]
+  },
+  "Blackfathom Deeps": {
+   "source": "https://www.wowhead.com/forever/guide/blackfathom-deeps-dungeon-overview-location-rewards",
+   "tavern": "https://www.warcrafttavern.com/forever/guides/blackfathom-deeps-quests/",
+   "checked": "2026-11-12",
+   "quests": [
+    {"id": 6563, "name": "The Essence of Aku'Mai", "req": 17, "sharable": true,
+     "start": "Je'neu Sancrea (Zoram'gar Outpost, Ashenvale)",
+     "note": "20 Sapphire of Aku'Mai z krystalů na stěnách jeskyně cestou ke vchodu"},
+    {"id": 6565, "name": "Allegiance to the Old Gods", "req": 17, "sharable": false,
+     "start": "Je'neu Sancrea (Zoram'gar Outpost, Ashenvale)",
+     "pre": {"name": "Damp Note, vzácný drop z Blackfathom Tide Priestess před dungeonem, odnést Je'neu", "ids": [6564]},
+     "note": "uvnitř zabít Lorgus Jett"},
+    {"id": 6921, "name": "Amongst the Ruins", "req": 21, "sharable": true,
+     "start": "Je'neu Sancrea (Zoram'gar Outpost, Ashenvale)",
+     "note": "kámen pod vodou přivolá Baron Aquanis, po jeho smrti si Fathom Core klikne každý sám"},
+    {"id": 6922, "name": "Baron Aquanis", "req": 21, "sharable": false, "start": "dungeon",
+     "note": "Strange Water Globe padá z Baron Aquanis (po Amongst the Ruins), odevzdat Je'neu Sancrea"},
+    {"id": 6561, "name": "Blackfathom Villainy", "req": 18, "sharable": true, "start": "dungeon",
+     "note": "dává Argent Guard Thaelrid ve výklenku u Ghamoo-ra, Head of Kelris z Twilight Lord Kelris, odevzdat Bashana Runetotem v Thunder Bluff"},
+    {"id": 95042, "name": "Seeking the Kor Gem", "req": 20, "sharable": true,
+     "start": "Ulric Frostveil (Ashenvale)",
+     "pre": {"name": "řetěz nemrtvého paladina od Diplomatic Incident (Bandarion Keep, Tirisfal) po The Debt (Lumina Windsinger, krypta v Silverpine), 7 questů", "ids": [91858, 91859, 91860, 91861, 91862, 96204, 95034]},
+     "note": "Corrupted Kor Gem z nag uvnitř, Purified Kor Gem je potřeba na A Moon-Kissed Blade"},
+    {"id": 1740, "name": "The Orb of Soran'ruk", "req": 20, "sharable": true,
+     "start": "Doan Karhan (u Camp Taurajo, The Barrens 49 57)",
+     "note": "střepy z BFD i ze Shadowfang Keep, nasdílet jde jen jiným warlockům"}
+   ]
+  },
+  "City of Dalaran": {
+   "source": "https://www.wowhead.com/forever/guide/city-of-dalaran-dungeon-overview-location-rewards",
+   "tavern": "https://www.warcrafttavern.com/forever/guides/city-of-dalaran-quests/",
+   "checked": "2026-11-12",
+   "quests": [
+    {"id": 96984, "name": "Heart of Disruption", "req": 24, "sharable": false,
+     "start": "Image of Archmage Modera (před vchodem do stok Dalaranu, 68.5 45.1)",
+     "pre": {"name": "Prison Break In / Key to the City → Dalaran Patrols → Blood in the Streets (Magus Wordeen Voidglare, Tarren Mill)", "ids": [544, 93680, 545, 92434]},
+     "note": "Modera dá Dalaran Sewer Key, bez něj aspoň u jednoho z party se dovnitř nedostanete. Arcane Mote z posledního bosse Shade of the Archmage"},
+    {"id": 96988, "name": "Source of Power", "req": 24, "sharable": true,
+     "start": "Doctor Martin Felben (Apothecarium, Undercity 46.4 74.3)",
+     "note": "6 Cracked Sentry Cores z golemů Fragmented Sentry v ulicích, některé stačí jen kliknout"},
+    {"id": 96986, "name": "The Grave Knight", "req": 24, "sharable": true,
+     "start": "Melisara (Tarren Mill, Hillsbrad 62.6 20.6)",
+     "note": "první boss Atrexis the Grave Knight ve stokách"},
+    {"id": 96987, "name": "Opportunistic Education", "req": 24, "sharable": true, "start": "dungeon",
+     "note": "dává Rexxie Copperclutch hned vpravo za vchodem, kniha je v Atrium of Fortune mezi policemi, vrátit cestou ven"}
+   ]
+  },
+  "Scarlet Monastery": {
+   "source": "https://www.wowhead.com/forever/guide/dungeons/every-dungeon-quest-location",
+   "tavern": "https://www.warcrafttavern.com/forever/guides/scarlet-monastery-quests/",
+   "checked": "2026-11-12",
+   "quests": [
+    {"id": 1051, "name": "Vorrel's Revenge", "req": 25, "sharable": true, "start": "dungeon",
+     "note": "Graveyard: Vorrel Sengutz na mučidle u Interrogator Vishas. Prsten z Nancy Vishas (elitka, Misty Shore v Alterac Mountains), odevzdat Monika Sengutz v Tarren Mill"},
+    {"id": 1049, "name": "Compendium of the Fallen", "req": 28, "sharable": true,
+     "start": "Sage Truthseeker (Thunder Bluff)",
+     "note": "Library: kniha na polici v rohové místnosti mezi posledními chodbami. Undead ho vzít nemůžou"},
+    {"id": 1160, "name": "Test of Lore", "req": 25, "sharable": false,
+     "start": "Parqual Fintallas (Apothecarium, Undercity)",
+     "pre": {"name": "6 questů od Test of Faith po Test of Lore (Dorn Plainstalker, Thousand Needles; Braug Dimspirit, Stonetalon; kniha v Dor'Danil Barrow, odpověď Neltharion)", "ids": [1149, 1152, 1154, 1159]},
+     "note": "Library: Beginnings of the Undead Threat na stole v místnůstce u chodby s červeným kobercem za nádvořím"},
+    {"id": 1113, "name": "Hearts of Zeal", "req": 30, "sharable": true,
+     "start": "Master Apothecary Faranell (Apothecarium, Undercity)",
+     "pre": {"name": "Going, Going, Guano! (Razorfen Kraul)", "ids": [1109]},
+     "note": "20 Heart of Zeal ze Scarlet mobů v kterémkoli křídle i venku"},
+    {"id": 1048, "name": "Into The Scarlet Monastery", "req": 33, "sharable": true,
+     "start": "Varimathras (Royal Quarter, Undercity)",
+     "note": "Houndmaster Loksey (Library), Herod (Armory), Mograine a Whitemane (Cathedral)"},
+    {"id": 1951, "name": "Rituals of Power", "req": 30, "sharable": false,
+     "start": "Magus Tirth (Shimmering Flats, Thousand Needles 78 75)",
+     "pre": {"name": "Journey to the Marsh → Items of Power → Hidden Secrets → Get the Scoop (mage trenér)", "ids": [1947, 1948, 1949, 1950]},
+     "note": "Library: kniha Rituals of Power hned na začátku poslední chodby, kousek od Compendium of the Fallen"}
+   ]
+  },
+  "Gnomeregan": {
+   "source": "https://www.wowhead.com/forever/guide/gnomeregan-dungeon-overview-location-rewards",
+   "tavern": "https://www.warcrafttavern.com/forever/guides/gnomeregan-quests/",
+   "checked": "2026-11-12",
+   "quests": [
+    {"id": 2841, "name": "Rig Wars", "req": 25, "sharable": true,
+     "start": "Nogg (Valley of Honor, Orgrimmar)",
+     "note": "Rig Blueprints z trezoru za Mekgineer Thermaplugg, kombinace padá z něj. Vedle stojí Sovik: Chief Engineer Scooty v Booty Bay odemkne transportér ke Gnomereganu"},
+    {"id": 2904, "name": "A Fine Mess", "req": 20, "sharable": true, "start": "dungeon",
+     "note": "eskorta Kernobee z The Dormitory (jižně od Clean Room) ven, když umře, nevrátí se. Odevzdat Scooty v Booty Bay"},
+    {"id": 2945, "name": "Grime-Encrusted Ring", "req": 28, "sharable": true, "start": "dungeon",
+     "note": "prsten padá z Dark Iron Agent, odevzdat do Sparklematic 5200 v Clean Room, pak jde opakovaně měnit Grime-Encrusted Object za krabičky"}
+   ]
+  },
+  "Razorfen Kraul": {
+   "source": "https://www.wowhead.com/forever/guide/razerfen-kraul-dungeon-overview-location-rewards",
+   "tavern": "https://www.warcrafttavern.com/forever/guides/razorfen-kraul-quests/",
+   "checked": "2026-11-12",
+   "quests": [
+    {"id": 1221, "name": "Blueleaf Tubers", "req": 20, "sharable": false,
+     "start": "Mebok Mizzyrix (Ratchet)",
+     "note": "vedle Meboka vzít Crate with Holes, Snufflenose Command Stick a manuál, uvnitř gopher vyhrabe 6 hlíz"},
+    {"id": 1144, "name": "Willix the Importer", "req": 22, "sharable": true, "start": "dungeon",
+     "note": "eskorta Willixe ze stanu u Charlga Razorflank ven z dungeonu, držet se u něj"},
+    {"id": 1102, "name": "A Vengeful Fate", "req": 29, "sharable": true,
+     "start": "Auld Stonespire (Lower Rise, Thunder Bluff)",
+     "note": "Razorflank's Heart z posledního bosse Charlga Razorflank"},
+    {"id": 6522, "name": "An Unholy Alliance", "req": 28, "sharable": false, "start": "dungeon",
+     "note": "Small Scroll padá z Charlga Razorflank, odevzdat Varimathras v Undercity (pokračuje do Razorfen Downs)"},
+    {"id": 1109, "name": "Going, Going, Guano!", "req": 30, "sharable": true,
+     "start": "Master Apothecary Faranell (Apothecarium, Undercity)",
+     "note": "Kraul Guano z netopýrů na konci za Overlord Ramtusk (umlčují). Otevře Hearts of Zeal do Scarlet Monastery"},
+    {"id": 1838, "name": "Brutal Armor", "req": 20, "sharable": false,
+     "start": "Thun'grim Firegaze (kopce východně od Crossroads, The Barrens)",
+     "pre": {"name": "řetěz od warrior trenéra Sorek v Orgrimmaru", "ids": [1825]},
+     "note": "Vial of Phlogiston z Roogug uvnitř, zbytek se shání venku"}
    ]
   }
  }

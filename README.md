@@ -44,11 +44,20 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Dungeony:** seznam a rozsahy levelů jsou podle
   [Wowhead pro Forever](https://www.wowhead.com/forever/guide/dungeons-overview-locations-details), opravíš je v `dungeons.json`.
   `new` označí nový dungeon z Forever, `alliance_side` dungeon na území Aliance, který se na stránce nezobrazuje.
-- **Questy pro ready check:** `quests.json`, ručně přepsané z průvodců questů na
-  [Warcraft Tavern](https://www.warcrafttavern.com/forever/guides/) (`source` u každého dungeonu).
-  U questu: `req` od levelu, `sharable`, `start` ("dungeon" = začíná předmětem uvnitř),
+- **Questy pro ready check:** `quests.json`, ručně přepsané (s Claudem), přidávají se, až se parta k dungeonu blíží.
+  Dungeon, který v souboru není, ready check nemá. Zdroje mají pevné pořadí:
+  1. **Wowhead** je hlavní zdroj: které questy dungeon má, ID, od jakého levelu, sdílení, start a předquesty.
+     Nejrychleji ze souhrnu [Every Dungeon Quest in WoW Forever](https://www.wowhead.com/forever/guide/dungeons/every-dungeon-quest-location),
+     detail z průvodce dungeonu (`source`). Stránky se vykreslují JavaScriptem, takže je čte jen prohlížeč, ne obyčejné stažení.
+  2. **[Warcraft Tavern](https://www.warcrafttavern.com/forever/guides/)** (`tavern`) jen na poznámky: kde co leží,
+     který boss co dropne. Jeho ID nepřebírat, u BFD a Gnomereganu linkuje verze ze Season of Discovery.
+  3. **Blizzard API** rozhoduje, když se zdroje rozcházejí: ID musí existovat a mít typ Dungeon (ne Raid),
+     sedí frakce, classa a rasa, XP.
+  U questu: `req` od levelu, `sharable`, `start` ("dungeon" = začíná až uvnitř, předmětem nebo od postavy),
   `pre` předquesty mimo dungeon (poslední z `ids` musí být hotový), `note`.
-  Dungeon, který v souboru není, ready check nemá; přidává se, až se k němu parta blíží.
+  Omezení na classu nebo rasu se bere z API (`requirements`), jde ho i dopsat do questu jako `classes` / `races`.
+  Classový quest vidí jen ta classa (štítek v její barvě, ostatní mají —), když ho v partě nikdo nemůže vzít,
+  neukáže se vůbec. V ready checku vede u každého dungeonu odkaz na Wowhead i Warcraft Tavern.
 
 Po pushnutí do `main` se stránka přegeneruje hned.
 

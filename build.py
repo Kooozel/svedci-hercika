@@ -350,16 +350,21 @@ def ready_check(token, region, rows, best, members, catalog):
     active = {m["slug"]: {q["id"] for q in m["quests_active"]} for m in with_quests}
     done = {m["slug"]: set(m["quests_done"]) for m in with_quests}
     levels = {m["slug"]: m["level"] for m in with_quests}
-    xp_cache = {}
+    who = {m["slug"]: m for m in with_quests}
+    details = {}
 
-    def quest_xp(qid):
-        if qid not in xp_cache:
+    def quest_detail(qid):
+        """XP a omezení na classu nebo rasu z Game Data API (requirements.classes / races)."""
+        if qid not in details:
             try:
-                detail = api_get(token, region, f"/data/wow/quest/{qid}", "static")
-                xp_cache[qid] = (detail.get("rewards") or {}).get("experience")
+                d = api_get(token, region, f"/data/wow/quest/{qid}", "static")
             except Exception:
-                xp_cache[qid] = None
-        return xp_cache[qid]
+                d = {}
+            req = d.get("requirements") or {}
+            details[qid] = {"xp": (d.get("rewards") or {}).get("experience"),
+                            "classes": [c["name"] for c in req.get("classes") or []],
+                            "races": [r["name"] for r in req.get("races") or []]}
+        return details[qid]
 
     checks, seen = [], set()
     for r in sorted((r for r in rows if r["near"]), key=lambda r: r is not best):
@@ -374,9 +379,26 @@ def ready_check(token, region, rows, best, members, catalog):
             # předquesty se nezobrazují, jen se podle nich pozná, kdo už quest může vzít
             earlier = set(pre["ids"]) if pre else set()
             required = {pre["ids"][-1]} if pre else set()
+            det = quest_detail(qid)
+            # v quests.json jde omezení dopsat ručně, jinak platí to z API
+            classes, races = q.get("classes") or det["classes"], q.get("races") or det["races"]
+            can = {s for s in active if (not classes or who[s].get("class") in classes)
+                   and (not races or who[s].get("race") in races)}
+            if not can:
+                continue  # classový quest, který v partě nikdo nevezme
+            limit = None
+            if classes:
+                limit = {"text": "jen " + " / ".join(classes), "cls": classes[0].lower(),
+                         "why": f"quest je jen pro classu {', '.join(classes)}"}
+            elif len(can) < len(active):
+                barred = sorted({who[s].get("race") or "?" for s in active if s not in can})
+                limit = {"text": "ne pro " + ", ".join(barred), "cls": None,
+                         "why": f"rasa {', '.join(barred)} tenhle quest nedostane"}
             status = {}
             for slug in active:
-                if qid in active[slug]:
+                if slug not in can:
+                    status[slug] = "na"
+                elif qid in active[slug]:
                     status[slug] = "active"
                 elif qid in done[slug]:
                     status[slug] = "done"
@@ -390,26 +412,28 @@ def ready_check(token, region, rows, best, members, catalog):
                     status[slug] = "inside"
                 else:
                     status[slug] = "missing"
-            if all(st == "done" for st in status.values()):
+            if all(st in ("done", "na") for st in status.values()):
                 continue
             # kdo quest nemá, dostane ho u vchodu od toho, kdo ho má v logu
             if q.get("sharable") and not pre and "active" in status.values():
                 status = {s: "share" if st == "missing" else st for s, st in status.items()}
             quests.append({
-                "id": qid, "name": q["name"], "xp": quest_xp(qid), "req": q.get("req"),
+                "id": qid, "name": q["name"], "xp": det["xp"], "req": q.get("req"), "limit": limit,
                 "sharable": q.get("sharable"), "start": q.get("start"), "note": q.get("note"),
                 "prev": pre["name"] if pre else None, "status": status,
                 "unclaimed": not any(st in ("active", "done", "pre") for st in status.values()),
             })
         # nejdřív questy, které někdo má, pak volné, nakonec ty, na které zatím nikdo nemůže
-        quests.sort(key=lambda q: (q["unclaimed"], all(st in ("level", "chain") for st in q["status"].values())))
+        # classové questy až za společnými
+        quests.sort(key=lambda q: (q["unclaimed"], all(st in ("level", "chain", "na") for st in q["status"].values()),
+                                   q["limit"] is not None))
         # ✋ = musí si někam dojít: pro quest, dokončit rozjetý řetěz nebo udělat předquesty
         take = sum(1 for q in quests for st in q["status"].values() if st in ("missing", "pre", "chain"))
         share = sum(1 for q in quests for st in q["status"].values() if st == "share")
         if quests and (r is best or any(not q["unclaimed"] for q in quests)):
             checks.append({"title": title, "min": r["min"], "max": r["max"], "best": r is best,
                            "quests": quests, "members": list(active), "take": take, "share": share,
-                           "source": catalog[title].get("source")})
+                           "source": catalog[title].get("source"), "tavern": catalog[title].get("tavern")})
     return checks
 
 
@@ -1266,6 +1290,8 @@ def squad(members, size, today):
 # ---------- ready check ----------
 
 def quest_cell(q, st, holders):
+    if st == "na":
+        return f'<td class="st st-na" title="nemůže vzít: {e(q["limit"]["why"])}">—</td>'
     if st == "active":
         return '<td class="st st-fit" title="má v logu">✓</td>'
     if st == "share":
@@ -1278,7 +1304,7 @@ def quest_cell(q, st, holders):
     if st == "level":
         return f'<td class="st st-over" title="quest jde vzít od levelu {q["req"]}">lvl {q["req"]}</td>'
     if st == "inside":
-        return '<td class="st st-over" title="quest začíná předmětem v dungeonu">uvnitř</td>'
+        return '<td class="st st-over" title="quest začíná až v dungeonu (předmět nebo postava uvnitř)">uvnitř</td>'
     if st == "pre":
         return '<td class="st st-pre" title="má v logu předquest, musí dokončit řetěz">⛓ ✓</td>'
     return f'<td class="st st-over" title="nejdřív: {e(q["prev"])}">⛓</td>'
@@ -1295,12 +1321,19 @@ def quest_meta(q):
 
 def share_label(q):
     tags = []
+    lim = q.get("limit")
+    if lim and lim["cls"]:
+        tags.append(f'<span class="share share-cls" style="--cls:{CLASS_COLOR.get(lim["cls"], "var(--muted)")}" '
+                    f'title="{e(lim["why"])}, ostatní ho nevidí">{e(lim["text"])}</span>')
+    elif lim:
+        tags.append(f'<span class="share share-race" title="{e(lim["why"])}">{e(lim["text"])}</span>')
     if q["start"] == "dungeon":
-        tags.append('<span class="share share-in" title="začíná předmětem, který padne v dungeonu">začíná uvnitř</span>')
+        tags.append('<span class="share share-in" title="začíná až v dungeonu: předmětem, který tam padne, nebo od postavy uvnitř">začíná uvnitř</span>')
     if q["prev"]:
         tags.append(f'<span class="share share-no" title="navazuje na {e(q["prev"])}, každý si ho musí vzít sám">✋ každý sám · řetěz</span>')
     elif q["sharable"]:
-        tags.append('<span class="share share-yes" title="kdo ho má, nasdílí ho ostatním v partě">↗ sdílitelný</span>')
+        whom = f'jen dalším, kdo ho můžou vzít ({lim["text"][4:] if lim["cls"] else lim["why"]})' if lim else "ostatním v partě"
+        tags.append(f'<span class="share share-yes" title="kdo ho má, nasdílí ho {e(whom)}">↗ sdílitelný</span>')
     elif q["sharable"] is False and q["start"] != "dungeon":
         tags.append('<span class="share share-no" title="nejde nasdílet, každý si ho musí vzít sám">✋ každý sám</span>')
     return "".join(tags)
@@ -1364,13 +1397,19 @@ def ready_box(check, members, idx):
         holders = ", ".join(first(m) for m in cols if q["status"][m["slug"]] == "active")
         cells = "".join(quest_cell(q, q["status"][m["slug"]], holders).replace("<td ", f'<td data-slug="{e(m["slug"])}" ', 1)
                         for m in cols)
-        cls = ' class="q-none"' if q["unclaimed"] else ""
+        classes = (["q-none"] if q["unclaimed"] else []) + (["q-cls"] if q["limit"] and q["limit"]["cls"] else [])
+        cls = f' class="{" ".join(classes)}"' if classes else ""
+        if q["limit"] and q["limit"]["cls"]:
+            cls += f' style="--cls:{CLASS_COLOR.get(q["limit"]["cls"], "var(--muted)")}"'
         body.append(f'<tr{cls}><th scope="row"><div class="q-name"><a href="https://www.wowhead.com/forever/quest={q["id"]}" '
                     f'target="_blank" rel="noopener">{e(q["name"])}</a>{share_label(q)}</div>'
                     f'<small>{quest_meta(q)}</small></th>{cells}</tr>')
     best = '<span class="chip chip-new">příští výprava</span>' if check["best"] else ""
-    source = (f'<a class="rc-source" href="{e(check["source"])}" target="_blank" rel="noopener">průvodce questů ↗</a>'
-              if check.get("source") else "")
+    links = [(check.get("source"), "Wowhead", "questy, levely a sdílení podle Wowheadu"),
+             (check.get("tavern"), "Warcraft Tavern", "podrobný postup uvnitř dungeonu")]
+    source = "".join(f'<a href="{e(url)}" target="_blank" rel="noopener" title="{tip}">{name} ↗</a>'
+                     for url, name, tip in links if url)
+    source = f'<span class="rc-source">{source}</span>' if source else ""
     hidden = "" if idx == 0 else " hidden"
     return f'''<article class="rc" id="rc-{idx}" role="tabpanel"{hidden}>
   <header class="rc-head"><h3>{e(check["title"])}{best}</h3><span class="range">level {check["min"]}–{check["max"]}</span>{counts(check, " big")}{source}</header>
@@ -1396,8 +1435,8 @@ def ready_section(checks, members):
             f'{"".join(ready_box(c, members, i) for i, c in enumerate(checks))}'
             f'<p class="note legend"><span class="st-fit">✓</span> má v logu · <span class="st-share">↗</span> dostane nasdílením u vchodu · '
             f'<span class="st-take">dojít</span> musí si pro quest dojít · ⛓ ✓ rozjetý řetěz · ⛓ nejdřív předchozí quest · '
-            f'lvl N zatím nízký level · uvnitř = začne předmětem v dungeonu. Šedé questy nemá nikdo z vás. '
-            f'Questy podle průvodců Warcraft Tavern, ready check mají jen dungeony z <code>quests.json</code>.</p></section>')
+            f'lvl N zatím nízký level · — nemůže vzít (jiná classa nebo rasa) · uvnitř = začne až v dungeonu (předmět nebo postava uvnitř). Šedé questy nemá nikdo z vás. '
+            f'Questy podle Wowheadu, postup uvnitř podle Warcraft Tavern, ID a omezení na classu ověřená v Blizzard API. Classové questy vidí jen ta classa, ready check mají jen dungeony z <code>quests.json</code>.</p></section>')
 
 
 # ---------- profese a dungeony ----------
@@ -1690,11 +1729,15 @@ border-radius:999px;padding:3px 10px;cursor:pointer}
 .xp{display:grid;gap:3px;font-size:12px}.xp small{color:var(--muted)}
 .updated{margin:auto 0 0;color:var(--muted);font-size:12px}
 .rc{margin-bottom:12px}.rc-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.rc-head h3{font-size:18px}.rc-source{margin-left:auto;font-size:13px}
+.rc-head h3{font-size:18px}.rc-source{margin-left:auto;font-size:13px;display:flex;gap:12px}
 .rc-table tbody th a{color:var(--text)}.rc-table tr.q-none th a{color:var(--muted)}
 .rc-table tbody th small{display:block;color:var(--muted);font-weight:400;font-size:12px}
 .q-name{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .share{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.share-cls{background:color-mix(in srgb,var(--cls) 18%,transparent);color:var(--cls);border:1px solid color-mix(in srgb,var(--cls) 45%,transparent)}
+.share-race{background:#3a2626;color:#e0a0a0}
+.rc-table tr.q-cls>th:first-child{box-shadow:inset 3px 0 0 var(--cls)}
+.st-na{color:var(--muted);opacity:.45}
 .share-yes{background:#16324d;color:var(--share)}.share-in{background:#3b2a5c;color:#c9b2ff}.share-no{background:#4a3a14;color:var(--warn)}
 .cnt{font-size:12px;font-weight:600;border-radius:999px;padding:1px 8px;white-space:nowrap}
 .cnt.big{font-size:13px;padding:3px 10px}
