@@ -150,6 +150,16 @@
 "req": 1,
 "sub": "Wand"
 },
+"250510": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132960.jpg",
+"inv": "HAND",
+"kind": "Armor",
+"level": 20,
+"name": "Protector's Gloves",
+"quality": "RARE",
+"req": 15,
+"sub": "Mail"
+},
 "250515": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132506.jpg",
 "inv": "WAIST",
@@ -176,6 +186,16 @@
 "kind": "Container",
 "level": 5,
 "name": "Linen Reagent Bag",
+"quality": "COMMON",
+"req": 0,
+"sub": "Reagent Bag"
+},
+"253667": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/348520.jpg",
+"inv": "BAG",
+"kind": "Container",
+"level": 15,
+"name": "Woolen Reagent Bag",
 "quality": "COMMON",
 "req": 0,
 "sub": "Reagent Bag"
@@ -259,6 +279,16 @@
 "quality": "UNCOMMON",
 "req": 7,
 "sub": "Cloth"
+},
+"2581": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133688.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 1,
+"name": "Heavy Linen Bandage",
+"quality": "COMMON",
+"req": 0,
+"sub": "Bandages"
 },
 "2584": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133762.jpg",
@@ -510,6 +540,16 @@
 "req": 0,
 "sub": "Metal & Stone"
 },
+"4231": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134366.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 10,
+"name": "Cured Light Hide",
+"quality": "COMMON",
+"req": 0,
+"sub": "Leather"
+},
 "4238": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133622.jpg",
 "inv": "BAG",
@@ -529,6 +569,26 @@
 "quality": "COMMON",
 "req": 0,
 "sub": "Bag"
+},
+"4243": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132724.jpg",
+"inv": "CHEST",
+"kind": "Armor",
+"level": 17,
+"name": "Fine Leather Tunic",
+"quality": "UNCOMMON",
+"req": 12,
+"sub": "Leather"
+},
+"4246": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132493.jpg",
+"inv": "WAIST",
+"kind": "Armor",
+"level": 16,
+"name": "Fine Leather Belt",
+"quality": "UNCOMMON",
+"req": 11,
+"sub": "Leather"
 },
 "4307": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132939.jpg",
@@ -867,6 +927,16 @@
 ]
 ]
 },
+"1839": {
+"item": 2581,
+"name": "Heavy Linen Bandage",
+"reagents": [
+[
+2589,
+2
+]
+]
+},
 "1848": {
 "item": 3576,
 "name": "Smelt Tin",
@@ -894,6 +964,52 @@
 [
 2836,
 2
+]
+]
+},
+"2170": {
+"item": 4243,
+"name": "Fine Leather Tunic",
+"reagents": [
+[
+4231,
+3
+],
+[
+2318,
+6
+],
+[
+2320,
+4
+]
+]
+},
+"2172": {
+"item": 4246,
+"name": "Fine Leather Belt",
+"reagents": [
+[
+2318,
+6
+],
+[
+2320,
+2
+]
+]
+},
+"2195": {
+"item": 4231,
+"name": "Cured Light Hide",
+"reagents": [
+[
+783,
+1
+],
+[
+4289,
+1
 ]
 ]
 },
@@ -1243,6 +1359,16 @@
 ]
 ]
 },
+"4301": {
+"item": null,
+"name": "Enchant Bracer - Minor Stamina",
+"reagents": [
+[
+10940,
+2
+]
+]
+},
 "4302": {
 "item": 6238,
 "name": "Brown Linen Robe",
@@ -1515,6 +1641,28 @@
 ]
 ]
 },
+"54722": {
+"item": 250510,
+"name": "Protector's Gloves",
+"reagents": [
+[
+2841,
+10
+],
+[
+3470,
+4
+],
+[
+249410,
+2
+],
+[
+818,
+3
+]
+]
+},
 "54727": {
 "item": 250515,
 "name": "Protector's Chain Belt",
@@ -1548,6 +1696,24 @@
 [
 2320,
 6
+]
+]
+},
+"55367": {
+"item": 253667,
+"name": "Woolen Reagent Bag",
+"reagents": [
+[
+2997,
+3
+],
+[
+2321,
+1
+],
+[
+249409,
+1
 ]
 ]
 },
