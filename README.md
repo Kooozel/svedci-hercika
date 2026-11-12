@@ -59,6 +59,12 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Classový quest vidí jen ta classa (štítek v její barvě, ostatní mají —), když ho v partě nikdo nemůže vzít,
   neukáže se vůbec. V ready checku vede u každého dungeonu odkaz na Wowhead i Warcraft Tavern.
 
+- **Bossové a loot:** `bosses.json`, ručně přepsané (s Claudem) pro dungeony, ke kterým se parta blíží. U bosse je krátká
+  taktika a loot, u kusu jsou jen ti, kdo ho unesou a komu sedí hlavní stat (`stat`: Caster, Spirit, Agility, Strength…),
+  s tím, o kolik item levelů je lepší než to, co nosí (🎲 = upgrade pro víc lidí, domluvit se před rollem). Pod tím odměny
+  z questů. Forever bossy ani většinu jejich lootu v API zatím nemá, takže typ (`inv`, `sub`), `level` a `req` se píšou ručně
+  ze zdrojů (Warcraft Wiki, Method). Když API předmět zná (třeba questová odměna), stačí `id`.
+
 Po pushnutí do `main` se stránka přegeneruje hned.
 
 ## Spuštění u sebe

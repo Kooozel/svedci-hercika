@@ -180,6 +180,26 @@
 "req": 10,
 "sub": "Mail"
 },
+"251485": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135650.jpg",
+"inv": "WEAPON",
+"kind": "Weapon",
+"level": 24,
+"name": "Edward's Knife",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Dagger"
+},
+"251486": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132609.jpg",
+"inv": "WRIST",
+"kind": "Armor",
+"level": 24,
+"name": "Tabitha's Cuffs",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Cloth"
+},
 "253664": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/348520.jpg",
 "inv": "BAG",

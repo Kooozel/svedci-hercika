@@ -549,6 +549,86 @@ def upgrade(item, m):
     return diff if diff > 0 else None
 
 
+# ---------- bossové a loot (bosses.json) ----------
+
+WEAPON_INV = {"WEAPON", "WEAPONMAINHAND", "WEAPONOFFHAND", "TWOHWEAPON", "RANGED", "RANGEDRIGHT", "THROWN"}
+HYBRIDS = {"paladin", "shaman", "druid"}
+
+
+def stat_fits(stat, m):
+    """Hodí se hlavní stat kusu classe a roli? Bez statu nebo se Staminou ano (Classic: hybridi podle role)."""
+    cls, heal = m["class_slug"], "heal" in (m.get("roles") or [])
+    if stat in ("Caster", "Spirit", "Intellect"):
+        return cls in CASTERS or (cls in HYBRIDS and heal)
+    if stat == "Agility":
+        return cls in {"hunter", "rogue"} or (cls in {"druid", "shaman", "warrior"} and not heal)
+    if stat == "Defense":
+        return cls in {"warrior", "paladin", "druid"} and not heal
+    if stat == "Strength":  # hunter a rogue berou agility
+        return cls in {"warrior", "paladin", "shaman", "druid"} and not heal
+    if stat == "Melee":
+        return cls not in CASTERS and not (cls in HYBRIDS and heal)
+    return True
+
+
+def loot_item(raw, static):
+    """Kus z bosses.json; s id se doplní z API (cache), ručně zapsaná pole mají přednost."""
+    it = dict(static.item(raw["id"]) or {}) if raw.get("id") else {}
+    it.update({k: v for k, v in raw.items() if v is not None})
+    it.setdefault("name", "?")
+    it.setdefault("kind", "Weapon" if it.get("inv") in WEAPON_INV else "Armor")
+    return it
+
+
+def loot_fit(item, m):
+    """Komu se kus hodí. None = ne (classa ho neunese, jiný stat, slabší typ zbroje, caster s 2H bez staffu).
+    Jinak gain: "empty" prázdný slot, číslo o kolik ilvl je lepší, None nosí stejné nebo lepší,
+    "?" neznámý item level nebo výbava; lvl = kolik levelů chybí na req."""
+    if item.get("inv") not in ITEM_SLOTS or not can_use(item, m) or not stat_fits(item.get("stat"), m):
+        return None
+    cls, sub = m["class_slug"], item.get("sub") or ""
+    if item["inv"] == "TWOHWEAPON" and cls in CASTERS | {"druid"} and "staff" not in sub.lower():
+        return None
+    if sub in ARMOR_RANK and ARMOR_RANK.index(sub) < ARMOR_RANK.index(best_armor(m)):
+        return None
+    if ITEM_SLOTS[item["inv"]] == ["RANGED"] and cls in NO_RANGED:
+        return None
+    lvl = max(0, (item.get("req") or 0) - m["level"])
+    if "gear" not in m:
+        return {"gain": "?", "lvl": lvl}
+    gain = upgrade(item, {**m, "level": max(m["level"], item.get("req") or 0)})
+    if gain is None and not item.get("level"):
+        gain = "?"
+    return {"gain": gain, "lvl": lvl}
+
+
+def boss_loot(rows, best, members, static, catalog):
+    """Bossové, taktika a loot pro dungeony v dosahu (nejdřív příští výprava) a komu se který kus hodí."""
+    out, seen = [], set()
+    for r in sorted((r for r in rows if r["near"]), key=lambda r: r is not best):
+        title = r["name"] if r["name"] in catalog else r["name"].split(":")[0]
+        if title not in catalog or title in seen:
+            continue
+        seen.add(title)
+        d = catalog[title]
+
+        def items(raws):
+            res = []
+            for raw in raws:
+                it = loot_item(raw, static)
+                fits = {m["slug"]: f for m in members if (f := loot_fit(it, m))}
+                res.append({"item": it, "fits": fits})
+            return res
+
+        out.append({"title": title, "min": r["min"], "max": r["max"], "best": r is best,
+                    "source": d.get("source"), "tactics": d.get("tactics"), "note": d.get("note"),
+                    "bosses": [{"name": b["name"], "tip": b.get("tip"), "rare": b.get("rare"),
+                                "items": items(b.get("loot") or [])} for b in d.get("bosses") or []],
+                    "quests": [{"quest": q["quest"], "items": items(q.get("loot") or [])}
+                               for q in d.get("quests") or []]})
+    return out
+
+
 # odkud se surovina bere: druh předmětu -> sběrná profese (cloth, maso a vendor věci se neukazují)
 GATHER = {"Leather": "Skinning", "Metal & Stone": "Mining", "Herb": "Herbalism", "Enchanting": "Enchanting"}
 ENCHANT_SLOT = {"Chest": ["CHEST"], "Bracer": ["WRIST"], "Boots": ["FEET"], "Cloak": ["BACK"], "Gloves": ["HANDS"],
@@ -1476,6 +1556,88 @@ def craft_box(plan, members):
             f'které musí dodat někdo jiný z party. Staty se neporovnávají.</p></div>')
 
 
+def loot_who(fits, by_slug):
+    """Štítky postav, kterým se kus hodí: upgrade barvou classy, ostatní tlumeně."""
+    chips = []
+    order = sorted(fits.items(), key=lambda kv: (kv[1]["gain"] is None, kv[1]["gain"] == "?", list(by_slug).index(kv[0])))
+    for slug, f in order:
+        m = by_slug[slug]
+        g = f["gain"]
+        if g is None:
+            text, cls, tip = "má lepší", " lt-no", "nosí stejný nebo lepší kus"
+        elif g == "?":
+            text, cls, tip = "?", " lt-maybe", "neznámý item level nebo výbava, porovnej ve hře"
+        elif g == "empty":
+            text, cls, tip = "prázdný slot", "", "ten slot má prázdný"
+        else:
+            text, cls, tip = f"+{g} ilvl", "", f"o {g} item levelů lepší než to, co nosí"
+        lvl = f' <small>lvl {m["level"] + f["lvl"]}</small>' if f["lvl"] else ""
+        if f["lvl"]:
+            tip += f', nasadí až na levelu {m["level"] + f["lvl"]}'
+        chips.append(f'<span class="lt-who{cls}" data-slug="{e(slug)}" style="--cls:{cls_color(m)}" title="{e(tip)}">'
+                     f'<b>{e(first(m))}</b> {e(text)}{lvl}</span>')
+    return "".join(chips)
+
+
+def loot_line(entry, by_slug, contested=True):
+    it, fits = entry["item"], entry["fits"]
+    color = QUALITY_COLOR.get(it.get("quality"), "var(--text)")
+    href = (f'https://www.wowhead.com/forever/item={it["id"]}' if it.get("id")
+            else "https://www.wowhead.com/forever/search?q=" + urllib.parse.quote(it["name"]))
+    icon = f'<img class="ic" src="{e(it["icon"])}" alt="" style="border-color:{color}">' if it.get("icon") else ""
+    slot = SLOT_LABEL.get(ITEM_SLOTS.get(it.get("inv"), [""])[0], "")
+    if it.get("inv") == "TWOHWEAPON":
+        slot = "2H zbraň"
+    meta = " · ".join(str(x) for x in (slot, it.get("sub") if it.get("sub") not in (None, "Miscellaneous") else None,
+                                       it.get("stat"), it.get("level") and f'ilvl {it["level"]}',
+                                       it.get("req") and f'od lvl {it["req"]}') if x)
+    alt = f' <small class="lt-alt">(nebo {e(it["alt"])})</small>' if it.get("alt") else ""
+    ups = [s for s, f in fits.items() if f["gain"] not in (None, "?")]
+    flag = ('<span class="lt-flag" title="upgrade pro víc lidí, domluvte se před rollem">🎲 víc zájemců</span>'
+            if contested and len(ups) > 1 else "")
+    who = loot_who(fits, by_slug) or '<span class="lt-none">nikomu, disenchant nebo prodat</span>'
+    cls = " lt-fight" if flag else ""
+    return (f'<li class="lt{cls}"><div class="lt-item"><a class="item" style="color:{color}" href="{e(href)}" target="_blank" '
+            f'rel="noopener">{icon}{e(it["name"])}</a>{alt}<small>{e(meta)}</small></div>'
+            f'<div class="lt-whos">{flag}{who}</div></li>')
+
+
+def loot_section(lists, members):
+    if not lists:
+        return ""
+    by_slug = {m["slug"]: m for m in members}
+    parts = []
+    for d in lists:
+        bosses = []
+        for b in d["bosses"]:
+            rare = '<span class="chip chip-rare">rare</span>' if b.get("rare") else ""
+            tip = f'<p class="boss-tip">{e(b["tip"])}</p>' if b.get("tip") else ""
+            bosses.append(f'<article class="boss"><h4>{e(b["name"])}{rare}</h4>{tip}'
+                          f'<ul class="loot">{"".join(loot_line(x, by_slug) for x in b["items"])}</ul></article>')
+        quests = "".join(f'<li class="lq"><span class="lq-name">{e(q["quest"])}</span>'
+                         f'<ul class="loot">{"".join(loot_line(x, by_slug, contested=False) for x in q["items"])}</ul></li>'
+                         for q in d["quests"])
+        links = [(d.get("source"), "Loot", "seznam lootu"), (d.get("tactics"), "Taktika", "postup a bossové podle Warcraft Tavern")]
+        src = "".join(f'<a href="{e(u)}" target="_blank" rel="noopener" title="{t}">{n} ↗</a>' for u, n, t in links if u)
+        best = '<span class="chip chip-new">příští výprava</span>' if d["best"] else ""
+        note = f'<p class="note">{e(d["note"])}</p>' if d.get("note") else ""
+        # spoiler: bossové a loot jsou schované, dokud si je někdo sám nerozklikne
+        n = len(d["bosses"])
+        parts.append(f'<details class="loot-dg"><summary><div class="rc-head"><h3>{e(d["title"])}{best}</h3>'
+                     f'<span class="range">level {d["min"]}–{d["max"]}</span>'
+                     f'<span class="spoil">⚠ spoiler · {pl(n, ("{n} boss", "{n} bossové", "{n} bossů"))}, taktika a loot '
+                     f'<span class="spoil-open">ukázat ▾</span><span class="spoil-close">schovat ▴</span></span></div></summary>'
+                     f'<p class="rc-source loot-src">{src}</p>'
+                     f'<div class="bosses">{"".join(bosses)}</div>'
+                     f'{f"<h3 class=sub-h>Odměny z questů (každý si vybírá sám)</h3><ul class=lq-list>{quests}</ul>" if quests else ""}'
+                     f'{note}</details>')
+    return (f'<section id="loot"><h2 class="sec">Bossové a loot</h2>{"".join(parts)}'
+            f'<p class="note legend">U kusu jsou jen ti, kdo ho unesou a komu sedí stat (caster, agility, strength). '
+            f'<b>+N ilvl</b> = o tolik item levelů lepší než to, co nosí · <b>prázdný slot</b> · <b>má lepší</b> = nosí stejné nebo lepší · '
+            f'<b>lvl N</b> = nasadí až na tom levelu · 🎲 upgrade pro víc lidí, domluvte se před rollem. Staty se neporovnávají, jen item level. '
+            f'Bossové a loot jsou schované jako spoiler, ukážou se po kliknutí. Přepisuješ je v <code>bosses.json</code>.</p></section>')
+
+
 def professions_box(members):
     """Přehled: profese × postavy, skill s ukazatelem; profese, které nikdo nemá, na jednom řádku."""
     names = [p["name"] for m in members for p in m.get("professions") or []]
@@ -1605,7 +1767,7 @@ def render_chronicle(party, entries, members):
 '''
 
 
-def render(party, members, rows, best, built, checks, base, titles, counters, chronicle, today, plan=None):
+def render(party, members, rows, best, built, checks, base, titles, counters, chronicle, today, plan=None, loot=None):
     ok = [m for m in members if m["ok"]]
     has_tank = any("tank" in m["roles"] for m in ok)
     has_heal = any("heal" in m["roles"] for m in ok)
@@ -1621,7 +1783,7 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
     desc = " · ".join(f'{first(by_slug[s])}: {t["title"]}' for s, t in titles.items() if s in by_slug)
     lead = next(iter(titles), None)
     image = (by_slug.get(lead) or {}).get("render") or next((m.get("render") for m in ok if m.get("render")), "")
-    nav = [("postavy", "Postavy", True), ("tituly", "Tituly", bool(titles)), ("vyprava", "Výprava", True), ("ready", "Ready check", bool(checks)),
+    nav = [("postavy", "Postavy", True), ("tituly", "Tituly", bool(titles)), ("vyprava", "Výprava", True), ("ready", "Ready check", bool(checks)), ("loot", "Loot", bool(loot)),
            ("kronika", "Kronika", bool(chronicle)), ("profese", "Profese", True)]
     nav_html = "".join(f'<a href="#{i}">{t}</a>' for i, t, show in nav if show)
     return f'''{page_head(party["title"], desc, image, party.get("site_url", ""))}
@@ -1641,6 +1803,7 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
   {evening_box(ok, base, titles, counters)}
   <div class="hero" id="vyprava">{next_box(rows, best, ok, checks)}{news_box(ok, base, today) if base else ""}</div>
   {ready_section(checks, ok)}
+  {loot_section(loot, ok)}
   {chronicle_box(chronicle, ok)}
   <section id="profese"><h2 class="sec">Profese</h2>{craft_box(plan, ok) if plan else ""}
     <h3 class="sub-h">Přehled</h3>{professions_box(ok)}</section>
@@ -1882,6 +2045,36 @@ background:var(--cls);color:#1a120c;padding:0 4px}
 .nw-quiet>span:last-child{margin-left:8px}
 .sub-h{font:600 13px Inter,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:18px 0 8px}
 .craft-box .sub-h{margin-top:0}
+.loot-dg{margin-bottom:12px}
+.loot-dg>summary{list-style:none;cursor:pointer;background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:12px 14px}
+.loot-dg>summary::-webkit-details-marker{display:none}
+.loot-dg>summary:hover{border-color:var(--gold)}
+.loot-dg>summary .rc-head{margin:0}
+.loot-dg[open]>summary{margin-bottom:12px;border-style:solid}
+.spoil{margin-left:auto;font-size:13px;color:var(--warn)}
+.spoil-open,.spoil-close{margin-left:8px;color:var(--gold);font-weight:600}
+.loot-dg[open] .spoil-open,.loot-dg:not([open]) .spoil-close{display:none}
+.loot-src{margin:0 0 10px}
+.bosses{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px}
+.boss{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.boss h4{margin:0;font:600 16px Cinzel,serif;color:var(--gold)}
+.boss-tip{margin:0;font-size:13px;color:var(--muted)}
+.chip-rare{background:#16324d;color:var(--share);margin-left:8px;vertical-align:middle}
+.loot{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.lt{display:grid;gap:4px;padding:7px 0;border-top:1px solid var(--line)}
+.lt-item{display:flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;min-width:0}
+.lt-item small{color:var(--muted);font-size:12px;flex-basis:100%}.lt-alt{flex-basis:auto!important}
+.lt-whos{display:flex;flex-wrap:wrap;gap:4px}
+.lt-who{font-size:12px;padding:1px 8px;border-radius:999px;color:var(--ok);background:color-mix(in srgb,var(--cls) 12%,transparent);
+border:1px solid color-mix(in srgb,var(--cls) 40%,transparent)}
+.lt-who b{color:var(--cls);font-weight:600}.lt-who small{color:var(--warn)}
+.lt-who.lt-no{color:var(--muted);opacity:.6;background:transparent}.lt-who.lt-maybe{color:var(--warn)}
+.lt-none{font-size:12px;color:var(--muted)}
+.lt-flag{font-size:12px;padding:1px 8px;border-radius:999px;background:#4a3a14;color:var(--warn);font-weight:600}
+.lt-who.dim{opacity:.25}
+.lq-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:12px}
+.lq{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.lq-name{font-weight:600;font-size:14px}
 .craft{list-style:none;margin:0;padding:0;display:grid;gap:0;background:var(--panel);border:1px solid var(--line);border-radius:12px}
 .craft li{display:grid;grid-template-columns:minmax(0,1fr) 200px 150px;gap:2px 14px;align-items:baseline;padding:9px 14px;
 border-top:1px solid #ffffff10;font-size:14px}
@@ -1905,6 +2098,7 @@ const meBtns=[...document.querySelectorAll('.me-pick button')];
 function me(slug){meBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));
   document.querySelectorAll('.todo').forEach(t=>t.classList.toggle('dim',!!slug&&t.dataset.slug!==slug));
   document.querySelectorAll('.rc-table [data-slug]').forEach(c=>c.classList.toggle('me-col',!!slug&&c.dataset.slug===slug));
+  document.querySelectorAll('.lt-who').forEach(c=>c.classList.toggle('dim',!!slug&&c.dataset.slug!==slug));
   try{localStorage.setItem('me',slug)}catch(e){}}
 meBtns.forEach(b=>b.addEventListener('click',()=>me(b.dataset.me)));
 try{const m=localStorage.getItem('me');if(m&&meBtns.some(b=>b.dataset.me===m))me(m)}catch(e){}
@@ -1965,6 +2159,12 @@ def main():
     except Exception as exc:
         print(f"Profese: {exc}", file=sys.stderr)
         plan = None
+    try:  # bossové a loot jsou bonus, stránka musí vzniknout i bez nich
+        bosses = json.loads((ROOT / "bosses.json").read_text(encoding="utf-8"))["dungeons"]
+        loot = boss_loot(rows, best, ok, static, bosses)
+    except Exception as exc:
+        print(f"Loot: {exc}", file=sys.stderr)
+        loot = []
     static.save()
     try:
         catalog = json.loads((ROOT / "quests.json").read_text(encoding="utf-8"))["dungeons"]
@@ -1992,7 +2192,7 @@ def main():
          "members": {m["slug"]: {"name": m["name"], **snapshot(m)} for m in ok}},
         ensure_ascii=False, indent=1), encoding="utf-8")
     (OUT / "index.html").write_text(render(party, members, rows, best, built, checks, base, titles, counters,
-                                                    chronicle, today, plan), encoding="utf-8")
+                                                    chronicle, today, plan, loot), encoding="utf-8")
     public = [{k: v for k, v in m.items() if k != "quests_done"} for m in members]
     (OUT / "party.json").write_text(json.dumps({"built": built, "members": public, "ready_check": checks,
                                                 "baseline": base,

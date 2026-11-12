@@ -222,3 +222,63 @@ class ReadyCheckLimits(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BossLoot(unittest.TestCase):
+    """Kdo kus z bosses.json unese, komu sedí stat a jestli je to upgrade."""
+
+    def party(self):
+        k = member("k", level=18, cls="priest", gear=[{"slot": "CHEST", "level": 15, "inv": "ROBE", "name": "Robe"}])
+        h = member("h", level=19, cls="mage", gear=[{"slot": "CHEST", "level": 22, "inv": "ROBE", "name": "Better Robe"}])
+        j = member("j", level=19, cls="paladin", gear=[])
+        j["roles"] = ["tank"]
+        z = member("z", level=20, cls="hunter")  # bez výbavy z Armory
+        return [k, h, j, z]
+
+    def loot(self):
+        catalog = {"D": {"bosses": [{"name": "B", "loot": [
+            {"name": "Skin", "inv": "CHEST", "sub": "Cloth", "level": 20, "req": 15},
+            {"name": "Scepter", "inv": "WEAPON", "sub": "Mace", "level": 22, "req": 17, "stat": "Caster"},
+            {"name": "Staff", "inv": "TWOHWEAPON", "sub": "Staff", "level": 24, "req": 19, "stat": "Caster"},
+            {"name": "Leg", "inv": "TWOHWEAPON", "sub": "Staff", "level": 20, "req": 15, "stat": "Agility"},
+            {"name": "Mirror", "inv": "SHIELD", "sub": "Shield", "level": 24, "req": 19, "stat": "Strength"},
+            {"name": "Plate", "inv": "CHEST", "sub": "Plate", "level": 27, "req": 22}]}],
+            "quests": [{"quest": "Q", "loot": [{"id": 7}]}]}}
+        static = FakeStatic({}, {7: {"name": "Cuffs", "inv": "WRIST", "kind": "Armor", "sub": "Cloth", "level": 24, "req": 0}})
+        row = {"name": "D", "min": 15, "max": 20, "near": True}
+        return build.boss_loot([row], row, self.party(), static, catalog)[0]
+
+    def fits(self, name):
+        d = self.loot()
+        entry = next(x for b in d["bosses"] + d["quests"] for x in b["items"] if x["item"]["name"] == name)
+        return entry["fits"]
+
+    def test_cloth_only_for_casters_and_upgrade(self):
+        fits = self.fits("Skin")
+        self.assertEqual(set(fits), {"k", "h"})  # paladin a hunter cloth nechtějí
+        self.assertEqual(fits["k"]["gain"], 5)
+        self.assertIsNone(fits["h"]["gain"])  # mág nosí lepší
+
+    def test_weapon_types_and_stats(self):
+        self.assertEqual(set(self.fits("Scepter")), {"k"})  # mág mace neunese
+        self.assertEqual(set(self.fits("Staff")), {"k", "h"})
+        self.assertEqual(self.fits("Staff")["k"]["lvl"], 1)  # req 19, Kozel 18
+        self.assertEqual(set(self.fits("Leg")), {"z"})  # agility jen hunter
+        self.assertEqual(self.fits("Leg")["z"]["gain"], "?")  # bez výbavy se neporovnává
+        self.assertEqual(set(self.fits("Mirror")), {"j"})
+        self.assertEqual(self.fits("Mirror")["j"]["gain"], "empty")
+        self.assertEqual(self.fits("Plate"), {})  # plate až od 40
+
+    def test_quest_item_from_static_and_render(self):
+        self.assertEqual(set(self.fits("Cuffs")), {"k", "h"})
+        html_ = build.loot_section([self.loot()], self.party())
+        self.assertIn("nikomu, disenchant nebo prodat", html_)  # plate
+        self.assertIn("wowhead.com/forever/item=7", html_)
+        self.assertIn("🎲 víc zájemců", html_)  # staff je upgrade pro oba castery
+
+    def test_real_file_parses(self):
+        data = json.loads((Path(build.ROOT) / "bosses.json").read_text(encoding="utf-8"))["dungeons"]
+        for d in data.values():
+            for b in d["bosses"]:
+                for it in b["loot"]:
+                    self.assertIn(it["inv"], build.ITEM_SLOTS, it["name"])
