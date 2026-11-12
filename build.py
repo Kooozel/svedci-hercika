@@ -562,8 +562,8 @@ def stat_fits(stat, m):
     cls, heal = m["class_slug"], "heal" in (m.get("roles") or [])
     if stat in SCHOOL_FOR:  # spell damage jen jedné školy (frost pro mága, shadow pro priesta a warlocka)
         return cls in SCHOOL_FOR[stat]
-    if stat == "Healing":
-        return cls == "priest" or (cls in HYBRIDS and heal)
+    if stat == "Healing":  # paladin se léčí i jako tank nebo ret, druid a shaman jen v roli healera
+        return cls in {"priest", "paladin"} or (cls in HYBRIDS and heal)
     if stat in ("Caster", "Spirit", "Intellect"):
         return cls in CASTERS or (cls in HYBRIDS and heal)
     if stat == "Agility":
@@ -594,6 +594,8 @@ def loot_fit(item, m):
     if item.get("inv") not in ITEM_SLOTS or not can_use(item, m) or not stat_fits(item.get("stat"), m):
         return None
     cls, sub = m["class_slug"], item.get("sub") or ""
+    if item["inv"] in WEAPON_INV and item.get("stat") in (None, "Stamina") and cls in CASTERS:
+        return None  # zbraň bez spell statů caster nepotřebuje, střílí wandem
     if item["inv"] == "TWOHWEAPON" and cls in CASTERS | {"druid"} and "staff" not in sub.lower():
         return None
     if sub in ARMOR_RANK and ARMOR_RANK.index(sub) < ARMOR_RANK.index(best_armor(m)):
