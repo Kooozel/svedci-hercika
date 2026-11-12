@@ -1,62 +1,57 @@
 {
-  "_info": "Bossové a loot dungeonů, ručně přepsané (s Claudem). Ukazují se jen u dungeonů v dosahu party. Boss: name, tip (co dělat), loot. Kus lootu: name, inv (inventory_type jako v API: WAIST, CHEST, LEGS, FEET, HAND, WRIST, CLOAK, FINGER, WEAPON, WEAPONMAINHAND, TWOHWEAPON, SHIELD), sub (Cloth / Leather / Mail / Plate / Shield / Dagger / Sword / Mace / Axe / Staff), level (item level), req (od levelu), stat (hlavní stat podle zdroje: Agility, Strength, Stamina, Spirit, Caster). Když API předmět zná, stačí id a zbytek se doplní z cache/static.json. quests: odměny z questů (vybírá si každý sám).",
+  "_info": "Bossové a loot dungeonů, ručně přepsané (s Claudem). Ukazují se jen u dungeonů v dosahu party. Boss: name, tip (co dělat), loot. Kus lootu: name, inv (inventory_type jako v API: WAIST, CHEST, LEGS, FEET, HAND, WRIST, CLOAK, FINGER, WEAPON, WEAPONMAINHAND, TWOHWEAPON, SHIELD), sub (Cloth / Leather / Mail / Plate / Shield / Dagger / Sword / Mace / Axe / Staff), level (item level), req (od levelu), stat (hlavní stat podle zdroje: Agility, Strength, Stamina, Spirit, Caster). id je z Wowheadu (bez něj nefunguje tooltip), quality a icon taky. Když předmět zná i Blizzard API (nemá inv), stačí id a zbytek se doplní z cache/static.json. quests: odměny z questů (vybírá si každý sám).",
   "dungeons": {
     "Ruins of Lordaeron": {
       "source": "https://warcraft.wiki.gg/wiki/Ruins_of_Lordaeron_(instance)",
       "tactics": "https://www.warcrafttavern.com/forever/guides/the-ruins-of-lordaeron/",
       "checked": "2026-11-12",
-      "note": "Loot podle Warcraft Wiki a Method (listopad 2026), u Abandoned a Rath'maela se zdroje liší v názvu kalhot a bot. Bossové v API zatím nejsou, typy a item levely jsou ze zdrojů.",
+      "note": "Loot podle Warcraft Wiki a Method (listopad 2026), ID, kvalita a item level podle Wowheadu. Bossové v API zatím nejsou.",
       "bosses": [
-        {"name": "Witherfang", "tip": "Hlídkuje u vchodu, jde pullnout samotná. Broodlingy zabít první, jed z tanka čistí Johnie (Purify).",
-         "loot": [
-           {"name": "Atrophic Girdle", "inv": "WAIST", "sub": "Mail", "level": 20, "req": 15},
-           {"name": "Segmented Spider Leg", "inv": "TWOHWEAPON", "sub": "Staff", "level": 20, "req": 15, "stat": "Agility"},
-           {"name": "Witherbite Bracers", "inv": "WRIST", "sub": "Leather", "level": 20, "req": 15}]},
-        {"name": "The Baron", "tip": "Odhodí a omráčí tanka a jde po někom jiném: shield na něj, Fade když po healerovi. Tank zády ke zdi, ranged od sebe. Za ním skok přes sloup, hunter schová peta.",
-         "loot": [
-           {"name": "Meathook Slicer", "inv": "WEAPON", "sub": "Dagger", "level": 20, "req": 15, "stat": "Stamina"},
-           {"name": "Abomination Bones", "inv": "CHEST", "sub": "Mail", "level": 20, "req": 15},
-           {"name": "Leftover Abomination Skin", "inv": "CHEST", "sub": "Cloth", "level": 20, "req": 15}]},
-        {"name": "Viktor the Vile", "tip": "Krb ve vyhořelém domě. Klikat až s plnou manou, nejdřív 5 vln addů. AoE až když je Johnie drží. Sám boss jen dává jed.",
-         "loot": [
-           {"name": "Vileblood Scimitar", "inv": "WEAPON", "sub": "Sword", "level": 22, "req": 17, "stat": "Spirit"},
-           {"name": "Bloodied Chestwraps", "inv": "CHEST", "sub": "Leather", "level": 22, "req": 17},
-           {"name": "Vilewalkers", "inv": "FEET", "sub": "Mail", "level": 22, "req": 17}]},
-        {"name": "The Abandoned", "tip": "Socha na nádvoří, předtím 3 vlny addů, plná mana. Frost Nova kolem sebe, ranged stojí dál. Drain Life na tanka přerušit Hammer of Justice.",
-         "loot": [
-           {"name": "Scepter of the Abandoned", "inv": "WEAPON", "sub": "Mace", "level": 22, "req": 17, "stat": "Caster"},
-           {"name": "Grip of Fear", "inv": "HAND", "sub": "Mail", "level": 22, "req": 17},
-           {"name": "Rotmender's Leggings", "inv": "LEGS", "sub": "Cloth", "level": 22, "req": 17, "alt": "Wispcloth Leggings"}]},
-        {"name": "Bjork", "tip": "Nejdřív vyčistit okolí. Anti-Magic Shield blokuje kouzla: když ho má, bijí Johnie a Zrza, caster počká.",
-         "loot": [
-           {"name": "Bonerust Leggings", "inv": "LEGS", "sub": "Mail", "level": 21, "req": 16},
-           {"name": "Tuskwrap Belt", "inv": "WAIST", "sub": "Cloth", "level": 21, "req": 16},
-           {"name": "Corpse Chopper", "inv": "TWOHWEAPON", "sub": "Axe", "level": 21, "req": 16}]},
-        {"name": "Rath'mael", "tip": "Hřbitov za plotem. Flamestrike pod tankem: Johnie z ohně hned ven, Hammer of Justice na cast.",
-         "loot": [
-           {"name": "Mirror of Rath'mael", "inv": "SHIELD", "sub": "Shield", "level": 24, "req": 19, "stat": "Strength"},
-           {"name": "Coldspire Staff", "inv": "TWOHWEAPON", "sub": "Staff", "level": 24, "req": 19, "stat": "Caster"},
-           {"name": "Rotmender's Treads", "inv": "FEET", "sub": "Cloth", "level": 24, "req": 19, "alt": "Frostbane Treads"}]},
-        {"name": "Lordaeron Captain", "rare": true, "tip": "Vzácný rare na západní straně, nemusí se objevit.",
-         "loot": [
-           {"name": "Haunting Blade", "inv": "TWOHWEAPON", "sub": "Sword", "level": 27, "req": 22, "stat": "Strength"},
-           {"name": "Phantom Armor", "inv": "CHEST", "sub": "Plate", "level": 27, "req": 22}]}
+        {"name": "Witherfang", "tip": "Hlídkuje u vchodu, jde pullnout samotná. Broodlingy zabít první, jed z tanka čistí Johnie (Purify).", "loot": [
+           {"id": 271201, "name": "Atrophic Girdle", "inv": "WAIST", "sub": "Mail", "level": 20, "req": 15, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_belt_21.jpg"},
+           {"id": 271203, "name": "Segmented Spider Leg", "inv": "TWOHWEAPON", "sub": "Staff", "level": 20, "req": 15, "stat": "Agility", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_staff_09.jpg"},
+           {"id": 271202, "name": "Witherbite Bracers", "inv": "WRIST", "sub": "Leather", "level": 20, "req": 15, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_bracer_07.jpg"}]},
+        {"name": "The Baron", "tip": "Odhodí a omráčí tanka a jde po někom jiném: shield na něj, Fade když po healerovi. Tank zády ke zdi, ranged od sebe. Za ním skok přes sloup, hunter schová peta.", "loot": [
+           {"id": 271204, "name": "Meathook Slicer", "inv": "WEAPON", "sub": "Dagger", "level": 20, "req": 15, "stat": "Stamina", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_misc_monsterfang_01.jpg"},
+           {"id": 271205, "name": "Abomination Bones", "inv": "CHEST", "sub": "Mail", "level": 20, "req": 15, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_chest_chain_15.jpg"},
+           {"id": 271206, "name": "Leftover Abomination Skin", "inv": "CHEST", "sub": "Cloth", "level": 20, "req": 15, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_chest_cloth_46.jpg"}]},
+        {"name": "Viktor the Vile", "tip": "Krb ve vyhořelém domě. Klikat až s plnou manou, nejdřív 5 vln addů. AoE až když je Johnie drží. Sám boss jen dává jed.", "loot": [
+           {"id": 271218, "name": "Vileblood Scimitar", "inv": "WEAPON", "sub": "Sword", "level": 22, "req": 17, "stat": "Spirit", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_sword_16.jpg"},
+           {"id": 271212, "name": "Bloodied Chestwraps", "inv": "CHEST", "sub": "Leather", "level": 22, "req": 17, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_misc_bandage_14.jpg"},
+           {"id": 271211, "name": "Vilewalkers", "inv": "FEET", "sub": "Mail", "level": 22, "req": 17, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_boots_chain_08.jpg"}]},
+        {"name": "The Abandoned", "tip": "Socha na nádvoří, předtím 3 vlny addů, plná mana. Frost Nova kolem sebe, ranged stojí dál. Drain Life na tanka přerušit Hammer of Justice.", "loot": [
+           {"id": 271216, "name": "Scepter of the Abandoned", "inv": "WEAPON", "sub": "Mace", "level": 22, "req": 17, "stat": "Caster", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_misc_bone_dwarfskull_01.jpg"},
+           {"id": 271208, "name": "Grip of Fear", "inv": "HAND", "sub": "Mail", "level": 22, "req": 17, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_gauntlets_04.jpg"},
+           {"id": 271207, "name": "Rotmender's Leggings", "inv": "LEGS", "sub": "Cloth", "level": 22, "req": 17, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_pants_cloth_05.jpg"}]},
+        {"name": "Bjork", "tip": "Nejdřív vyčistit okolí. Anti-Magic Shield blokuje kouzla: když ho má, bijí Johnie a Zrza, caster počká.", "loot": [
+           {"id": 271209, "name": "Bonerust Leggings", "inv": "LEGS", "sub": "Mail", "level": 21, "req": 16, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_pants_mail_01.jpg"},
+           {"id": 271210, "name": "Tuskwrap Belt", "inv": "WAIST", "sub": "Cloth", "level": 21, "req": 16, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_belt_26.jpg"},
+           {"id": 271217, "name": "Corpse Chopper", "inv": "TWOHWEAPON", "sub": "Axe", "level": 21, "req": 16, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_axe_21.jpg"}]},
+        {"name": "Rath'mael", "tip": "Hřbitov za plotem. Flamestrike pod tankem: Johnie z ohně hned ven, Hammer of Justice na cast.", "loot": [
+           {"id": 271213, "name": "Mirror of Rath'mael", "inv": "SHIELD", "sub": "Shield", "level": 24, "req": 19, "stat": "Strength", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_shield_02.jpg"},
+           {"id": 271215, "name": "Coldspire Staff", "inv": "TWOHWEAPON", "sub": "Staff", "level": 24, "req": 19, "stat": "Caster", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_staff_07.jpg"},
+           {"id": 271214, "name": "Rotmender's Treads", "inv": "FEET", "sub": "Cloth", "level": 24, "req": 19, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_boots_05.jpg"}]},
+        {"name": "Lordaeron Captain", "rare": true, "tip": "Vzácný rare na západní straně, nemusí se objevit.", "loot": [
+           {"id": 6641, "name": "Haunting Blade", "inv": "TWOHWEAPON", "sub": "Sword", "level": 27, "req": 22, "stat": "Strength", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_sword_17.jpg"},
+           {"id": 6642, "name": "Phantom Armor", "inv": "CHEST", "sub": "Mail", "level": 27, "req": 22, "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_chest_chain_05.jpg"}]}
       ],
       "quests": [
         {"quest": "Light's Justice", "loot": [
-          {"name": "The Stitcher", "inv": "WEAPONMAINHAND", "sub": "Mace", "stat": "Caster"},
-          {"name": "Spare Part Bindings", "inv": "WRIST", "sub": "Leather"}]},
+          {"id": 279874, "name": "The Stitcher", "inv": "WEAPONMAINHAND", "sub": "Mace", "level": 24, "stat": "Caster", "quality": "UNCOMMON", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_mace_08.jpg"},
+          {"id": 279875, "name": "Spare Part Bindings", "inv": "WRIST", "sub": "Leather", "level": 24, "quality": "UNCOMMON", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_bracer_07.jpg"}]},
         {"quest": "The Wrath of Rath'mael", "loot": [
-          {"name": "Forsaken Greataxe", "inv": "TWOHWEAPON", "sub": "Axe", "stat": "Strength"},
-          {"name": "Gnarled Necromancer's Staff", "inv": "TWOHWEAPON", "sub": "Staff", "stat": "Caster"}]},
-        {"quest": "A Frightened Request", "loot": [{"id": 251485, "stat": "Agility"}, {"id": 251486}]},
+          {"id": 251533, "name": "Forsaken Greataxe", "inv": "TWOHWEAPON", "sub": "Axe", "level": 24, "stat": "Strength", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_axe_18.jpg"},
+          {"id": 251534, "name": "Gnarled Necromancer's Staff", "inv": "TWOHWEAPON", "sub": "Staff", "level": 24, "stat": "Caster", "quality": "RARE", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_staff_16.jpg"}]},
+        {"quest": "A Frightened Request", "loot": [
+          {"id": 251485, "stat": "Agility"},
+          {"id": 251486}]},
         {"quest": "The New Plague", "loot": [
-          {"name": "Plaguefang", "inv": "WEAPON", "sub": "Sword", "stat": "Melee"},
-          {"name": "Blight Gloves", "inv": "HAND", "sub": "Cloth"}]},
+          {"id": 279876, "name": "Plaguefang", "inv": "WEAPON", "sub": "Sword", "level": 24, "stat": "Melee", "quality": "UNCOMMON", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_weapon_shortblade_54.jpg"},
+          {"id": 279877, "name": "Blight Gloves", "inv": "HAND", "sub": "Cloth", "level": 24, "quality": "UNCOMMON", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_gauntlets_21.jpg"}]},
         {"quest": "Unending Torment", "loot": [
-          {"name": "Monstrous Cleaver", "inv": "TWOHWEAPON", "sub": "Sword", "stat": "Strength"},
-          {"name": "Grave Shroud", "inv": "CLOAK", "stat": "Strength"},
-          {"name": "Slain Baron's Signet", "inv": "FINGER", "stat": "Defense"}]}
+          {"id": 279864, "name": "Monstrous Cleaver", "inv": "TWOHWEAPON", "sub": "Sword", "level": 23, "stat": "Strength", "quality": "UNCOMMON", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_sword_23.jpg"},
+          {"id": 279865, "name": "Grave Shroud", "inv": "CLOAK", "level": 23, "stat": "Strength", "quality": "UNCOMMON", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_misc_cape_10.jpg"},
+          {"id": 279867, "name": "Slain Baron's Signet", "inv": "FINGER", "level": 23, "stat": "Defense", "quality": "UNCOMMON", "icon": "https://wow.zamimg.com/images/wow/icons/medium/inv_jewelry_ring_19.jpg"}]}
       ]
     }
   }

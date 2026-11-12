@@ -572,8 +572,9 @@ def stat_fits(stat, m):
 
 
 def loot_item(raw, static):
-    """Kus z bosses.json; s id se doplní z API (cache), ručně zapsaná pole mají přednost."""
-    it = dict(static.item(raw["id"]) or {}) if raw.get("id") else {}
+    """Kus z bosses.json; jen s id (bez inv) se doplní z API (cache), ručně zapsaná pole mají přednost."""
+    # s inv je kus zapsaný ručně (API ho nezná), id je jen pro Wowhead tooltip
+    it = dict(static.item(raw["id"]) or {}) if raw.get("id") and not raw.get("inv") else {}
     it.update({k: v for k, v in raw.items() if v is not None})
     it.setdefault("name", "?")
     it.setdefault("kind", "Weapon" if it.get("inv") in WEAPON_INV else "Armor")
