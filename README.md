@@ -19,6 +19,8 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Statistika, kterou `titles.json` nezná, dostane obecný titul „Objevitel“. Vlastní klíče: `_lvl`, `_xp`, `_skill`,
   `_explore` (objevená místa z achievementů Explore, `{zone}`).
   Nový člen party dostane první den uvítací titul z `newcomers`.
+  Titul za statistiku dostane jen ten, kdo v ní vede (nebo má aspoň 75 % nejlepšího, `LEAD`); kdo hrál,
+  ale v ničem nevedl, dostane titul z `busy`.
 - **Příští výprava:** dungeon jako pásmo na stupnici levelů, postavy jako tečky (vybledlé = mimo rozsah),
   pod tím další dva dungeony a souhrn ready checku.
 - **Postavy:** klik na postavu ve skupinovce otevře pod ní její kartu: render uprostřed, kolem výbava jako okno

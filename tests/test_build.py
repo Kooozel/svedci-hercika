@@ -94,6 +94,15 @@ class Titles(unittest.TestCase):
         self.assertNotEqual(titles["a"]["key"], "Total deaths")
 
 
+    def test_stat_title_only_for_leader(self):
+        # Horaes nabral 22 460 XP a dostal level; Kozel s 8 975 XP nesmí být „Rychlík“
+        olds = [member("horaes", level=17, xp=14864), member("kozel", level=18, xp=3550)]
+        now = [member("horaes", level=19, xp=224), member("kozel", level=18, xp=12525)]
+        titles = build.evening_titles(now, base(olds), TODAY, CATALOG)
+        self.assertEqual(titles["horaes"]["key"], "_lvl")
+        self.assertTrue(titles["kozel"]["key"].startswith("busy:"))
+
+
 class Baseline(unittest.TestCase):
     def test_uses_last_history_before_today(self):
         with tempfile.TemporaryDirectory() as tmp:

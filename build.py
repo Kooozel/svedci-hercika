@@ -772,6 +772,10 @@ def pick_variant(variants, today, slug):
     return variants[(today.toordinal() + zlib.crc32(slug.encode())) % len(variants)]
 
 
+# kolik z nejlepšího výkonu party stačí na titul za statistiku
+LEAD = 0.75
+
+
 def evening_titles(members, base, today, catalog):
     """Každý dostane jeden titul, žádná statistika se nedá dvakrát a nikdo nedostane stejnou jako včera."""
     with_stats = [m for m in members if m.get("stats") is not None]
@@ -796,7 +800,8 @@ def evening_titles(members, base, today, catalog):
         top = max((values[s].get(stat, 0) for s in values), default=0)
         for s in values:
             v = values[s].get(stat, 0)
-            if v >= rule["min"] and played[s] and yesterday.get(s) != stat:
+            # titul je superlativ („nejvíc ve vzduchu“): jen pro toho, kdo ve statistice vede nebo je těsně za ním
+            if v >= rule["min"] and v >= LEAD * top and played[s] and yesterday.get(s) != stat:
                 # podíl na nejlepším + vtipnost + velikost čísla (185 nápojů přebije 2 zvířátka)
                 score = v / top + rule["bonus"] + 0.1 * math.log2(v / rule["min"])
                 candidates.append((score, v / rule["min"], s, stat, v))
@@ -831,7 +836,9 @@ def evening_titles(members, base, today, catalog):
         s = m["slug"]
         if s in out:
             continue
-        group = "newcomers" if info[s]["new"] else "quiet" if played[s] else "sleepers"
+        # hrál a něco nahrál, jen v ničem nevedl: „nic se nestalo“ by nebyla pravda
+        busy = played[s] and values[s] and catalog.get("busy")
+        group = "newcomers" if info[s]["new"] else "busy" if busy else "quiet" if played[s] else "sleepers"
         pool = [(f"{group}:{i}", t) for i, t in enumerate(catalog.get(group) or [])
                 if f"{group}:{i}" != yesterday.get(s)] or [(group, {"emoji": "🙂", "name": "Hrdina", "line": ""})]
         key, t = pick_variant(pool, today, s)

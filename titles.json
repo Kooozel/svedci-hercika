@@ -143,7 +143,7 @@
    {"name": "Průzkumník", "line": "{v} v {zone}. Nikdo neví, co tam dělal."}
   ]},
   "_xp": {"emoji": "⭐", "min": 1000, "bonus": 0.0, "forms": ["+{n} XP", "+{n} XP", "+{n} XP"], "titles": [
-   {"name": "Rychlík", "line": "{v}. Žlutá lišta se hýbe."},
+   {"name": "Rychlík", "line": "{v}. Fialová lišta se hýbe."},
    {"name": "Sběrač zkušeností", "line": "{v}. Pomalu, ale jistě."},
    {"name": "Pracant", "line": "{v}. Večer nebyl promarněný."}
   ]}
@@ -170,6 +170,11 @@
  "newcomers": [
   {"emoji": "🆕", "name": "Nováček", "line": "Vítej v partě. Tituly začnou od zítřka."},
   {"emoji": "🎒", "name": "Čerstvá posila", "line": "Batoh sbalený, questlog prázdný."}
+ ],
+ "busy": [
+  {"emoji": "🛠️", "name": "Tichý tahoun", "line": "Odmakal svoje, jen ho dneska někdo přetrumfnul."},
+  {"emoji": "🥈", "name": "Věčně druhý", "line": "Ve všem slušně, v ničem první. Stříbro taky lesk."},
+  {"emoji": "🧱", "name": "Pilíř party", "line": "Bez hvězdných čísel, ale bez něj by to nešlo."}
  ],
  "quiet": [
   {"emoji": "🚶", "name": "Tichý poutník", "line": "Byl ve hře, ale nic se nestalo."},
