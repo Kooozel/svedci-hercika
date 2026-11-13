@@ -1,6 +1,6 @@
 [
   {"name": "The Hall of Thanes", "zone": "Ironforge", "min": 13, "max": 18, "new": true, "alliance_side": true, "note": "pod Ironforge, pro Hordu daleko a málo questů"},
-  {"name": "Ragefire Chasm", "zone": "Orgrimmar", "min": 13, "max": 18},
+  {"name": "Ragefire Chasm", "zone": "Orgrimmar", "min": 13, "max": 18, "done": "2026-11-07"},
   {"name": "Ruins of Lordaeron", "zone": "Tirisfal Glades", "min": 15, "max": 20, "new": true, "note": "nad Undercity, Horda má víc questů", "done": "2026-11-12"},
   {"name": "Wailing Caverns", "zone": "The Barrens", "min": 15, "max": 25},
   {"name": "The Deadmines", "zone": "Westfall", "min": 18, "max": 23, "alliance_side": true},

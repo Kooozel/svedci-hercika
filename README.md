@@ -23,8 +23,8 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   ale v ničem nevedl, dostane titul z `busy`.
 - **Příští výprava:** dungeon jako pásmo na stupnici levelů, postavy jako tečky (vybledlé = mimo rozsah),
   pod tím další dva dungeony a souhrn ready checku. Vybírá se podle levelů, domluvený dungeon se dá napsat
-  do `party.json` jako `"next": "Wailing Caverns"`. Odehraný dungeon dostane v `dungeons.json` `"done": "RRRR-MM-DD"`
-  a zmizí z plánu, ready checku i lootu.
+  do `party.json` jako `"next": "Wailing Caverns"`. Odehraný dungeon dostane v `dungeons.json` `"done": "RRRR-MM-DD"` (nebo `true`, když datum
+  nevíme) a zmizí z plánu, ready checku i lootu. V seznamu všech dungeonů zůstane se štítkem odehráno.
 - **Postavy:** klik na postavu ve skupinovce otevře pod ní její kartu: render uprostřed, kolem výbava jako okno
   postavy ve hře (rámeček barvy kvality, ▼ nejslabší kus, prázdné sloty čárkovaně), vedle staty z API
   (Health, atributy, obrana a útok/kouzla/léčení podle role), profese a pet. Kdo se odhlásil s Resurrection

@@ -335,10 +335,11 @@ def plan_dungeons(members, dungeons):
             else:
                 status[m["slug"]] = ("fit", 0)
         fit = sum(1 for s, _ in status.values() if s == "fit")
-        near = d["max"] >= lo and d["min"] <= hi + 5
+        # odehraný dungeon zůstává jen v seznamu všech, z plánu, ready checku a lootu zmizí
+        near = d["max"] >= lo and d["min"] <= hi + 5 and not d.get("done")
         rows.append({**d, "status": status, "fit": fit, "near": near})
     # Víc lidí v rozsahu > vyšší dungeon > užší rozsah
-    best = max(rows, key=lambda r: (r["fit"], r["min"], -r["max"]), default=None)
+    best = max((r for r in rows if not r.get("done")), key=lambda r: (r["fit"], r["min"], -r["max"]), default=None)
     return rows, best
 
 
@@ -1270,7 +1271,7 @@ def next_box(rows, best, members, checks):
     """Příští výprava: dungeon, kdo do něj levelem sedí, souhrn ready checku a co přijde pak."""
     if not best:
         return ""
-    later = sorted((r for r in rows if r is not best and r["min"] >= best["min"] and r["max"] > best["max"]),
+    later = sorted((r for r in rows if r is not best and not r.get("done") and r["min"] >= best["min"] and r["max"] > best["max"]),
                    key=lambda r: (r["min"], r["max"]))[:2]
     party = []
     for m in members:
@@ -1731,9 +1732,15 @@ def dungeon_table(rows, best, members):
     body = []
     for r in rows:
         chips = '<span class="chip chip-new">nový</span>' if r.get("new") else ""
+        if r.get("done"):  # datum, nebo jen true, když si ho nikdo nepamatuje
+            when = ""
+            if isinstance(r["done"], str):
+                _, mo, d = (int(x) for x in r["done"].split("-"))
+                when = f" {d}. {mo}."
+            chips += f'<span class="chip chip-done">✓ odehráno{when}</span>'
         place = e(r["zone"]) + (f' · {e(r["note"])}' if r.get("note") else "")
         cells = "".join(status_cell(r["status"][m["slug"]]) for m in members)
-        body.append(f'<tr{" class=best" if r is best else ""}><th scope="row">{e(r["name"])}{chips}<small>{place}</small></th>'
+        body.append(f'<tr{" class=best" if r is best else " class=done" if r.get("done") else ""}><th scope="row">{e(r["name"])}{chips}<small>{place}</small></th>'
                     f'<td class="range">{r["min"]}–{r["max"]}</td>{cells}</tr>')
     return (f'<div class="table-wrap"><table class="dungeons"><thead><tr><th>Dungeon</th><th>Level</th>{head}</tr></thead>'
             f'<tbody>{"".join(body)}</tbody></table></div>')
@@ -1981,6 +1988,7 @@ table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520p
 .legend .st-share{font-size:inherit}
 tr.best{background:#2c1611}tr.best th:first-child{box-shadow:inset 3px 0 var(--red)}
 .note{color:var(--muted);font-size:13px}
+.chip-done{background:#1f4224;color:#8fe39a;margin-left:8px;vertical-align:middle}.dungeons tr.done td{opacity:.45}
 .prof-grid+.all-dungeons{margin-top:30px}.all-dungeons summary{cursor:pointer;color:var(--gold);font:600 16px Cinzel,serif;margin-bottom:10px}
 footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
 code{background:var(--panel2);padding:1px 5px;border-radius:4px}
@@ -2197,7 +2205,7 @@ for(const t of document.querySelectorAll('time[data-ts]')){
 def main():
     party = json.loads((ROOT / "party.json").read_text(encoding="utf-8"))
     dungeons = [d for d in json.loads((ROOT / "dungeons.json").read_text(encoding="utf-8"))
-                if not d.get("alliance_side") and not d.get("done")]
+                if not d.get("alliance_side")]
     region = party["region"]
     try:
         token = api_token()

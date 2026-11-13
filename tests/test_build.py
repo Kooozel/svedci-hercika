@@ -123,6 +123,18 @@ class Titles(unittest.TestCase):
         self.assertIn("další milník 1", html)
 
 
+class Dungeons(unittest.TestCase):
+    def test_done_dungeon_only_in_list(self):
+        ds = [{"name": "RoL", "zone": "z", "min": 15, "max": 20, "done": "2026-11-12"},
+              {"name": "WC", "zone": "z", "min": 15, "max": 25}]
+        rows, best = build.plan_dungeons([member("a", level=20)], ds)
+        self.assertEqual(best["name"], "WC")
+        self.assertFalse(rows[0]["near"])
+        self.assertIn("odehráno 12. 11.", build.dungeon_table(rows, best, [member("a", level=20)]))
+        rows[0]["done"] = True
+        self.assertIn("✓ odehráno<", build.dungeon_table(rows, best, [member("a", level=20)]))
+
+
 class Baseline(unittest.TestCase):
     def test_uses_last_history_before_today(self):
         with tempfile.TemporaryDirectory() as tmp:
