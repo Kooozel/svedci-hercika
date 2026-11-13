@@ -161,25 +161,22 @@ class Sheet(unittest.TestCase):
         self.assertFalse(build.sick({"cstats": healthy}))
 
 
-    def test_bonus_since_yesterday(self):
-        m = {"cstats": {"armor": (16, 799), "stamina": (40, 72), "dodge": 4.1}, "roles": [],
-             "yday": {"attrs": {"armor": 780, "stamina": 75, "dodge": 4.12}, "label": "od včerejšího rána"}}
+    def test_body_lines_instead_of_numbers(self):
+        m = {"slug": "a", "level": 20, "class_slug": "paladin", "roles": ["tank"],
+             "cstats": {"health": 726, "armor": (16, 1124), "attack_power": 185,
+                        **{k: (20, 30) for k in ("strength", "agility", "stamina", "intellect", "spirit")}}}
+        self.assertEqual(set(build.body_values(m)), {"hp", "armor", "melee"})
         html = build.stat_rows(m)
-        self.assertIn("+19</small>", html)
-        self.assertIn("−3</small>", html)
-        self.assertIn('title="od včerejšího rána"', html)
-        self.assertEqual(html.count("<small"), 2)  # dodge −0,02 se zaokrouhlí na nulu
-        m["yday"] = None  # bez včerejška žádné plus ani mínus
-        self.assertNotIn("<small", build.stat_rows(m))
+        for label in ("Vydrží", "Kryje", "Bije"):
+            self.assertIn(label, html)
+        self.assertNotIn("1124", html)  # přesná čísla na kartě nejsou
+        self.assertIn(build.Q.line("body.armor.high", "x"), build.Q.variants("body.armor.high"))  # 1124/20 je high
 
-    def test_sick_snapshot_gives_no_bonus(self):
+    def test_sick_card_shows_sickness_only(self):
         sick = {k: (40, 10) for k in ("strength", "agility", "stamina", "intellect", "spirit")}
-        snap = build.snapshot({"level": 20, "cstats": sick})
-        self.assertTrue(snap["sick"])
-        base = {"date": "2026-11-12", "members": {"a": snap}}
-        self.assertIsNone(build.yday({"slug": "a"}, base, date(2026, 11, 13)))
-        snap["sick"] = False
-        self.assertEqual(build.yday({"slug": "a"}, base, date(2026, 11, 13))["label"], "od včerejšího rána")
+        html = build.stat_rows({"slug": "a", "level": 20, "roles": [], "cstats": sick})
+        self.assertIn("Resurrection Sickness", html)
+        self.assertNotIn("Vydrží", html)
 
     def test_old_history_gets_attrs_from_deployed(self):
         members = {"a": {"level": 20}, "b": {"level": 20, "attrs": {"armor": 1}}}
@@ -189,15 +186,22 @@ class Sheet(unittest.TestCase):
         self.assertFalse(members["a"]["sick"])
         self.assertEqual(members["b"]["attrs"], {"armor": 1})  # co snímek má, se nepřepisuje
 
-    def test_news_stats_with_new_gear(self):
-        m = {"slug": "a", "level": 20, "xp": 0, "gear": [{"slot": "CHEST", "name": "Nová vesta"}],
-             "cstats": {"armor": (16, 520), "stamina": (40, 60)}}
-        base = {"members": {"a": {"level": 20, "xp": 0, "gear": ["Stará vesta"], "profs": {},
-                                  "achievements": None, "recipes": None,
-                                  "attrs": {"armor": 500, "stamina": 60}, "sick": False}}}
-        self.assertEqual(build.changes(m, base)["stats"], [("armor", 20)])
-        m["gear"] = [{"slot": "CHEST", "name": "Stará vesta"}]  # bez nové výbavy se staty do novinek nepíšou
-        self.assertEqual(build.changes(m, base)["stats"], [])
+    def test_news_quips_by_own_level(self):
+        ch = {"from": 20, "to": 20, "xp": 1000}
+        self.assertEqual(build.xp_news(ch), "crumb")  # level 20 chce 23 200, čtvrtina je 5 800
+        self.assertEqual(build.xp_news({**ch, "xp": 9000}), "chunk")
+        self.assertEqual(build.xp_news({**ch, "to": 21}), "level")
+        self.assertEqual(build.xp_news({**ch, "to": 23}), "multi")
+
+    def test_prof_news_only_new_and_rank_up(self):
+        m = {"slug": "a", "professions": [{"name": "Tailoring", "skill": 80}, {"name": "Fishing", "skill": 1},
+                                          {"name": "Mining", "skill": 40}]}
+        ch = {"profs": [("Tailoring", 7), ("Fishing", None), ("Mining", 5)], "learned": ["A", "B", "C", "D"]}
+        out = build.prof_news(m, ch)
+        self.assertEqual(len(out), 3)  # Mining +5 bez nového stupně se nepíše
+        self.assertTrue(any("tovaryš krejčí" in x for x in out))
+        self.assertTrue(any("rybaření" in x for x in out))
+        self.assertTrue(any("4 nové recepty" in x for x in out))
 
     def test_genitive_falls_back_to_first_name(self):
         self.assertEqual(build.first_gen({"name": "Zrza Jegod", "gen": "Zrzy"}), "Zrzy")
@@ -489,11 +493,11 @@ class Scoring(unittest.TestCase):
 
     def test_loot_chips_say_big_small(self):
         by_slug = {"k": member("k", cls="priest")}
-        html_big = build.loot_who({"k": {"gain": "big", "lvl": 0}}, by_slug)
-        self.assertIn("velký upgrade", html_big)
-        self.assertIn("malý upgrade", build.loot_who({"k": {"gain": "small", "lvl": 0}}, by_slug))
-        self.assertIn("+3 ilvl", build.loot_who({"k": {"gain": 3, "lvl": 0}}, by_slug))
-        self.assertIn("nic moc", build.loot_who({"k": {"gain": None, "lvl": 0}}, by_slug))
+        q = build.Q
+        self.assertIn(q.label("loot.big"), build.loot_who({"k": {"gain": "big", "lvl": 0}}, by_slug))
+        self.assertIn(q.label("loot.small"), build.loot_who({"k": {"gain": "small", "lvl": 0}}, by_slug))
+        self.assertIn("+3 ilvl", build.loot_who({"k": {"gain": 3, "lvl": 0}}, by_slug))  # v tooltipu
+        self.assertIn(q.label("loot.none"), build.loot_who({"k": {"gain": None, "lvl": 0}}, by_slug))
 
     def test_crafting_uses_tooltip_stats(self):
         smith = armed("paladin", ["tank"], [worn("FEET", {"ARMOR": 100, "STAMINA": 2}, level=10)])
@@ -504,6 +508,85 @@ class Scoring(unittest.TestCase):
         smith["professions"] = [{"name": "Blacksmithing", "primary": True, "skill": 50, "max": 75}]
         up = build.crafting([smith], static)["ups"]
         self.assertEqual([(u["item"]["name"], u["upgrade"]) for u in up], [("Boots", "big")])
+
+
+SCHOOLS = ("SHADOW", "FROST", "FIRE", "ARCANE", "NATURE", "HOLY")
+CASTER_KEYS = {"INTELLECT", "SPIRIT", "SPELL_POWER", "SPELL_DAMAGE_DONE", "SPELL_HEALING_DONE", "MANA_REGEN"} | {
+    f"{x}_SPELL_DAMAGE" for x in SCHOOLS}
+PHYSICAL = {"STRENGTH", "AGILITY", "ATTACK_POWER"}
+# ruční stat v bosses.json -> staty, z nichž aspoň jeden musí kus mít (DPS = zbraň bez statů)
+STAT_NEEDS = {
+    "Agility": {"AGILITY", "ATTACK_POWER", "DPS"}, "Strength": {"STRENGTH", "ATTACK_POWER", "DPS"},
+    "Melee": PHYSICAL | {"DPS"}, "Stamina": {"STAMINA"}, "Spirit": {"SPIRIT"},
+    "Defense": {"DEFENSE_SKILL_RATING", "BLOCK", "BLOCK_VALUE", "BLOCK_PCT"},
+    "Caster": CASTER_KEYS, "Healing": {"SPELL_HEALING_DONE", "SPELL_POWER"},
+    **{x.title(): {f"{x}_SPELL_DAMAGE"} for x in SCHOOLS},
+}
+
+# štítek je správně, ale ze statů to vidět není
+LABEL_OK = {"Deep Fathom Ring": "spell penetrace (jen pro castery), staty jen Stamina",
+            "Tortoise Armor": "+40 bonusového armoru, v datech splyne s armorem"}
+
+
+class LootLabels(unittest.TestCase):
+    """Ruční stat v bosses.json nesmí odporovat statům kusu (z Wowhead tooltipu v cache nebo values)."""
+
+    def test_stat_matches_values(self):
+        tips = json.loads((Path(build.ROOT) / "cache" / "static.json").read_text(encoding="utf-8")).get("tooltips") or {}
+        dungeons = json.loads((Path(build.ROOT) / "bosses.json").read_text(encoding="utf-8"))["dungeons"]
+        bad = []
+        for d in dungeons.values():
+            groups = [b.get("loot") or [] for b in d.get("bosses") or []] + [q.get("loot") or [] for q in d.get("quests") or []]
+            for it in (it for g in groups for it in g):
+                values = {**((tips.get(str(it.get("id"))) or {}).get("values") or {}), **(it.get("values") or {})}
+                need = STAT_NEEDS.get(it.get("stat"))
+                if it.get("sub") == "Wand":  # wand má jen DPS
+                    need = (need or set()) | {"DPS"}
+                if need and values and not need & set(values) and it["name"] not in LABEL_OK:
+                    bad.append(f'{it["name"]}: stat {it["stat"]}, staty {sorted(set(values) - {"ARMOR"})}')
+        self.assertEqual(bad, [])
+
+
+class Quips(unittest.TestCase):
+    def setUp(self):
+        self.data = json.loads((Path(build.ROOT) / "hlasky.json").read_text(encoding="utf-8"))
+
+    def test_every_list_has_three_variants(self):
+        short = []
+
+        def walk(node, path):
+            if isinstance(node, dict):
+                for k, v in node.items():
+                    if not k.startswith("_"):
+                        walk(v, f"{path}.{k}" if path else k)
+            elif isinstance(node, list) and len(node) < 3:
+                short.append(path)
+        walk(self.data, "")
+        self.assertEqual(short, [])
+
+    def test_no_repeat_on_page_and_daily_change(self):
+        q = build.Quips(self.data, date(2026, 11, 13))
+        lines = [q.line("outfit.work", s) for s in ("a", "b", "c", "d")]
+        self.assertEqual(len(set(lines)), 4)  # 4 varianty, 4 postavy, nikdo nemá stejnou
+        again = build.Quips(self.data, date(2026, 11, 13))
+        self.assertEqual(again.line("outfit.work", "a"), lines[0])  # stejný den, stejný build
+        days = {build.Quips(self.data, date(2026, 11, d)).label("loot.big") for d in range(1, 8)}
+        self.assertGreater(len(days), 1)  # štítek se během týdne mění
+
+    def test_format_and_fallback(self):
+        q = build.Quips(self.data, date(2026, 11, 13))
+        self.assertIn("21", q.line("xpbar.start", "a", next=21))
+        self.assertEqual(build.Quips({}).label("loot.big", "velký upgrade"), "velký upgrade")
+
+    def test_bare_line(self):
+        self.assertEqual(build.bare_line(["NECK", "FINGER_1", "FINGER_2", "TRINKET_2"]),
+                         "Chodí s holým krkem, bez prstenů a jen s jednou cetkou.")
+        self.assertEqual(build.bare_line([]), "")
+
+    def test_prof_rank(self):
+        self.assertEqual(build.prof_rank({"skill": 75, "max": 150}), "tovaryš")
+        self.assertEqual(build.prof_rank({"skill": 1, "max": 75}), "učeň")
+        self.assertEqual(build.skill_rank(76), "tovaryš")
 
 
 if __name__ == "__main__":
@@ -558,9 +641,9 @@ class BossLoot(unittest.TestCase):
     def test_quest_item_from_static_and_render(self):
         self.assertEqual(set(self.fits("Cuffs")), {"k", "h"})
         html_ = build.loot_section([self.loot()], self.party())
-        self.assertIn("nikomu, disenchant nebo prodat", html_)  # plate
+        self.assertIn(build.Q.label("loot.nobody"), html_)  # plate
         self.assertIn("wowhead.com/forever/item=7", html_)
-        self.assertIn("🎲 víc zájemců", html_)  # staff je upgrade pro oba castery
+        self.assertIn(build.Q.label("loot.fight"), html_)  # staff je upgrade pro oba castery
 
     def test_real_file_parses(self):
         data = json.loads((Path(build.ROOT) / "bosses.json").read_text(encoding="utf-8"))["dungeons"]

@@ -813,6 +813,7 @@ def boss_loot(rows, best, members, static, catalog):
                     "source": d.get("source"), "tactics": d.get("tactics"), "note": d.get("note"),
                     "sets": d.get("sets") or {},
                     "bosses": [{"name": b["name"], "tip": b.get("tip"), "rare": b.get("rare"), "trash": b.get("trash"),
+                                "quip": b.get("quip"), "boe": b.get("boe"),
                                 "items": items(b.get("loot") or [])} for b in d.get("bosses") or []],
                     "quests": [{"quest": q["quest"], "items": items(q.get("loot") or [])}
                                for q in d.get("quests") or []]})
@@ -877,7 +878,7 @@ def crafting(members, static):
                         who = supplier(iid, m["slug"])
                         if who:
                             reagents.append({"name": (static.item(iid) or {}).get("name", "?"), "qty": qty, "from": who})
-                    best[key] = {"score": score, "item": {**it, "id": rec["item"]}, "crafter": m["slug"],
+                    best[key] = {"score": score, "item": {**it, "id": rec["item"]}, "crafter": m["slug"], "prof": r.get("prof"),
                                  "target": t["slug"], "upgrade": d, "reagents": reagents,
                                  "loses": next((g["name"] for g in t.get("gear") or []
                                                 if g["slot"] == key[1] and g.get("enchanted")), None)}
@@ -988,9 +989,6 @@ def xp_total(level, xp):
     return sum(XP_TO_NEXT[:level - 1]) + (xp or 0)
 
 
-NEWS_STATS = ("armor", "strength", "agility", "stamina", "intellect", "spirit")
-
-
 def changes(m, base):
     """Co se u postavy změnilo od výchozího stavu; None = výchozí stav postavu nezná."""
     b = ((base or {}).get("members") or {}).get(m["slug"])
@@ -1011,11 +1009,8 @@ def changes(m, base):
            if b.get("achievements") is not None else [])
     learned = (sorted({r["name"] for r in m.get("recipes") or []} - set(b["recipes"]))
                if b.get("recipes") is not None else [])
-    old, now = b.get("attrs"), snap_attrs(m)
-    stats = ([(k, now[k] - old[k]) for k in NEWS_STATS if k in now and k in old and now[k] != old[k]]
-             if gear and old and not b.get("sick") and not (m.get("cstats") and sick(m)) else [])
     return {"from": b["level"], "to": m["level"], "xp": max(0, gained), "profs": profs, "gear": gear, "ach": ach,
-            "learned": learned, "stats": stats}
+            "learned": learned}
 
 
 # ---------- tituly a počítadla party ----------
@@ -1102,6 +1097,48 @@ def evening_values(m, base):
 def pick_variant(variants, today, slug):
     """Varianta podle dne a postavy: každý den jiná, ale při opakovaném buildu stejná."""
     return variants[(today.toordinal() + zlib.crc32(slug.encode())) % len(variants)]
+
+
+class Quips:
+    """Hlášky z hlasky.json. label: štítek, celý den stejný na celé stránce (sedí s legendou).
+    line: věta u postavy, jiná podle dne a postavy, na jedné stránce se neopakuje."""
+
+    def __init__(self, data=None, today=None):
+        self.data, self.day, self.used = data or {}, today.toordinal() if today else 0, set()
+
+    def variants(self, key):
+        v = self.data
+        for k in key.split("."):
+            v = v.get(k) if isinstance(v, dict) else None
+        return v if isinstance(v, list) else [v] if isinstance(v, str) else []
+
+    def label(self, key, default=""):
+        vs = self.variants(key)
+        return vs[(self.day + zlib.crc32(key.encode())) % len(vs)] if vs else default
+
+    def line(self, key, seed="", default="", **fmt):
+        """seed: postava nebo jiný klíč, podle kterého se varianta liší."""
+        vs = self.variants(key) or ([default] if default else [])
+        if not vs:
+            return ""
+        start = self.day + zlib.crc32((seed + "|" + key).encode())
+        order = [vs[(start + i) % len(vs)] for i in range(len(vs))]
+        pick = next((v for v in order if v not in self.used), order[0])
+        self.used.add(pick)
+        for k, x in fmt.items():
+            pick = pick.replace("{" + k + "}", str(x))
+        return pick
+
+
+def read_quips():
+    try:
+        return json.loads((ROOT / "hlasky.json").read_text(encoding="utf-8"))
+    except Exception as exc:  # bez hlášek zůstanou výchozí texty
+        print(f"Hlášky: {exc}", file=sys.stderr)
+        return {}
+
+
+Q = Quips(read_quips())  # render() ho přenastaví na dnešek
 
 
 # kolik z nejlepšího výkonu party stačí na titul za statistiku
@@ -1295,29 +1332,50 @@ def doll_slot(slot, worn, weakest, m):
         inner = f'<span class="sl-txt">{e(g["name"][:2])}</span>' + (
             f'<img src="{e(g["icon"])}" alt="" loading="lazy" onerror="this.remove()">' if g.get("icon") else "")
         weak = " sl-weak" if g is weakest else ""
-        tip = f'{g["name"]} · {label}' + (f' · ilvl {g["level"]}' if g.get("level") else "") + (
-            " · nejslabší kus" if weak else "")
-        lvl = f'<small>{g["level"]}</small>' if g.get("level") else ""
+        tip = f'{g["name"]} · {label}' + (f' · 🩴 hadr, {Q.label("weak", "tohle by chtělo vyměnit")}' if weak else "")
         return (f'<a class="sl{weak}" style="--q:{color}" href="https://www.wowhead.com/forever/item={g["id"]}" '
-                f'target="_blank" rel="noopener" title="{e(tip)}">{inner}{lvl}</a>')
+                f'target="_blank" rel="noopener" title="{e(tip)}">{inner}</a>')
     two_hand = (worn.get("MAIN_HAND") or {}).get("inv") == "TWOHWEAPON"
     if (slot == "OFF_HAND" and two_hand) or (slot == "RANGED" and m["class_slug"] in NO_RANGED):
         return f'<span class="sl sl-na" title="{e(label)}: nepotřebuje"></span>'
     return f'<span class="sl sl-empty" title="{e(label)}: prázdné">{e(label)}</span>'
 
 
+# stupeň řemesla podle stropu skillu (Apprentice 75, Journeyman 150, Expert 225, Artisan 300)
+RANKS = [(75, "učeň"), (150, "tovaryš"), (225, "mistr"), (300, "velmistr")]
+CRAFTSMAN = {"Alchemy": "alchymista", "Blacksmithing": "kovář", "Enchanting": "enchanter", "Engineering": "inženýr",
+             "Herbalism": "bylinkář", "Leatherworking": "koželuh", "Mining": "horník", "Skinning": "stahovač kůží",
+             "Tailoring": "krejčí", "Cooking": "kuchař", "First Aid": "zdravotník", "Fishing": "rybář"}
+ACTIVITY = {"Alchemy": "alchymie", "Blacksmithing": "kovařina", "Enchanting": "enchanting", "Engineering": "inženýrství",
+            "Herbalism": "bylinkaření", "Leatherworking": "koželužství", "Mining": "hornictví",
+            "Skinning": "stahování kůží", "Tailoring": "krejčovina", "Cooking": "vaření", "First Aid": "obvazování",
+            "Fishing": "rybaření"}
+CRAFT_VERB = {"Tailoring": "ušít", "Blacksmithing": "ukovat", "Leatherworking": "sešít z kůže",
+              "Engineering": "smontovat", "Alchemy": "uvařit"}
+
+
+def prof_rank(p):
+    """Stupeň řemesla: podle stropu, když ho API dá, jinak podle skillu."""
+    cap = p.get("max") or p["skill"]
+    return next((name for top, name in RANKS if cap <= top), RANKS[-1][1])
+
+
+def skill_rank(skill):
+    """Stupeň, na který skill stačí (přes 75 už musí mít tovaryše)."""
+    return next((name for top, name in RANKS if skill <= top), RANKS[-1][1])
+
+
 def prof_bars(m):
     rows = []
     for p in sorted(m.get("professions") or [], key=lambda p: (not p["primary"], -p["skill"])):
-        pct = min(100, round(100 * p["skill"] / p["max"])) if p["max"] else 0
-        rows.append(f'<li class="{"" if p["primary"] else "pb-sec"}"><span>{e(p["name"])}</span><b>{p["skill"]}</b>'
-                    f'<span class="bar"><span style="width:{pct}%"></span></span></li>')
+        rows.append(f'<li class="{"" if p["primary"] else "pb-sec"}" title="{p["skill"]} / {p["max"]}">'
+                    f'<span>{e(p["name"])}</span><b>{prof_rank(p)}</b></li>')
     return f'<ul class="pbars">{"".join(rows)}</ul>' if rows else ""
 
 
 def doll(m):
     """Výbava kolem renderu postavy jako okno postavy ve hře: ikony v rámečku barvy kvality,
-    prázdné sloty čárkovaně, nejslabší kus označený ▼."""
+    prázdné sloty čárkovaně, nejslabší kus označený 🩴 (hadr)."""
     worn = {g["slot"]: g for g in gear_info(m)["gear"]} if "gear" in m else {}
     weakest = gear_info(m)["weakest"] if "gear" in m else None
     col = lambda slots: "".join(doll_slot(s, worn, weakest, m) for s in slots)  # noqa: E731
@@ -1332,54 +1390,45 @@ def doll(m):
 CASTERS = {"mage", "warlock", "priest"}
 
 
-def stat_rows(m):
-    """Staty jako ve hře, skupiny podle role: tank obrana, healer léčení, jinak útok podle classu."""
+# hrubé stupně: (klíč z cstats, hranice na level pro low / mid, štítek); nad druhou hranicí high
+BODY = {"hp": ("Vydrží", (24, 32)), "heal": ("Léčí", (1.5, 3.5)), "spell": ("Kouzlí", (4, 6.5)),
+        "ranged": ("Střílí", (5, 8.5)), "melee": ("Bije", (5.5, 9.5)), "armor": ("Kryje", (25, 45))}
+
+
+def body_values(m):
+    """Hrubá čísla na level pro řádky „Jak na tom je“ podle role a classy."""
     c = m.get("cstats") or {}
-    if not c:
-        return ""
 
-    prev, since = (m.get("yday") or {}).get("attrs") or {}, (m.get("yday") or {}).get("label", "")
-
-    def plain(key, label, fmt=num):
-        v = c.get(key)
-        if v is None:
-            return ""
-        v = v[1] if isinstance(v, (tuple, list)) else v
-        show = fmt if callable(fmt) else fmt.format
-        bonus = ""
-        if key in prev:  # plus/mínus od posledního ranního snímku
-            d, zero = v - prev[key], show(0)
-            if show(abs(d)) != zero:
-                cls_, sign = ("st-bonus", "+") if d > 0 else ("st-malus", "−")
-                bonus = f' <small class="{cls_}" title="{e(since)}">{sign}{show(abs(d))}</small>'
-        return f'<li><span>{label}</span><b>{show(v)}{bonus}</b></li>'
-    attr = plain
-
-    def pct(v):
-        return f"{v:.1f} %".replace(".", ",")
-    groups = [("Základ", plain("health", "Health", num) + plain("power", c.get("power_type") or "Power", num)),
-              ("Atributy", "".join(attr(k, k.capitalize()) for k in ("strength", "agility", "stamina", "intellect", "spirit")))]
+    def v(key):
+        x = c.get(key) or 0
+        return x[1] if isinstance(x, (tuple, list)) else x
+    out = {"hp": v("health")}
     cls, roles = m.get("class_slug"), m.get("roles") or []
     if "tank" in roles:
-        groups.append(("Obrana", attr("armor", "Armor") + attr("defense", "Defense") + plain("dodge", "Dodge", pct)
-                       + plain("parry", "Parry", pct) + plain("block", "Block", pct)))
-    else:
-        groups.append(("Obrana", attr("armor", "Armor") + plain("dodge", "Dodge", pct)))
-    if "heal" in roles:
-        groups.append(("Léčení", plain("spell_healing", "Bonus healing") + plain("spell_crit", "Spell crit", pct)
-                       + plain("mana_regen", "Mana regen", "{:.0f}")))
+        out |= {"armor": v("armor"), "melee": v("attack_power")}
+    elif "heal" in roles:
+        out["heal"] = v("spell_healing")
     elif cls == "hunter":
-        groups.append(("Útok", plain("ranged_attack_power", "Ranged AP") + plain("ranged_crit", "Ranged crit", pct)
-                       + plain("attack_power", "Melee AP")))
+        out["ranged"] = v("ranged_attack_power")
     elif cls in CASTERS:
-        groups.append(("Kouzla", plain("spell_power", "Spell power") + plain("spell_crit", "Spell crit", pct)
-                       + plain("mana_regen", "Mana regen", "{:.0f}")))
+        out["spell"] = v("spell_power") + v("intellect")
     else:
-        groups.append(("Útok", plain("attack_power", "Attack power") + plain("main_hand_dps", "DPS zbraně", lambda v: f"{v:.1f}".replace(".", ","))
-                       + plain("melee_crit", "Crit", pct)))
-    html_groups = "".join(f'<div class="st-group"><h4>{t}</h4><ul>{rows}</ul></div>'
-                          for t, rows in groups if rows)
-    return f'{sickness(m)}<div class="stats">{html_groups}</div>'
+        out["melee"] = v("attack_power")
+    return {k: x / max(1, m["level"]) for k, x in out.items()}
+
+
+def stat_rows(m):
+    """Místo statů pár hospodských řádků („Vydrží: jak dubový sud“), přesná čísla jsou na Armory."""
+    if not m.get("cstats"):
+        return ""
+    if sick(m):
+        return sickness(m)
+    rows = []
+    for key, per_lvl in body_values(m).items():
+        label, (low, mid) = BODY[key]
+        tier = "low" if per_lvl < low else "mid" if per_lvl < mid else "high"
+        rows.append(f'<li><span>{label}</span><b>{e(Q.line(f"body.{key}.{tier}", m["slug"], tier))}</b></li>')
+    return f'<div class="st-group st-body"><h4>Jak na tom je</h4><ul>{"".join(rows)}</ul></div>'
 
 
 def sick(m):
@@ -1398,34 +1447,70 @@ def sickness(m):
             'Spirit Healer pozdravuje a staty se vrátí do deseti minut ve hře.</p>')
 
 
+# co postavě chybí, jak by to řekl hospodský (prsteny a cetky zvlášť, mají dva sloty)
+BARE = {"HEAD": "bez čepice", "NECK": "s holým krkem", "SHOULDER": "s holými rameny", "BACK": "bez pláště",
+        "CHEST": "s holou hrudí", "WRIST": "s holými zápěstími", "HANDS": "bez rukavic", "WAIST": "bez opasku",
+        "LEGS": "bez kalhot", "FEET": "naboso", "MAIN_HAND": "beze zbraně", "OFF_HAND": "s volnou levačkou",
+        "RANGED": "bez střelné zbraně"}
+BARE_PAIR = {"FINGER": ("jen s jedním prstenem", "bez prstenů"), "TRINKET": ("jen s jednou cetkou", "bez cetek")}
+
+
+def and_join(words):
+    return " a ".join([", ".join(words[:-1]), words[-1]]) if len(words) > 1 else "".join(words)
+
+
+def bare_line(missing):
+    """„Chodí bez čepice, s holým krkem a bez prstenů.“ ze seznamu prázdných slotů."""
+    words = []
+    for slot in DOLL_LEFT + DOLL_RIGHT + DOLL_BOTTOM:
+        if slot not in missing:
+            continue
+        pair = slot.rsplit("_", 1)[0]
+        if pair in BARE_PAIR:
+            if slot.endswith("_1") or f"{pair}_1" not in missing:
+                words.append(BARE_PAIR[pair][sum(f"{pair}_{i}" in missing for i in (1, 2)) - 1])
+        else:
+            words.append(BARE[slot])
+    return f"Chodí {and_join(words)}." if words else ""
+
+
+def outfit_tier(avg, level):
+    """Jak je oblečený: průměrný item level proti levelu postavy."""
+    if avg is None:
+        return "work"
+    return "fine" if avg >= level else "work" if avg >= level - 4 else "rags"
+
+
 def sheet_side(m):
     gi = gear_info(m) if "gear" in m else None
     bits = []
     if gi:
         worn = {g["slot"] for g in gi["gear"]}
-        qual = "".join(f'<span style="color:{QUALITY_COLOR[q]}">{n}× {QUALITY_NAME[q]}</span>'
-                       for q, n in gi["quality"].items() if n)
         two_hand = any(g["slot"] == "MAIN_HAND" and g["inv"] == "TWOHWEAPON" for g in gi["gear"])
-        empty = len([s for s in DOLL_LEFT + DOLL_RIGHT + DOLL_BOTTOM if s not in worn]) - (
-            ("OFF_HAND" not in worn and two_hand) + ("RANGED" not in worn and m["class_slug"] in NO_RANGED))
-        gap = (f'<p class="d-gap">{pl(empty, ("{n} prázdný slot", "{n} prázdné sloty", "{n} prázdných slotů"))}</p>'
-               if empty else "")
-        bits.append(f'<div class="d-sum"><p class="d-ilvl"><b>{gi["avg"] or "?"}</b><span>ø item level</span></p>'
-                    f'<p class="d-qual">{qual}</p>{gap}</div>')
+        missing = [s for s in DOLL_LEFT + DOLL_RIGHT + DOLL_BOTTOM if s not in worn
+                   and not (s == "OFF_HAND" and two_hand) and not (s == "RANGED" and m["class_slug"] in NO_RANGED)]
+        bare = bare_line(missing)
+        gap = f'<p class="d-gap">{e(bare)} {e(Q.line("gap_tail", m["slug"]))}</p>' if bare else ""
+        outfit = Q.line(f"outfit.{outfit_tier(gi['avg'], m['level'])}", m["slug"])
+        bits.append(f'<div class="d-sum"><p class="d-outfit">{e(outfit)}</p>{gap}</div>')
     bits.append(stat_rows(m))
     if m.get("professions"):
-        bits.append(f'<div class="st-group"><h4>Profese</h4>{prof_bars(m)}</div>')
+        bits.append(f'<div class="st-group"><h4>Řemesla</h4>{prof_bars(m)}</div>')
     pet = m.get("pet")
     if pet:
         bits.append(f'<p class="d-pet">🐾 <b>{e(pet["name"])}</b> <small>{e(pet["creature"] or "")}, lvl {pet["level"]}</small></p>')
     return f'<aside class="sheet-side">{"".join(bits)}</aside>'
 
 
+def xp_tier(pct):
+    return "start" if pct < 20 else "mid" if pct < 60 else "late" if pct < 90 else "almost"
+
+
 def xp_bar(m, big=False):
     if not m.get("xp_next"):
         return ""
     pct = min(100, round(100 * m["xp"] / m["xp_next"]))
-    label = (f'<span class="xp-num">{num(m["xp"])} / {num(m["xp_next"])} XP <small>· chybí {num(m["xp_next"] - m["xp"])}</small></span>'
+    label = (f'<span class="xp-num">{e(Q.line("xpbar." + xp_tier(pct), m["slug"], next=m["level"] + 1))}</span>'
              if big else "")
     return (f'<div class="xp" title="{pct} % do dalšího levelu">{label}'
             f'<span class="bar"><span style="width:{pct}%"></span></span></div>')
@@ -1446,7 +1531,7 @@ def days_ago(day, today):
 
 def sheet(m, today):
     """Karta postavy, která se otevře pod skupinovkou po kliknutí na postavu."""
-    spec = f'{e(m["spec"])} <small>{m["spec_points"]} b.</small>' if m["spec"] else ""
+    spec = e(m["spec"]) if m["spec"] else ""
     cls_icon = f'<img class="ic ic-cls" src="{e(m["class_icon"])}" alt="">' if m.get("class_icon") else ""
     return f'''<article class="sheet" id="char-{e(m["slug"])}" data-slug="{e(m["slug"])}" style="--cls:{cls_color(m)}" hidden>
   <header class="card-head">
@@ -1535,14 +1620,37 @@ def since_label(base, today):
 WEEKDAY_FROM = ["pondělního", "úterního", "středečního", "čtvrtečního", "pátečního", "sobotního", "nedělního"]
 
 
-def yday(m, base, today):
-    """Staty z posledního ranního snímku pro +/− na kartě; nemocný snímek se nepočítá."""
-    b = ((base or {}).get("members") or {}).get(m["slug"]) or {}
-    return {"attrs": b["attrs"], "label": since_label(base, today)} if b.get("attrs") and not b.get("sick") else None
+def xp_news(ch):
+    """Hláška ke včerejšímu XP podle toho, kolik postava nahrála vůči svému levelu (ne vůči ostatním)."""
+    ups = ch["to"] - ch["from"]
+    if ups >= 2:
+        return "multi"
+    if ups == 1:
+        return "level"
+    need = XP_TO_NEXT[ch["from"] - 1] if 0 < ch["from"] <= len(XP_TO_NEXT) else 0
+    return "chunk" if need and ch["xp"] >= need / 4 else "crumb"
+
+
+def prof_news(m, ch):
+    """Profese v novinkách: jen nové řemeslo a nový stupeň (tovaryš, mistr), body skillu ne."""
+    out = []
+    skills = {p["name"]: p["skill"] for p in m.get("professions") or []}
+    for name, d in ch["profs"]:
+        if d is None:
+            out.append(Q.line("news.newprof", m["slug"], what=ACTIVITY.get(name, name)))
+        elif skill_rank(skills[name] - d) != skill_rank(skills[name]):
+            out.append(Q.line("news.rankup", m["slug"], rank=skill_rank(skills[name]),
+                              craft=CRAFTSMAN.get(name, name)))
+    if ch["learned"]:
+        n = len(ch["learned"])
+        name = ch["learned"][(Q.day + zlib.crc32(m["slug"].encode())) % n]  # každý den jiný příklad
+        out.append(f"📜 Nový recept: {name}." if n == 1 else Q.line(
+            "news.recipes", m["slug"], v=pl(n, ("{n} nový recept", "{n} nové recepty", "{n} nových receptů")), name=name))
+    return out
 
 
 def news_box(members, base, today):
-    """Novinky po postavách: řádek se jménem, levelem a XP, pod ním řemesla a nové kusy výbavy."""
+    """Novinky po postavách: levely s hláškou, nové řemeslo nebo stupeň, recepty jednou větou a nové kusy výbavy."""
     rows, quiet = [], []
     for m in members:
         ch = changes(m, base)
@@ -1552,25 +1660,19 @@ def news_box(members, base, today):
             quiet.append(m)
             continue
         lvl = f'<span class="nw-lvl">{ch["from"]} → {ch["to"]}</span>' if ch["to"] > ch["from"] else ""
-        xp = f'<span class="nw-xp">+{num(ch["xp"])} XP</span>' if ch["xp"] else ""
-        profs = " · ".join(f'{e(n)} <b>{"nová" if d is None else f"+{d}"}</b>' for n, d in ch["profs"])
+        title = f' title="+{num(ch["xp"])} XP"' if ch["xp"] else ""
+        quip = (f'<span class="nw-xp"{title}>{e(Q.line("news." + xp_news(ch), m["slug"]))}</span>'
+                if ch["xp"] or lvl else "")
         extra = "".join(f'<p class="nw-ach">🏆 {e(a)}</p>' for a in ch["ach"])
-        if ch["learned"]:
-            more = f' a {len(ch["learned"]) - 3} další' if len(ch["learned"]) > 3 else ""
-            extra += f'<p class="nw-profs">📜 nové recepty: {e(", ".join(ch["learned"][:3]))}{more}</p>'
+        extra += "".join(f'<p class="nw-profs">{e(x)}</p>' for x in prof_news(m, ch))
         gear = "".join(item_link(g, compact=True) for g in ch["gear"])
-        if ch["stats"]:
-            gear += '<p class="nw-profs">' + " · ".join(
-                f'<b class="{"st-bonus" if d > 0 else "st-malus"}">{"+" if d > 0 else "−"}{num(abs(d))}</b> {k.capitalize()}'
-                for k, d in ch["stats"]) + '</p>'
-
         rows.append(f'<li style="--cls:{cls_color(m)}">{avatar(m, "nw-av")}<div class="nw-main">'
-                    f'<p class="nw-head"><b class="who-n">{e(first(m))}</b>{lvl}{xp}</p>'
-                    f'{f"<p class=nw-profs>{profs}</p>" if profs else ""}{extra}'
+                    f'<p class="nw-head"><b class="who-n">{e(first(m))}</b>{lvl}{quip}</p>{extra}'
                     f'{f"<div class=nw-gear>{gear}</div>" if gear else ""}</div></li>')
     if quiet:
+        names = ", ".join(first(m) for m in quiet)
         rows.append(f'<li class="nw-quiet"><span class="nw-avs">{"".join(avatar(m, "nw-av") for m in quiet)}</span>'
-                    f'<span>{e(", ".join(first(m) for m in quiet))}: nic nového</span></li>')
+                    f'<span>{e(Q.line("news.quiet", names, f"{names}: nic nového", names=names))}</span></li>')
     body = f'<ul class="nw">{"".join(rows)}</ul>' if rows else '<p class="muted">Nic nového, nikdo nehrál.</p>'
     return f'<section class="news"><p class="eyebrow">Novinky {since_label(base, today)}</p>{body}</section>'
 
@@ -1597,12 +1699,12 @@ def evening_box(members, base, titles, counters):
     hit = any(c["crossed"] for c in counters)
     summary = " · ".join(f'<b>{num(c["total"])}</b> {e(c["label"])}' for c in counters[:3])
     head = "Tituly za včerejší večer" if daily else "Tituly za celou dobu"
-    note = ("Každý má jeden titul, žádný se neopakuje dva dny po sobě. Není to žebříček."
+    note = (Q.line("titles_note", "note", "Není to žebříček.")
             if daily else "Od zítřka se tituly budou dávat za včerejší večer.")
     return (f'<section id="tituly"><h2 class="sec">{head}</h2><ul class="titles">{cards}</ul>'
             f'<details class="counters-box"{" open" if hit else ""}><summary>Parta dohromady · {summary}</summary>'
             f'<ul class="counters">{"".join(tiles)}</ul></details>'
-            f'<p class="note">{note} Počítá se ze statistik Blizzard API, které se aktualizují, když se postava odhlásí.</p></section>')
+            f'<p class="note" title="Počítá se ze statistik Blizzard API, které se aktualizují, když se postava odhlásí.">{e(note)}</p></section>')
 
 
 def squad(members, size, today):
@@ -1625,7 +1727,7 @@ def squad(members, size, today):
         * max(0, size - len(members))
     sheets = "".join(sheet(m, today) for m in members if m["ok"])
     return (f'<section id="postavy"><div class="squad">{"".join(out)}</div>'
-            f'<p class="sheet-hint">Klikni na postavu a otevře se její výbava a staty.</p>{sheets}</section>')
+            f'<p class="sheet-hint">Klikni na postavu a uvidíš, v čem chodí.</p>{sheets}</section>')
 
 
 # ---------- ready check ----------
@@ -1652,8 +1754,7 @@ def quest_cell(q, st, holders):
 
 
 def quest_meta(q):
-    bits = [f'{num(q["xp"])} XP' if q["xp"] else None,
-            f'od lvl {q["req"]}' if q["req"] else None,
+    bits = [f'od lvl {q["req"]}' if q["req"] else None,
             f'start: {e(q["start"])}' if q["start"] and q["start"] != "dungeon" else None,
             f'nejdřív: {e(q["prev"])}' if q["prev"] else None,
             e(q["note"]) if q.get("note") else None]
@@ -1777,59 +1878,66 @@ def ready_section(checks, members):
             f'<p class="note legend"><span class="st-fit">✓</span> má v logu · <span class="st-share">↗</span> dostane nasdílením u vchodu · '
             f'<span class="st-take">dojít</span> musí si pro quest dojít · ⛓ ✓ rozjetý řetěz · ⛓ nejdřív předchozí quest · '
             f'lvl N zatím nízký level · — nemůže vzít (jiná classa nebo rasa) · uvnitř = začne až v dungeonu (předmět nebo postava uvnitř). Šedé questy nemá nikdo z vás. '
-            f'Questy podle Wowheadu, postup uvnitř podle Warcraft Tavern, ID a omezení na classu ověřená v Blizzard API. Classové questy vidí jen ta classa, ready check mají jen dungeony z <code>quests.json</code>.</p></section>')
+            f'<span class="src-note" title="Questy podle Wowheadu, postup uvnitř podle Warcraft Tavern, ID a omezení na classu ověřená v Blizzard API. '
+            f'Classové questy vidí jen ta classa.">ⓘ odkud to víme</span></p></section>')
 
 
 # ---------- profese a dungeony ----------
 
+CRAFT_MAX = 3  # Dílna ukáže nejvýš tolik nabídek, ať to není výrobní plán
+
+
 def craft_box(plan, members):
-    """Co se vyplatí vyrobit: upgrady, enchanty a profese na stropu. Prázdné části se neukazují."""
+    """Dílna: pár nabídek, co kdo komu umí vyrobit (jen kusy, které berou všema deseti, nebo do prázdného slotu),
+    kdo co musí přinést, kdo umí třpytky (bez jmen, komu chybí) a kdo je na stropu."""
     by_slug = {m["slug"]: m for m in members}
 
     def who(slug, name=first):
         m = by_slug.get(slug)
         return f'<b style="color:{cls_color(m)}">{e(name(m))}</b>' if m else e(slug)
 
-    rows = []
+    offers = {}  # stejný kus od stejného řemeslníka pro víc lidí = jedna nabídka
     for u in plan["ups"]:
-        target = "sobě" if u["target"] == u["crafter"] else who(u["target"])
-        gain = gain_text(u["upgrade"])[0]
-        slot = SLOT_LABEL.get(ITEM_SLOTS[u["item"]["inv"]][0], "")
-        need = " · ".join([f'potřebuje {r["qty"]}× {e(r["name"])} od {", ".join(who(s, first_gen) for s in r["from"])}'
-                           for r in u["reagents"]] + ([f'přijde o enchant na {e(u["loses"])}'] if u["loses"] else []))
-        rows.append(f'<li>{item_link(u["item"])}<span class="cf-who">{who(u["crafter"])} → {target}</span>'
-                    f'<span class="cf-gain">{e(slot)} · {gain}</span>'
+        if u["upgrade"] not in ("big", "empty"):
+            continue
+        o = offers.setdefault((u["item"]["id"], u["crafter"]), {**u, "targets": []})
+        o["targets"].append(u["target"])
+    rows = []
+    for o in list(offers.values())[:CRAFT_MAX]:
+        targets = and_join(["sobě" if t == o["crafter"] else who(t) for t in o["targets"]])
+        verb = CRAFT_VERB.get(o.get("prof"), "vyrobit")
+        need = " · ".join([f'{", ".join(who(s_) for s_ in r["from"])} přinese {r["qty"]}× {e(r["name"])}'
+                           for r in o["reagents"]] + ([f'přijde o třpytky na {e(o["loses"])}'] if o["loses"] else []))
+        rows.append(f'<li><span class="cf-title">{who(o["crafter"])} umí {verb} {item_link(o["item"])} → {targets}</span>'
+                    f'<span class="cf-gain">{e(Q.line("craft.offer", o["crafter"] + str(o["item"]["id"])))}</span>'
                     f'{f"<span class=cf-need>{need}</span>" if need else ""}</li>')
-    for slot, en in plan["enchants"].items():
-        targets = ", ".join(who(s) for s in en["targets"])
-        effects = ", ".join(sorted(en["effects"]))
-        rows.append(f'<li class="cf-ench"><span class="cf-title">✨ Enchant na {e(SLOT_CZ.get(slot, slot))}</span>'
-                    f'<span class="cf-who">{targets}</span><span class="cf-gain">bez enchantu</span>'
-                    f'<span class="cf-need">umí {", ".join(who(s) for s in sorted(en["by"]))}: {e(effects)}</span></li>')
+    if plan["enchants"]:
+        by = sorted({s_ for en in plan["enchants"].values() for s_ in en["by"]})
+        slots = and_join([SLOT_CZ.get(slot, slot) for slot in plan["enchants"]])
+        rows.append(f'<li class="cf-ench"><span class="cf-title">✨ {and_join([who(s_) for s_ in by])} '
+                    f'{"umí" if len(by) == 1 else "umějí"} zatřpytit {e(slots)}.</span>'
+                    f'<span class="cf-gain">{e(Q.line("craft.enchant", "ench"))}</span></li>')
     for slug, prof, skill in plan["capped"]:
-        rows.append(f'<li class="cf-cap"><span class="cf-title">⚠️ {e(prof)} {skill}/{skill}</span>'
-                    f'<span class="cf-who">{who(slug)}</span><span class="cf-gain">strop</span><span class="cf-need">skill je na stropu, '
-                    f'zajdi k trenérovi</span></li>')
+        rows.append(f'<li class="cf-cap" title="{e(prof)} {skill}/{skill}"><span class="cf-title">⚠️ {who(slug)} je na stropu jako '
+                    f'{e(CRAFTSMAN.get(prof, prof))}, {e(Q.line("craft.cap", slug + prof))}</span></li>')
     body = (f'<ul class="craft">{"".join(rows)}</ul>' if rows
-            else '<p class="muted">Nic, co by se teď vyplatilo vyrobit.</p>')
-    return (f'<div class="craft-box"><h3 class="sub-h">Co vyrobit pro partu</h3>{body}'
-            f'<p class="note">Jen upgrady (prázdný slot nebo lepší staty pro classu a roli, class je unese, level stačí) '
-            f'a suroviny, které musí dodat někdo jiný z party. Kde staty neznáme, rozhoduje item level.</p></div>')
+            else f'<p class="muted">{e(Q.line("craft.empty", "craft", "Nic k výrobě."))}</p>')
+    return f'<div class="craft-box"><h3 class="sub-h">Dílna</h3>{body}</div>'
 
 
 def gain_text(g):
-    """Text a tooltip štítku upgradu (upgrade() / loot_fit)."""
+    """Text a tooltip štítku upgradu (upgrade() / loot_fit); text je hláška dne z hlasky.json."""
     if g is None:
-        return "nic moc", "nosí stejně dobrý nebo lepší kus (podle statů a vah pro classu a roli)"
+        return Q.label("loot.none", "nic moc"), "nosí stejně dobrý nebo lepší kus"
     if g == "?":
         return "?", "neznámé staty nebo výbava, porovnej ve hře"
     if g == "empty":
-        return "prázdný slot", "ten slot má prázdný"
+        return Q.label("loot.empty", "prázdný slot"), "ten slot má prázdný"
     if g == "big":
-        return "velký upgrade", "podle statů a vah pro classu a roli výrazně lepší než to, co nosí"
+        return Q.label("loot.big", "velký upgrade"), "výrazně lepší než to, co nosí"
     if g == "small":
-        return "malý upgrade", "podle statů a vah pro classu a roli o něco lepší než to, co nosí"
-    return f"+{g} ilvl", f"staty neznáme, o {g} item levelů lepší než to, co nosí"
+        return Q.label("loot.small", "malý upgrade"), "o něco lepší než to, co nosí"
+    return Q.label("loot.maybe", "asi lepší"), f"staty neznáme, o {g} item levelů lepší než to, co nosí (+{g} ilvl)"
 
 
 def loot_who(fits, by_slug):
@@ -1846,7 +1954,7 @@ def loot_who(fits, by_slug):
         if f.get("second"):
             cls += " lt-second"
             tip = "druhá volba: heal nebo damage jiné školy nevyužije, " + tip
-            text = "2. volba · " + text
+            text = f'{Q.label("loot.second", "2. volba")} · {text}'
         lvl = f' <small>lvl {m["level"] + f["lvl"]}</small>' if f["lvl"] else ""
         if f["lvl"]:
             tip += f', nasadí až na levelu {m["level"] + f["lvl"]}'
@@ -1865,16 +1973,16 @@ def loot_line(entry, by_slug, contested=True, sets=None):
     if it.get("inv") == "TWOHWEAPON":
         slot = "2H zbraň"
     meta = " · ".join(str(x) for x in (slot, it.get("sub") if it.get("sub") not in (None, "Miscellaneous") else None,
-                                       it.get("stats") or it.get("stat"), it.get("level") and f'ilvl {it["level"]}',
-                                       it.get("req") and f'od lvl {it["req"]}') if x)
+                                       it.get("stats") or it.get("stat"), it.get("req") and f'od lvl {it["req"]}') if x)
     alt = f' <small class="lt-alt">(nebo {e(it["alt"])})</small>' if it.get("alt") else ""
     ups = [s for s, f in fits.items() if f["gain"] not in (None, "?") and not f.get("second")]
     if it.get("set"):
         bonus = " · ".join((sets or {}).get(it["set"], {}).get("bonus") or [])
         alt += f' <span class="lt-set" title="{e(bonus)}">set {e(it["set"])}</span>'
-    flag = ('<span class="lt-flag" title="upgrade pro víc lidí, domluvte se před rollem">🎲 víc zájemců</span>'
+    flag = (f'<span class="lt-flag" title="hodí se víc lidem, domluvte se před rollem">{e(Q.label("loot.fight", "🎲 víc zájemců"))}</span>'
             if contested and len(ups) > 1 else "")
-    who = loot_who(fits, by_slug) or '<span class="lt-none">nikomu, disenchant nebo prodat</span>'
+    who = loot_who(fits, by_slug) or (f'<span class="lt-none" title="nikomu z party se nehodí">'
+                                      f'{e(Q.label("loot.nobody", "nikomu, disenchant nebo prodat"))}</span>')
     cls = " lt-fight" if flag else ""
     return (f'<li class="lt{cls}"><div class="lt-item"><a class="item" style="color:{color}" href="{e(href)}" target="_blank" '
             f'rel="noopener">{icon}{e(it["name"])}</a>{alt}<small>{e(meta)}</small></div>'
@@ -1891,9 +1999,15 @@ def loot_section(lists, members):
         for b in d["bosses"]:
             rare = ('<span class="chip chip-rare">rare</span>' if b.get("rare") else
                     '<span class="chip chip-none">z trashe</span>' if b.get("trash") else "")
+            quip = Q.line("trash_boe", d["title"]) if b.get("boe") else b.get("quip")
+            if isinstance(quip, list):
+                quip = quip[(Q.day + zlib.crc32(b["name"].encode())) % len(quip)] if quip else ""
+            quip = f'<p class="boss-quip">{e(quip)}</p>' if quip else ""
             tip = f'<p class="boss-tip">{e(b["tip"])}</p>' if b.get("tip") else ""
-            bosses.append(f'<article class="boss{" boss-trash" if b.get("trash") else ""}"><h4>{e(b["name"])}{rare}</h4>{tip}'
-                          f'<ul class="loot">{"".join(loot_line(x, by_slug, sets=d["sets"]) for x in b["items"])}</ul></article>')
+            # vzácné BoE z trashe: žádný seznam na farmení, jen věta
+            items = "" if b.get("boe") else f'<ul class="loot">{"".join(loot_line(x, by_slug, sets=d["sets"]) for x in b["items"])}</ul>'
+            bosses.append(f'<article class="boss{" boss-trash" if b.get("trash") else ""}"><h4>{e(b["name"])}{rare}</h4>{quip}{tip}'
+                          f'{items}</article>')
         set_boxes = []
         for name, st in d["sets"].items():
             pieces = [(x["item"], b) for b in d["bosses"] for x in b["items"] if x["item"].get("set") == name]
@@ -1909,7 +2023,8 @@ def loot_section(lists, members):
         links = [(d.get("source"), "Loot", "seznam lootu"), (d.get("tactics"), "Taktika", "postup a bossové podle Warcraft Tavern")]
         src = "".join(f'<a href="{e(u)}" target="_blank" rel="noopener" title="{t}">{n} ↗</a>' for u, n, t in links if u)
         best = '<span class="chip chip-new">příští výprava</span>' if d["best"] else ""
-        note = f'<p class="note">{e(d["note"])}</p>' if d.get("note") else ""
+        if d.get("note"):  # odkud to víme: jen v tooltipu, ne jako odstavec
+            src += f'<span class="src-note" title="{e(d["note"])}">ⓘ odkud to víme</span>'
         # spoiler: bossové a loot jsou schované, dokud si je někdo sám nerozklikne
         n = sum(1 for b in d["bosses"] if not b.get("trash"))
         parts.append(f'<details class="loot-dg"><summary><div class="rc-head"><h3>{e(d["title"])}{best}</h3>'
@@ -1919,17 +2034,22 @@ def loot_section(lists, members):
                      f'<p class="rc-source loot-src">{src}</p>'
                      f'<div class="bosses">{"".join(bosses)}</div>{"".join(set_boxes)}'
                      f'{f"<h3 class=sub-h>Odměny z questů (každý si vybírá sám)</h3><ul class=lq-list>{quests}</ul>" if quests else ""}'
-                     f'{note}</details>')
+                     f'</details>')
     return (f'<section id="loot"><h2 class="sec">Bossové a loot</h2>{"".join(parts)}'
-            f'<p class="note legend">U kusu jsou jen ti, kdo ho unesou a komu sedí staty (caster, heal, frost nebo shadow damage, agility, strength). '
-            f'<b>velký / malý upgrade</b> = podle statů a hrubých vah pro classu a roli (<code>weights.json</code>) · <b>prázdný slot</b> · '
-            f'<b>nic moc</b> = nosí stejně dobré nebo lepší · <b>+N ilvl</b> = staty neznáme, rozhoduje item level · '
-            f'<b>lvl N</b> = nasadí až na tom levelu · <b>2. volba</b> (tlumeně) = heal nebo damage jiné školy z kusu nevyužije, ale zbytek ano · 🎲 upgrade pro víc lidí, domluvte se před rollem. '
-            f'Bossové a loot jsou schované jako spoiler, ukážou se po kliknutí. Přepisuješ je v <code>bosses.json</code>.</p></section>')
+            f'<p class="note legend">U kusu jsou jen ti, komu se hodí. '
+            f'<b>{e(Q.label("loot.big", "velký upgrade"))}</b> = výrazně lepší než to, co nosí · '
+            f'<b>{e(Q.label("loot.small", "malý upgrade"))}</b> = o něco lepší · '
+            f'<b>{e(Q.label("loot.empty", "prázdný slot"))}</b> = ten slot má prázdný · '
+            f'<b>{e(Q.label("loot.none", "nic moc"))}</b> = nosí stejně dobré nebo lepší · '
+            f'<b>{e(Q.label("loot.maybe", "asi lepší"))}</b> = staty neznáme · <b>lvl N</b> = až na tom levelu · '
+            f'<b>{e(Q.label("loot.second", "2. volba"))}</b> (tlumeně) = využije jen část · '
+            f'{e(Q.label("loot.fight", "🎲 víc zájemců"))} = hodí se víc lidem. '
+            f'Bossové jsou schovaní, ať si nikdo nekazí překvapení.</p></section>')
 
 
 def professions_box(members):
-    """Přehled: profese × postavy, skill s ukazatelem; profese, které nikdo nemá, na jednom řádku."""
+    """Přehled: profese × postavy, stupeň (učeň, tovaryš…) místo čísla; vedlejší profese u nuly s hláškou,
+    chybějící profese jednou větou."""
     names = [p["name"] for m in members for p in m.get("professions") or []]
     prim = [n for n in ALL_PRIMARIES if n in names]
     sec = sorted({p["name"] for m in members for p in m.get("professions") or [] if not p["primary"]})
@@ -1942,15 +2062,21 @@ def professions_box(members):
         for m in members:
             p = next((p for p in m.get("professions") or [] if p["name"] == name), None)
             if not p:
-                cells += '<span class="pg-cell pg-none"><b>–</b><span class="bar"></span></span>'
+                cells += '<span class="pg-cell pg-none"><b>–</b></span>'
                 continue
-            pct = min(100, round(100 * p["skill"] / p["max"])) if p["max"] else 0
             cells += (f'<span class="pg-cell" title="{p["skill"]} / {p["max"]}" style="--cls:{cls_color(m)}">'
-                      f'<b>{p["skill"]}</b><span class="bar"><span style="width:{pct}%"></span></span></span>')
+                      f'<b>{prof_rank(p)}</b></span>')
         return f'<span class="pg-name{cls}">{e(name)}</span>{cells}'
 
     grid = "".join(row(n) for n in prim) + "".join(row(n, " pg-sec") for n in sec)
-    foot = f'<p class="note">Nikdo nemá: {e(", ".join(nobody))}.</p>' if nobody else ""
+    # vedlejší profese skoro na nule: hláška místo čísla
+    low = [Q.line(f"prof_low.{p['name']}", m["slug"], who=first(m))
+           for m in members for p in m.get("professions") or [] if not p["primary"] and p["skill"] <= 5]
+    foot = "".join(f'<p class="note pg-low">{e(x)}</p>' for x in low if x)
+    if nobody:
+        bits = [Q.line(f"missing.{n}", "missing", n) for n in nobody]
+        line = and_join(bits)
+        foot += f'<p class="note" title="nikdo nemá: {e(", ".join(nobody))}">{e(line[:1].upper() + line[1:])}.</p>'
     return (f'<div class="prof-grid2" style="--cols:{cols}"><span></span>{head}{grid}</div>{foot}')
 
 
@@ -2056,7 +2182,7 @@ def render_chronicle(party, entries, members):
 <main>
   <header class="top"><div><p class="eyebrow"><a href="index.html">← {e(party["title"])}</a></p><h1>Kronika</h1></div></header>
   <div class="k-list">{body}</div>
-  <footer>Zápisy jsou v <code>kronika.json</code>, píšou se po výpravách.</footer>
+  <footer>Píše se po výpravách, u piva.</footer>
 </main>
 </body>
 </html>
@@ -2064,8 +2190,9 @@ def render_chronicle(party, entries, members):
 
 
 def render(party, members, rows, best, built, checks, base, titles, counters, chronicle, today, plan=None, loot=None):
-    for m in members:
-        m["yday"] = yday(m, base, today)
+    global Q
+    Q = Quips(Q.data, today)  # hlášky na dnešek, nové počítání opakování
+    Q.used |= {t["detail"] for t in titles.values()}  # ať novinky neopakují titul
     ok = [m for m in members if m["ok"]]
     has_tank = any("tank" in m["roles"] for m in ok)
     has_heal = any("heal" in m["roles"] for m in ok)
@@ -2082,7 +2209,7 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
     lead = next(iter(titles), None)
     image = (by_slug.get(lead) or {}).get("render") or next((m.get("render") for m in ok if m.get("render")), "")
     nav = [("postavy", "Postavy", True), ("tituly", "Tituly", bool(titles)), ("vyprava", "Výprava", True), ("ready", "Ready check", bool(checks)), ("loot", "Loot", bool(loot)),
-           ("kronika", "Kronika", bool(chronicle)), ("profese", "Profese", True)]
+           ("kronika", "Kronika", bool(chronicle)), ("profese", "Řemesla", True)]
     nav_html = "".join(f'<a href="#{i}">{t}</a>' for i, t, show in nav if show)
     return f'''{page_head(party["title"], desc, image, party.get("site_url", ""))}
 <main>
@@ -2093,7 +2220,7 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
     </div>
     <div class="top-right">
       <div class="flags">{flag("Tank", has_tank)}{flag("Healer", has_heal)}<span class="flag">Levely {lvl_range}</span></div>
-      <p class="built">Staženo <time data-ts="{built}">{built}</time></p>
+      <p class="built">Natočeno <time data-ts="{built}">{built}</time></p>
     </div>
   </header>
   {squad(members, party.get("size", len(members)), today)}
@@ -2103,13 +2230,13 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
   {ready_section(checks, ok)}
   {loot_section(loot, ok)}
   {chronicle_box(chronicle, ok)}
-  <section id="profese"><h2 class="sec">Profese</h2>{craft_box(plan, ok) if plan else ""}
+  <section id="profese"><h2 class="sec">Řemesla</h2>{craft_box(plan, ok) if plan else ""}
     <h3 class="sub-h">Přehled</h3>{professions_box(ok)}</section>
-  <section><details class="all-dungeons"><summary>Všechny dungeony podle levelu ({len(rows)})</summary>
+  <section><details class="all-dungeons"><summary>Kam jednou… (všech {len(rows)} dungeonů)</summary>
     {dungeon_table(rows, best, ok)}
     <p class="note">✓ sedí · −N chybí N levelů · +N je o N levelů výš. Rozsahy podle
-    <a href="https://www.wowhead.com/forever/guide/dungeons-overview-locations-details" target="_blank" rel="noopener">Wowhead pro Forever</a>, upravíš je v <code>dungeons.json</code>.</p></details></section>
-  <footer>Data z Blizzard API (záloha: veřejná <a href="https://worldofwarcraft.blizzard.com/en-us/forever/eu/armory" target="_blank" rel="noopener">WoW Forever Armory</a>), obnovuje se každé ráno. Postava se aktualizuje, když se odhlásí ze hry. Tooltipy předmětů z Wowhead.</footer>
+    <a href="https://www.wowhead.com/forever/guide/dungeons-overview-locations-details" target="_blank" rel="noopener">Wowheadu</a>.</p></details></section>
+  <footer>Čepuje se každé ráno z Blizzard API (a když neteče, z <a href="https://worldofwarcraft.blizzard.com/en-us/forever/eu/armory" target="_blank" rel="noopener">Armory</a>). Postava se aktualizuje, až se odhlásí ze hry. Tooltipy předmětů z Wowheadu.</footer>
 </main>
 <script>{JS}</script>
 </body>
@@ -2277,7 +2404,8 @@ cursor:pointer;flex:none;line-height:1}.sheet-close:hover{color:var(--text);bord
 .st-group h4{margin:0 0 4px;font:600 11px Inter,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
 .st-group ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
 .st-group li{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted var(--line);padding:1px 0}
-.st-group li b{font-weight:600}.st-bonus{color:var(--ok);font-weight:600}.st-malus{color:var(--bad);font-weight:600}
+.st-group li b{font-weight:600}
+.st-body li{justify-content:flex-start}.st-body li span{flex:0 0 58px;color:var(--muted)}.st-bonus{color:var(--ok);font-weight:600}.st-malus{color:var(--bad);font-weight:600}
 .st-sick{margin:0;padding:8px 10px;border:1px solid #6b2a24;background:#3b1612;border-radius:10px;color:#ffb3a8}
 .sheet-hint{margin:8px 0 0;font-size:12px;color:var(--muted);text-align:center}
 .squad.has-open .pc:not(.open){opacity:.55}.squad.has-open .pc:not(.open):hover{opacity:.85}
@@ -2292,14 +2420,12 @@ display:grid;place-items:center;overflow:hidden;box-shadow:0 0 8px -3px var(--q,
 .sl-txt{font-size:12px;color:var(--q)}
 .sl-empty{border:1px dashed var(--line);background:transparent;box-shadow:none;font-size:9px;color:var(--muted);overflow:hidden}
 .sl-na{border:1px solid transparent;background:repeating-linear-gradient(45deg,transparent 0 5px,#ffffff08 5px 7px);box-shadow:none}
-.sl-weak::after{content:"▼";position:absolute;left:2px;top:0;font-size:9px;color:var(--bad);text-shadow:0 0 3px #000}
-.d-ilvl{display:flex;align-items:baseline;gap:8px}.d-ilvl b{font:700 30px/1 Cinzel,serif;color:var(--gold)}.d-ilvl span{color:var(--muted);font-size:12px}
-.d-qual{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;font-weight:600}
+.sl-weak::after{content:"🩴";position:absolute;left:1px;top:0;font-size:10px;line-height:1;text-shadow:0 0 3px #000}
+.d-outfit{font:600 15px/1.3 Cinzel,serif;color:var(--gold)}
 .d-gap{color:var(--warn);font-size:12px}
 .pbars{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:5px}
-.pbars li{display:grid;grid-template-columns:1fr auto;gap:0 8px;font-size:12px}.pbars li b{color:var(--gold);font-size:12px}
-.pbars .bar{grid-column:1/-1;height:3px}.pbars .bar span{background:linear-gradient(90deg,#b0802f,var(--gold))}
-.pbars .pb-sec{color:var(--muted)}.pbars .pb-sec .bar span{background:var(--muted)}
+.pbars li{display:grid;grid-template-columns:1fr auto;gap:0 8px;font-size:12px}.pbars li b{color:var(--gold);font-size:12px;font-weight:600}
+.pbars .pb-sec{color:var(--muted)}
 .d-pet{font-size:12px}.d-pet small{color:var(--muted)}
 box-shadow:0 0 0 2px var(--panel);z-index:1}
 .next{display:flex;flex-direction:column;gap:14px}.next .eyebrow{margin:0}
@@ -2384,20 +2510,20 @@ border:1px solid color-mix(in srgb,var(--cls) 40%,transparent)}
 .lq{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
 .lq-name{font-weight:600;font-size:14px}
 .craft{list-style:none;margin:0;padding:0;display:grid;gap:0;background:var(--panel);border:1px solid var(--line);border-radius:12px}
-.craft li{display:grid;grid-template-columns:minmax(0,1fr) 200px 150px;gap:2px 14px;align-items:baseline;padding:9px 14px;
+.craft li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 14px;align-items:baseline;padding:9px 14px;
 border-top:1px solid #ffffff10;font-size:14px}
 .craft li:first-child{border-top:0}
-.cf-who{font-size:13px}.cf-gain{font-size:12px;color:var(--ok);font-weight:600;text-align:right;white-space:nowrap}
+.cf-gain{font-size:12px;color:var(--muted);font-style:italic;text-align:right}
 .cf-need{grid-column:1/-1;font-size:12px;color:var(--muted)}
-.cf-title{font-weight:600}.cf-ench .cf-gain{color:#c9b2ff}.cf-cap .cf-gain{color:var(--warn)}
-@media(max-width:600px){.craft li{grid-template-columns:minmax(0,1fr) auto}.cf-who{grid-column:1/-1;grid-row:2}}
-.cf-who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cf-title{font-weight:500}.cf-title .item{font-weight:600}
+@media(max-width:600px){.craft li{grid-template-columns:minmax(0,1fr)}.cf-gain{text-align:left}}
+.boss-quip{margin:2px 0 6px;font-style:italic;color:var(--gold);font-size:13px}
+.src-note{color:var(--muted);font-size:12px;cursor:help}.pg-low{margin:4px 0 0}
 .prof-grid2{display:grid;grid-template-columns:minmax(110px,1.3fr) repeat(var(--cols),minmax(0,1fr));gap:8px 14px;align-items:start;
 background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:13px}
 .pg-h{font-weight:600;font-size:12px;line-height:18px}.pg-name{color:var(--text);line-height:18px}.pg-sec{color:var(--muted)}
 .pg-cell{display:grid;gap:3px}.pg-cell b{font-weight:600;font-size:12px;line-height:18px}
-.pg-none b{color:var(--line)}.pg-none .bar{visibility:hidden}
-.pg-cell .bar{height:3px}.pg-cell .bar span{background:var(--cls)}
+.pg-none b{color:var(--line)}.pg-cell b{color:var(--cls)}.pg-none b{color:var(--line)}
 """
 
 JS = """

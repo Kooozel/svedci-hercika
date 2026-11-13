@@ -13,7 +13,9 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Druhý pád jména:** v `genitive` (třeba `"zrza-jegod": "Zrzy"`), aby stránka psala „od Zrzy“.
   Nová postava bez něj dostane první pád.
 - **Novinky od včerejška:** porovná levely, XP, profese, výbavu a achievementy s posledním snímkem v `history/`
-  před dneškem (ranní stav před včerejším večerem). Večerní push ho neposune. Bez historie se vezme `party.json`
+  před dneškem (ranní stav před včerejším večerem). Večerní push ho neposune. Místo čísel XP je hláška podle toho,
+  kolik kdo nahrál vůči svému levelu (drobek, kus, level, víc levelů), nikdy vůči ostatním. U profesí jen nové
+  řemeslo a nový stupeň (tovaryš od skillu 76…), recepty jednou větou. Bez historie se vezme `party.json`
   z nasazené stránky (`site_url`).
 - **Tituly a počítadla:** ze statistik postav (smrti, jídlo, need rolly, lety…) dostane každý titul za včerejší večer,
   bez žebříčku a bez opakování stejné statistiky dva dny po sobě. Kdo nehrál, dostane hezký titul.
@@ -28,15 +30,18 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   do `party.json` jako `"next": "Wailing Caverns"`. Odehraný dungeon dostane v `dungeons.json` `"done": "RRRR-MM-DD"` (nebo `true`, když datum
   nevíme) a zmizí z plánu, ready checku i lootu. V seznamu všech dungeonů zůstane se štítkem odehráno.
 - **Postavy:** klik na postavu ve skupinovce otevře pod ní její kartu: render uprostřed, kolem výbava jako okno
-  postavy ve hře (rámeček barvy kvality, ▼ nejslabší kus, prázdné sloty čárkovaně), vedle staty z API
-  (Health, atributy, obrana a útok/kouzla/léčení podle role), profese a pet. Kdo se odhlásil s Resurrection
+  postavy ve hře (rámeček barvy kvality, 🩴 hadr = nejslabší kus podle item levelu, prázdné sloty čárkovaně), vedle
+  hláška, jak je oblečený (průměrný item level proti levelu), co mu chybí („chodí bez čepice“), pár řádků „Jak na tom je“
+  (Vydrží, Léčí, Bije… hrubě podle statů na level, `BODY` v `build.py`), stupně řemesel a pet. Přesná čísla schválně
+  ne, ta jsou na Armory. Kdo se odhlásil s Resurrection
   Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu, jinak se otevře ta
   z „Já jsem“ v ready checku.
 - **Ready check:** „Já jsem“ schová úkoly ostatních, pamatuje si to prohlížeč.
-- **Profese:** „Co vyrobit pro partu“ ukáže jen upgrady, které někdo z party umí vyrobit (prázdný slot nebo lepší
-  staty pro classu a roli, class je unese, level stačí; nejlepší kus na slot), u nich suroviny, které musí dodat někdo jiný
-  (kůže od skinnera, Copper Rod od kováře…), kusy bez enchantu, které umí enchanter z party, a profese na stropu
-  skillu. Pod tím je přehled profesí. Detaily receptů a předmětů se ukládají do `cache/static.json`, takže se
+- **Řemesla:** „Dílna“ nabídne nejvýš tři kusy (`CRAFT_MAX`), které někdo z party umí vyrobit a jinému nebo sobě
+  výrazně pomůžou (velký upgrade nebo prázdný slot, class je unese, level stačí), u nich kdo co přinese
+  (kůže od skinnera, Copper Rod od kováře…), kdo umí třpytky (enchanty, bez jmen, komu chybí) a kdo je na stropu
+  skillu. Pod tím je přehled se stupni (učeň, tovaryš, mistr, velmistr podle stropu skillu, číslo v tooltipu),
+  hlášky k vedlejším profesím skoro na nule a jedna věta o profesích, které nikdo nemá. Detaily receptů a předmětů se ukládají do `cache/static.json`, takže se
   z API stahuje jen to nové (ranní běh cache commitne). Smazáním souboru se stáhne znovu.
   Nové recepty se ukážou v novinkách.
 - **Soukromí:** na stránku a do historie jde jen den posledního přihlášení, ne přesný čas.
@@ -66,18 +71,23 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   neukáže se vůbec. V ready checku vede u každého dungeonu odkaz na Wowhead i Warcraft Tavern.
 
 - **Bossové a loot:** `bosses.json`, ručně přepsané (s Claudem) pro dungeony, ke kterým se parta blíží. U bosse je krátká
-  taktika a loot, u kusu jsou jen ti, kdo ho unesou a komu sedí hlavní stat (`stat`: Caster, Spirit, Agility, Strength…),
-  s tím, jestli je to velký nebo malý upgrade podle statů (🎲 = upgrade pro víc lidí, domluvit se před rollem). Pod tím odměny
-  z questů. Forever bossy ani většinu jejich lootu v API zatím nemá, takže typ (`inv`, `sub`), `level` a `req` se píšou ručně
+  hláška (`quip`), taktika a loot, u kusu jsou jen ti, kdo ho unesou a komu sedí hlavní stat (`stat`: Caster, Spirit, Agility, Strength…),
+  s hláškou místo velký / malý upgrade (🎲 = hodí se víc lidem, domluvit se před rollem). Vzácné BoE kusy z trashe
+  (`"boe": true`) se nevypisují, jen věta. Item level se u kusu neukazuje. Pod tím odměny z questů. Forever bossy ani většinu jejich lootu v API zatím nemá, takže typ (`inv`, `sub`), `level` a `req` se píšou ručně
   ze zdrojů (Warcraft Wiki, Method). Když API předmět zná (třeba questová odměna), stačí `id`.
   Číselné staty kusů (armor, DPS, Str, spell power…) se berou z Wowhead tooltipu podle `id` a ukládají do
   `cache/static.json` (stahuje se jen nové, klíče k tomu nejsou potřeba). Ručně zapsané `values` u kusu mají přednost,
-  `stats` je jen popisek na stránku. Nošená výbava má staty z API.
-- **Upgrady podle statů:** loot i „Co vyrobit pro partu“ sečtou staty kusu podle vah (`weights.json`) a porovnají
+  `stats` je jen popisek na stránku. Nošená výbava má staty z API. Ruční `stat` určuje, komu se kus ukáže
+  (pro koho je myšlený), test hlídá, že neodporuje statům kusu (výjimky v `LABEL_OK` v testech).
+- **Upgrady podle statů:** loot i Dílna sečtou staty kusu podle vah (`weights.json`) a porovnají
   s tím, co postava nosí (prsten a trinket se slabším z obou, 2H zbraň s main hand a off hand dohromady).
-  Stránka ukáže jen hrubě **velký upgrade** (aspoň o 20 % a 4 body lepší), **malý upgrade** (aspoň o 10 % a 1 bod)
-  nebo **nic moc**, přesná čísla schválně ne (`BIG_UP`, `SMALL_UP` v `build.py`). Kde staty neznáme, rozhoduje item
-  level (+N ilvl). Podklad je v `docs/staty-forever.md`. ▼ nejslabší kus na kartě je dál podle item levelu.
+  Stránka ukáže jen hrubě velký upgrade (aspoň o 20 % a 4 body lepší), malý upgrade (aspoň o 10 % a 1 bod)
+  nebo nic moc, a to hláškou z `hlasky.json` („bere všema deseti“, „neurazí“, „ani za pivo“), přesná čísla schválně
+  ne (`BIG_UP`, `SMALL_UP` v `build.py`). Kde staty neznáme, rozhoduje item level („asi lepší“, +N ilvl v tooltipu).
+  Podklad je v `docs/staty-forever.md`.
+- **Hlášky:** `hlasky.json`, každý seznam aspoň tři varianty (hlídá test). Štítky lootu a legenda jsou celý den stejné
+  na celé stránce, věty u postav se střídají podle dne a postavy a na jedné stránce se neopakují (ani s tituly).
+  Po výpravě se můžou připsat nové, třeba s narážkami na ten večer.
 - **Váhy statů:** `weights.json`, hrubé odhady pro classu a roli: hlavní staty (`main`), vedlejší (`minor`), kolik
   bodů je +1 DPS zbraně podle slotu (`weapon`) a převody jednotek (`units`, třeba 2 AP = 1 Str). Profil se hledá
   podle classy, role a specu (`"shaman dps enhancement"`, pak `"shaman dps"`, pak `"shaman"`).

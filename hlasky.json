@@ -1,0 +1,96 @@
+{
+ "_info": "Hlášky na stránku. Každý seznam má aspoň tři varianty, střídají se podle dne. Štítky (loot, legenda) jsou celý den na celé stránce stejné, věty u postav se liší postava od postavy a na jedné stránce se neopakují. {next}, {names}, {who}, {what}, {rank}, {craft}, {v}, {name} se doplní. Klidně připiš další.",
+ "loot": {
+  "big": ["bere všema deseti", "tohle chce", "hned by to bral", "sedne jak ulité"],
+  "small": ["neurazí", "proč ne", "lepší než prd", "dá se nosit"],
+  "none": ["ani za pivo", "nic moc", "má lepší", "nestojí za řeč"],
+  "empty": ["lepší než nic", "aspoň něco", "díru zalepí", "holý slot, bere"],
+  "second": ["kdyby to nikdo nechtěl", "až po ostatních", "když zbude"],
+  "maybe": ["asi lepší", "spíš lepší", "vypadá líp"],
+  "fight": ["🎲 bude se o to rvát", "🎲 dohodněte se u piva", "🎲 víc zájemců, kámen nůžky papír"],
+  "nobody": ["💰 do krámu, na rundu", "💰 prodat a propít", "💰 enchanterovi na prach"]
+ },
+ "trash_boe": [
+  "Občas z trashe padne něco modrého. Kdo to vytáhne, platí rundu.",
+  "Z trashe sem tam vypadne modrá věc. Nálezce kupuje pivo.",
+  "Trash umí překvapit modrou věcí. Šťastlivec platí rundu."
+ ],
+ "outfit": {
+  "fine": ["Oblečený jak na svatbu.", "Vyfiknutý jak na rande.", "Nablýskaný jak půllitr po myčce."],
+  "work": ["Oblečený do práce.", "Na dungeon to stačí.", "Nic extra, ale nestydí se.", "Jak na sobotní brigádu."],
+  "rags": ["Oblečený z kontejneru za Orgrimmarem.", "Vypadá, jako by spal pod mostem.", "Něco na sobě má, hlavně že nemrzne."]
+ },
+ "gap_tail": ["Chudák.", "Ať mu někdo něco hodí.", "Móda je móda.", "Asi otužuje."],
+ "weak": ["tohle by chtělo do krámu", "nosí to snad z recese", "zasloužilo by si důchod", "i krysy by se styděly"],
+ "body": {
+  "hp": {
+   "low": ["jak pivní tácek", "jak papírový ubrousek", "dvě rány a dost"],
+   "mid": ["jak poctivý stůl", "na hospodskou rvačku to stačí", "běžnou sobotu"],
+   "high": ["jak dubový sud", "jak výčepní pult", "i rvačku v Grom'golu"]
+  },
+  "heal": {
+   "low": ["náplastí a dobrým slovem", "spíš modlitbou než kouzlem", "jak babička heřmánkem"],
+   "mid": ["spolehlivě jak dobrý výčepní", "na běžný dungeon dost", "poctivě, nikdo si nestěžuje"],
+   "high": ["zázraky na počkání", "skoro i mrtvé vzkřísí", "líp než lék na kocovinu"]
+  },
+  "spell": {
+   "low": ["jak zapalovač na pivo", "jiskřičky a dým", "jak prskavka"],
+   "mid": ["slušný ohňostroj", "jak Silvestr na vsi", "na trash to stačí"],
+   "high": ["jak bouře nad Barrens", "pálí jak slivovice", "pozor na obočí"]
+  },
+  "ranged": {
+   "low": ["jak z praku", "spíš plaší vrány", "šipky do terče"],
+   "mid": ["jak střelnice na pouti", "trefí, co má", "poctivě"],
+   "high": ["jak odstřelovač", "pes se ani nemusí snažit", "šíp mezi oči"]
+  },
+  "melee": {
+   "low": ["jak babička deštníkem", "spíš hladí", "jak polštářem"],
+   "mid": ["jak kovář v pátek", "slušná facka", "poctivá ručička"],
+   "high": ["jak vyhazovač", "jak kladivo na stůl", "pěst jak buchta"]
+  },
+  "armor": {
+   "low": ["jak plechovka od piva", "jak ubrus", "spíš symbolicky"],
+   "mid": ["jak dveře od hospody", "jak poctivý štít", "rány bere statečně"],
+   "high": ["jak sejf", "jak zeď za výčepem", "rány se od něj odrážejí"]
+  }
+ },
+ "xpbar": {
+  "start": ["Do {next} je to ještě daleko.", "{next}? To bude dlouhá noc.", "Level {next} zatím jen v plánech."],
+  "mid": ["Na půl cesty k {next}.", "K {next} zbývá ještě kus.", "Půlka. Pivo a jede se dál."],
+  "late": ["{next} už je na dohled.", "Pár questů a je {next}.", "K {next} jen kousek."],
+  "almost": ["{next} na jeden zátah.", "Ding na krajíčku.", "Stačí zabít kance a je {next}."]
+ },
+ "news": {
+  "crumb": ["Spíš jen venčení mounta.", "Přijít, pozdravit, jít spát.", "Prodat šedé věci a hotovo.", "Spíš zdvořilostní návštěva."],
+  "chunk": ["Poctivá směna.", "Na jedno pivo to stačilo.", "Bez spěchu, a dobře tak.", "Klidný večer s questama."],
+  "level": ["Ding! Zvuk, který nikdy neomrzí.", "Jeden level, jedna runda.", "Talentový bod čeká, až vystřízliví.", "Level do sebe jak panáka."],
+  "multi": ["Tohle už není hraní, to je druhá práce.", "Kdo mu to doma dovolil?", "Grind jak o život.", "Kde na to bere čas?"],
+  "quiet": ["{names}: odpočinek. Taky se to počítá.", "{names}: den volna, klid na baru.", "{names}: nic, asi v hospodě naživo."],
+  "newprof": ["🎒 Nově: {what}. Začátky jsou těžký.", "🎒 Nově: {what}. Kdo by to byl řekl.", "🎒 Nově: {what}. Uvidíme, jak dlouho to vydrží."],
+  "rankup": ["🎓 Nově {rank} {craft}. Zapíjí se!", "🎓 Povýšení na {rank} {craft}. Cech hlásí nového člena.", "🎓 Teď už {rank} {craft}. Mistr ho poplácal po zádech."],
+  "recipes": ["📜 {v} v sešitě, třeba {name}.", "📜 {v} navíc. Nejlíp zní {name}.", "📜 {v}, mezi nimi {name}."]
+ },
+ "craft": {
+  "offer": ["Za rundu.", "Stačí hezky poprosit.", "Cena: jedno pivo.", "Dodací lhůta: až bude nálada."],
+  "enchant": ["Kdo chce, ať přinese prach.", "Třpytky za pivo.", "Stačí přinést prach a dobrou náladu."],
+  "cap": ["ať zajde za mistrem.", "trenér už čeká (i s nataženou dlaní).", "dál to bez učitele nepůjde."],
+  "empty": ["V dílně je klid, nikdo nic nepotřebuje.", "Dílna má zavřeno, všichni jsou oblečení.", "Nic k výrobě. Jde se na pivo."]
+ },
+ "prof_low": {
+  "Cooking": ["{who} vaří. Raději ne.", "{who} umí spálit i vodu.", "{who} u plotny? Volejte hasiče."],
+  "Fishing": ["{who} rybaří. Zatím jen boty.", "{who} drží prut obráceně.", "{who} krmí ryby, chytat je nebude."],
+  "First Aid": ["{who} obvazuje. Hlavně sebe.", "{who} má náplasti s kačenkama.", "{who} umí obvaz, ne uzel."]
+ },
+ "missing": {
+  "Alchemy": ["lektvary kupujeme", "lektvary jen z obchodu", "lektvary pije každý svoje"],
+  "Blacksmithing": ["meče kupujeme", "kovárna je zavřená", "kladivo nikdo nedrží"],
+  "Enchanting": ["třpytky nemáme", "prach nikdo nesbírá", "očarovat neumí nikdo"],
+  "Engineering": ["bomby nehází nikdo", "nic nebouchá", "šroubovák nikdo nedrží"],
+  "Herbalism": ["bylinky šlapeme", "kytky jen obdivujeme", "bylinky necháváme kozám"],
+  "Leatherworking": ["kůži nikdo nešije", "koženky kupujeme", "kůže jde do krámu"],
+  "Mining": ["kámen nikdo nekope", "rudu obcházíme", "krumpáč nikdo nemá"],
+  "Skinning": ["kůži nikdo nestahuje", "zvířátka necháváme v kožichu", "nůž na kůže nikdo nemá"],
+  "Tailoring": ["šít neumí nikdo", "jehla nikde", "hadry kupujeme"]
+ },
+ "titles_note": ["Není to žebříček. Kdo vede, ten platí.", "Žádný žebříček, jen pomluvy podložené statistikou.", "Není to soutěž. Ale kdyby byla…"]
+}
