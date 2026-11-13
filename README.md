@@ -74,6 +74,9 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   `cache/static.json` (stahuje se jen nové, klíče k tomu nejsou potřeba). Ručně zapsané `values` u kusu mají přednost,
   `stats` je jen popisek na stránku. Nošená výbava má staty z API. Hodnocení upgradů podle statů se teprve chystá
   (podklad v `docs/staty-forever.md`).
+- **Váhy statů:** `weights.json`, hrubé odhady pro classu a roli: hlavní staty (`main`), vedlejší (`minor`), kolik
+  bodů je +1 DPS zbraně podle slotu (`weapon`) a převody jednotek (`units`, třeba 2 AP = 1 Str). Profil se hledá
+  podle classy, role a specu (`"shaman dps enhancement"`, pak `"shaman dps"`, pak `"shaman"`).
 
 Po pushnutí do `main` se stránka přegeneruje hned.
 

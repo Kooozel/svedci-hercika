@@ -668,6 +668,23 @@ SCHOOL_FOR = {"Shadow": {"priest", "warlock"}, "Frost": {"mage"}, "Arcane": {"ma
               "Nature": {"druid", "shaman"}}
 
 
+def weights_for(m, catalog):
+    """Váhy statů z weights.json pro classu, roli a spec: {"stats": {STAT: body za jednotku}, "weapon": {slot: body
+    za +1 DPS}}. Hlavní role je první z roles, bez specu dps. None = classa bez profilu."""
+    cls, role = m.get("class_slug"), ((m.get("roles") or ["dps"])[0])
+    spec = (m.get("spec") or "").lower().replace(" ", "-")
+    profiles = catalog.get("profiles") or {}
+    prof = next((profiles[k] for k in (f"{cls} {role} {spec}", f"{cls} {role}", cls) if k in profiles), None)
+    if prof is None:
+        return None
+    tiers, units = catalog.get("tiers") or {}, catalog.get("units") or {}
+    stats = {}
+    for tier in ("minor", "main"):  # hlavní přebije vedlejší, kdyby byl stat v obou
+        for s in prof.get(tier) or []:
+            stats[s] = round(tiers.get(tier, 0) * units.get(s, 1), 4)
+    return {"stats": stats, "weapon": dict(prof.get("weapon") or {})}
+
+
 def stat_fits(stat, m):
     """Hodí se hlavní stat kusu classe a roli? Bez statu nebo se Staminou ano (Classic: hybridi podle role)."""
     cls, heal = m["class_slug"], "heal" in (m.get("roles") or [])

@@ -384,6 +384,62 @@ class Tooltip(unittest.TestCase):
         self.assertNotIn("values", build.loot_item({"name": "Bez id", "inv": "FEET"}, static))
 
 
+WEIGHTS = json.loads((Path(build.ROOT) / "weights.json").read_text(encoding="utf-8"))
+
+
+def who(cls, roles, spec=None):
+    return {"class_slug": cls, "roles": roles, "spec": spec}
+
+
+class Weights(unittest.TestCase):
+    """Hrubé váhy statů z weights.json podle classy, role a specu."""
+
+    def test_paladin_tank(self):
+        w = build.weights_for(who("paladin", ["tank"], "Holy"), WEIGHTS)
+        self.assertEqual((w["stats"]["STAMINA"], w["stats"]["ARMOR"], w["stats"]["INTELLECT"]), (1.0, 0.05, 0.4))
+        self.assertNotIn("SPELL_HEALING_DONE", w["stats"])
+        self.assertEqual(w["weapon"], {"MAIN_HAND": 3})
+
+    def test_healer_ignores_spell_damage(self):
+        w = build.weights_for(who("priest", ["heal"], "Holy"), WEIGHTS)
+        self.assertEqual((w["stats"]["SPELL_HEALING_DONE"], w["stats"]["SPIRIT"]), (1.0, 0.4))
+        self.assertNotIn("SPELL_DAMAGE_DONE", w["stats"])
+
+    def test_mage_school_and_wand(self):
+        w = build.weights_for(who("mage", ["dps"], "Frost"), WEIGHTS)
+        self.assertEqual(w["stats"]["FROST_SPELL_DAMAGE"], 1.0)
+        self.assertNotIn("SHADOW_SPELL_DAMAGE", w["stats"])
+        self.assertNotIn("ATTACK_POWER", w["stats"])
+        self.assertEqual(w["weapon"], {"RANGED": 2})
+
+    def test_hunter_ranged_weapon_and_ap(self):
+        w = build.weights_for(who("hunter", ["dps"], "Beast Mastery"), WEIGHTS)
+        self.assertEqual((w["stats"]["AGILITY"], w["stats"]["ATTACK_POWER"], w["weapon"]["RANGED"]), (1.0, 0.5, 7))
+
+    def test_spec_picks_profile(self):
+        enh = build.weights_for(who("shaman", ["dps"], "Enhancement"), WEIGHTS)
+        ele = build.weights_for(who("shaman", ["dps"], "Elemental"), WEIGHTS)
+        self.assertEqual((enh["stats"]["STRENGTH"], "STRENGTH" in ele["stats"]), (1.0, False))
+        self.assertEqual(ele["stats"]["SPELL_DAMAGE_DONE"], 1.0)
+
+    def test_no_spec_is_dps_unknown_class_none(self):
+        self.assertEqual(build.weights_for(who("rogue", []), WEIGHTS)["weapon"]["MAIN_HAND"], 10)
+        self.assertIsNone(build.weights_for(who("monk", ["dps"]), WEIGHTS))
+
+    def test_every_class_role_has_profile(self):
+        roles = {"warrior": ["tank", "dps"], "paladin": ["tank", "heal", "dps"], "hunter": ["dps"], "rogue": ["dps"],
+                 "priest": ["heal", "dps"], "shaman": ["heal", "dps"], "mage": ["dps"], "warlock": ["dps"],
+                 "druid": ["tank", "heal", "dps"]}
+        known = set(WEIGHTS["units"]) | {"STRENGTH", "AGILITY", "STAMINA", "INTELLECT", "SPIRIT", "SPELL_POWER",
+                                         "SPELL_HEALING_DONE", "SPELL_DAMAGE_DONE", "DEFENSE_SKILL_RATING"}
+        known |= {f"{s}_SPELL_DAMAGE" for s in ("SHADOW", "FIRE", "FROST", "ARCANE", "NATURE", "HOLY")}
+        for cls, rs in roles.items():
+            for r in rs:
+                w = build.weights_for(who(cls, [r]), WEIGHTS)
+                self.assertIsNotNone(w, f"{cls} {r}")
+                self.assertTrue(set(w["stats"]) <= known, f"{cls} {r}: {set(w['stats']) - known}")
+
+
 if __name__ == "__main__":
     unittest.main()
 
