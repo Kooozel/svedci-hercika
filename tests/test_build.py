@@ -103,6 +103,26 @@ class Titles(unittest.TestCase):
         self.assertTrue(titles["kozel"]["key"].startswith("busy:"))
 
 
+    def test_chronicle_title_only_day_after_run(self):
+        entry = {"date": "2026-11-11", "titles": {"a": {"emoji": "🎈", "title": "Špatný zeppelin"},
+                                                  "x": {"title": "Není v partě"}}}
+        got = build.chronicle_titles([entry], base([member("a")]), TODAY, {"a"})
+        self.assertEqual(list(got), ["a"])
+        self.assertEqual(got["a"]["title"], "Špatný zeppelin")
+        # o den později, nebo bez včerejšího stavu už neplatí
+        self.assertEqual(build.chronicle_titles([entry], base([member("a")], day="2026-11-12"),
+                                                date(2026, 11, 13), {"a"}), {})
+        self.assertEqual(build.chronicle_titles([entry], None, TODAY, {"a"}), {})
+
+    def test_counter_milestone_keeps_delta(self):
+        old, now = member("a", stats={"Quests completed": 480}), member("a", stats={"Quests completed": 511})
+        html = build.evening_box([now], base([old]), {"a": {"emoji": "🎉", "title": "T", "detail": ""}},
+                                 build.party_counters([now], base([old])))
+        self.assertIn("přes 500!", html)
+        self.assertIn("+31 od včera", html)
+        self.assertIn("další milník 1", html)
+
+
 class Baseline(unittest.TestCase):
     def test_uses_last_history_before_today(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -22,7 +22,9 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Titul za statistiku dostane jen ten, kdo v ní vede (nebo má aspoň 75 % nejlepšího, `LEAD`); kdo hrál,
   ale v ničem nevedl, dostane titul z `busy`.
 - **Příští výprava:** dungeon jako pásmo na stupnici levelů, postavy jako tečky (vybledlé = mimo rozsah),
-  pod tím další dva dungeony a souhrn ready checku.
+  pod tím další dva dungeony a souhrn ready checku. Vybírá se podle levelů, domluvený dungeon se dá napsat
+  do `party.json` jako `"next": "Wailing Caverns"`. Odehraný dungeon dostane v `dungeons.json` `"done": "RRRR-MM-DD"`
+  a zmizí z plánu, ready checku i lootu.
 - **Postavy:** klik na postavu ve skupinovce otevře pod ní její kartu: render uprostřed, kolem výbava jako okno
   postavy ve hře (rámeček barvy kvality, ▼ nejslabší kus, prázdné sloty čárkovaně), vedle staty z API
   (Health, atributy, obrana a útok/kouzla/léčení podle role), profese a pet. Kdo se odhlásil s Resurrection
@@ -37,7 +39,9 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Nové recepty se ukážou v novinkách.
 - **Soukromí:** na stránku a do historie jde jen den posledního přihlášení, ne přesný čas.
 - **Kronika:** zápisy z výprav v `kronika.json`. Na hlavní stránce je první odstavec posledního zápisu,
-  celá kronika je na `kronika.html`. Píše se ručně (s Claudem) po výpravě.
+  celá kronika je na `kronika.html`. Píše se ručně (s Claudem) po výpravě. Zápis může mít `titles`
+  (slug → `emoji`, `title`, `detail`): ruční tituly za ten večer, třeba za špatný zeppelin, které přebijí ty ze statistik.
+  Platí jen první den po výpravě.
 - **Denní historie:** ranní plánovaný běh commitne `history/RRRR-MM-DD.json` se stavem všech postav
   (levely, XP, statistiky, výbava). Z rozdílu dvou dnů se pozná, co se ten večer stalo. Kvůli tomu má workflow
   právo zápisu do repozitáře, takže si před vlastním pushem udělej `git pull`.

@@ -5,7 +5,8 @@
    {"name": "Oslavenec", "line": "{v}. Dort je v Orgrimmaru."},
    {"name": "Ding!", "line": "{v}. Ten zvuk nikdy neomrzí."},
    {"name": "Povýšený", "line": "{v}. Talentový bod čeká na rozmyšlení."},
-   {"name": "Rostoucí legenda", "line": "{v}. Ještě pár a bude se o něm zpívat."}
+   {"name": "Rostoucí legenda", "line": "{v}. Ještě pár a bude se o něm zpívat."},
+   {"name": "Ruinový ding", "line": "{v}. V Lordaeronu se roste rychleji než v kanálech."}
   ]},
   "Resurrected by priests": {"emoji": "👼", "min": 1, "bonus": 0.8, "forms": ["{n}× oživen", "{n}× oživen", "{n}× oživen"], "titles": [
    {"name": "Lazar", "line": "{v} priestem. Vstaň a choď."},
@@ -28,18 +29,21 @@
    {"name": "Kamarád Spirit Healera", "line": "{v}. Už si tykají."},
    {"name": "Zkoušeč podlahy", "line": "{v}. Podlaha drží, potvrzeno."},
    {"name": "Pravidelný host hřbitova", "line": "{v}. Má tam vlastní lavičku."},
-   {"name": "Nesmrtelný (skoro)", "line": "{v}. Pokaždé se vrátil."}
+   {"name": "Nesmrtelný (skoro)", "line": "{v}. Pokaždé se vrátil."},
+   {"name": "Věrný Spirit Healerovi", "line": "{v}. Hřbitov za plotem byl hned vedle."}
   ]},
   "Quests abandoned": {"emoji": "🗑️", "min": 1, "bonus": 0.6, "forms": ["{n} vzdaný quest", "{n} vzdané questy", "{n} vzdaných questů"], "titles": [
    {"name": "Ten, který to vzdal", "line": "{v}. Někdy je moudré odejít."},
    {"name": "Uklízeč questlogu", "line": "{v}. Místo pro nové dobrodružství."},
-   {"name": "Realista", "line": "{v}. Patnáct kančích jater nikdo nepotřebuje."}
+   {"name": "Realista", "line": "{v}. Patnáct kančích jater nikdo nepotřebuje."},
+   {"name": "Místo pro Lordaeron", "line": "{v}. Questlog má jen dvacet řádků."}
   ]},
   "Beverages consumed": {"emoji": "🍺", "min": 3, "bonus": 0.4, "forms": ["{n} nápoj", "{n} nápoje", "{n} nápojů"], "titles": [
    {"name": "Štamgast", "line": "{v}. Hospodský mu drží židli."},
    {"name": "Žíznivý poutník", "line": "{v}. Hydratace je základ."},
    {"name": "Sommelier z Orgrimmaru", "line": "{v}. Rozezná ročník podle mana regenu."},
-   {"name": "Velbloud", "line": "{v}. A pořád má žízeň."}
+   {"name": "Velbloud", "line": "{v}. A pořád má žízeň."},
+   {"name": "Čerpací stanice", "line": "{v}. Mág bez vody je jen chodící róba."}
   ]},
   "Food eaten": {"emoji": "🍗", "min": 3, "bonus": 0.4, "forms": ["{n} jídlo", "{n} jídla", "{n} jídel"], "titles": [
    {"name": "Hodovník", "line": "{v}. Svačina je taky taktika."},
@@ -50,17 +54,20 @@
   "Need rolls made on loot": {"emoji": "🎲", "min": 2, "bonus": 0.4, "forms": ["{n}× need", "{n}× need", "{n}× need"], "titles": [
    {"name": "Lovec štěstí", "line": "{v}. Potřebuje to. Všechno."},
    {"name": "Muž v nouzi", "line": "{v}. Ten plášť se mu fakt hodí."},
-   {"name": "Kostkař", "line": "{v}. Kostky jsou jeho kamarádi."}
+   {"name": "Kostkař", "line": "{v}. Kostky jsou jeho kamarádi."},
+   {"name": "Sběratel setů", "line": "{v}. Healerský set? Hlavně že má Int."}
   ]},
   "Greed rolls made on loot": {"emoji": "💰", "min": 2, "bonus": 0.4, "forms": ["{n}× greed", "{n}× greed", "{n}× greed"], "titles": [
    {"name": "Chamtivec", "line": "{v}. Zlato se samo nesebere."},
    {"name": "Obchodník", "line": "{v}. Vendor ho zdraví jménem."},
-   {"name": "Skromný sběratel", "line": "{v}. Nepotřebuje, ale vezme."}
+   {"name": "Skromný sběratel", "line": "{v}. Nepotřebuje, ale vezme."},
+   {"name": "Dodavatel prachu", "line": "{v}. Enchanter v partě už čeká."}
   ]},
   "Times camped": {"emoji": "⛺", "min": 1, "bonus": 0.4, "forms": ["{n}× tábořil", "{n}× tábořil", "{n}× tábořil"], "titles": [
    {"name": "Trampík", "line": "{v}. Kytara chybí, ale jinak dobrý."},
    {"name": "Skaut", "line": "{v}. Oheň rozdělá i v Barrens."},
-   {"name": "Nomád", "line": "{v}. Domov je tam, kde je stan."}
+   {"name": "Nomád", "line": "{v}. Domov je tam, kde je stan."},
+   {"name": "Štamgast z Brillu", "line": "{v}. V Gallows' End Tavern má stálou postel."}
   ]},
   "Bandages used": {"emoji": "🩹", "min": 2, "bonus": 0.3, "forms": ["{n} obvaz", "{n} obvazy", "{n} obvazů"], "titles": [
    {"name": "Zdravotník", "line": "{v}. Healer si může odpočinout."},
@@ -75,7 +82,8 @@
   "Items disenchanted": {"emoji": "✨", "min": 2, "bonus": 0.3, "forms": ["{n}× disenchant", "{n}× disenchant", "{n}× disenchant"], "titles": [
    {"name": "Drtič itemů", "line": "{v}. Z modrého se stal prach."},
    {"name": "Kouzelný mlýnek", "line": "{v}. Co nepotřebuješ, rozemele."},
-   {"name": "Alchymista prachu", "line": "{v}. Zelené itemy se třesou."}
+   {"name": "Alchymista prachu", "line": "{v}. Zelené itemy se třesou."},
+   {"name": "Popelník lootu", "line": "{v}. Co nikdo nechtěl, je teď prach."}
   ]},
   "Flight paths taken": {"emoji": "🦅", "min": 2, "bonus": 0.3, "forms": ["{n} let gryfem", "{n} lety gryfem", "{n} letů gryfem"], "titles": [
    {"name": "Turista", "line": "{v}. Wyverna už zná jeho váhu."},
@@ -101,6 +109,24 @@
    {"name": "Řezník", "line": "{v}. Respawn nestíhá."},
    {"name": "Grinder", "line": "{v}. XP se samo nenasbírá."},
    {"name": "Mlýnek na moby", "line": "{v}. Kanci hlásí ztráty."}
+  ]},
+  "Rath'mael Kills (Ruins of Lordaeron)": {"emoji": "🔥", "min": 1, "bonus": 0.5, "forms": ["{n}× Rath'mael", "{n}× Rath'mael", "{n}× Rath'mael"], "titles": [
+   {"name": "Hasič Lordaeronu", "line": "{v}. Z Flamestriku ven, do Rath'maela zpátky."},
+   {"name": "Hrobník", "line": "{v}. Hřbitov za plotem je zase klidný."},
+   {"name": "Kristofova pomsta", "line": "{v}. Deathguard Kristof děkuje."}
+  ]},
+  "Elixirs consumed": {"emoji": "🧴", "min": 1, "bonus": 0.3, "forms": ["{n} elixír", "{n} elixíry", "{n} elixírů"], "titles": [
+   {"name": "Pokusný králík", "line": "{v}. Zelené bublinky, prý to pomáhá."},
+   {"name": "Zázračný nápoj", "line": "{v}. Placebo taky funguje."}
+  ]},
+  "Mana potions consumed": {"emoji": "💙", "min": 1, "bonus": 0.3, "forms": ["{n} lektvar many", "{n} lektvary many", "{n} lektvarů many"], "titles": [
+   {"name": "Modrá láhev", "line": "{v}. Na drink nebyl čas."},
+   {"name": "Prázdná nádrž", "line": "{v}. Fireball nepočká."}
+  ]},
+  "Fish caught": {"emoji": "🐟", "min": 1, "bonus": 0.5, "forms": ["{n} ryba", "{n} ryby", "{n} ryb"], "titles": [
+   {"name": "Rybář", "line": "{v}. Nikdo neví, kdy na to měl čas."},
+   {"name": "Zenový rybář", "line": "{v}. Zatímco ostatní čekali na respawn."},
+   {"name": "Vánoční kapr", "line": "{v}. Do Vánoc to ještě natrénuje."}
   ]},
   "Deaths from drowning": {"emoji": "🫧", "min": 1, "bonus": 0.95, "forms": ["{n}× se utopil", "{n}× se utopil", "{n}× se utopil"], "titles": [
    {"name": "Kamarád murloců", "line": "{v}. Mrglglgl!"},
@@ -129,7 +155,8 @@
   "Total deaths in 5-player dungeons": {"emoji": "🏚️", "min": 1, "bonus": 0.75, "forms": ["{n} smrt v dungeonu", "{n} smrti v dungeonu", "{n} smrtí v dungeonu"], "titles": [
    {"name": "Hrdina podzemí", "line": "{v}. Někdo musí jít první."},
    {"name": "Pull magnet", "line": "{v}. Moby ho prostě milují."},
-   {"name": "Obětní beránek", "line": "{v}. Pro dobro party."}
+   {"name": "Obětní beránek", "line": "{v}. Pro dobro party."},
+   {"name": "Host Lordaeronu", "line": "{v}. Ruiny si chtěly nechat suvenýr."}
   ]},
   "_skill": {"emoji": "🔨", "min": 10, "bonus": 0.45, "forms": ["+{n} bod", "+{n} body", "+{n} bodů"], "titles": [
    {"name": "Mistr řemesla", "line": "{skill} {v}. Kovadlina ještě dýmá."},
@@ -140,7 +167,8 @@
   "_explore": {"emoji": "🗺️", "min": 2, "bonus": 0.55, "forms": ["{n} nové místo", "{n} nová místa", "{n} nových míst"], "titles": [
    {"name": "Kartograf", "line": "{v} v {zone}. Mapa už nemá bílá místa, jen šedá."},
    {"name": "Ztracený turista", "line": "{v} v {zone}. Prý hledal cestu zpátky."},
-   {"name": "Průzkumník", "line": "{v} v {zone}. Nikdo neví, co tam dělal."}
+   {"name": "Průzkumník", "line": "{v} v {zone}. Nikdo neví, co tam dělal."},
+   {"name": "Špatný zeppelin", "line": "{v} v {zone}. Grom'gol není Undercity."}
   ]},
   "_xp": {"emoji": "⭐", "min": 1000, "bonus": 0.0, "forms": ["+{n} XP", "+{n} XP", "+{n} XP"], "titles": [
    {"name": "Rychlík", "line": "{v}. Fialová lišta se hýbe."},
@@ -152,7 +180,7 @@
   {"name": "Objevitel", "line": "Nová statistika: {stat} ({n}×)."},
   {"name": "Průkopník", "line": "Jako první v partě: {stat} ({n}×)."}
  ]},
- "discovery_skip": ["Highest", "Most ", "Continent", "Creature type", "Different", "learned", "known", "maximum", "skill", "Average", "used most", "that grant", "Killing Blows", "factions", "Total kills", "Materials produced", "opposite faction", "raid and dungeon deaths"],
+ "discovery_skip": ["Highest", "Most ", "Continent", "Creature type", "Different", "learned", "known", "maximum", "skill", "Average", "used most", "that grant", "Killing Blows", "factions", "Total kills", "Materials produced", "opposite faction", "raid and dungeon deaths", "other things"],
  "first": {"emoji": "🎬", "min": 1, "bonus": 0.85, "titles": [
   {"name": "Premiéra", "line": "Poprvé v životě: {v}."},
   {"name": "Konečně!", "line": "Poprvé v životě: {v}. Historický okamžik."},

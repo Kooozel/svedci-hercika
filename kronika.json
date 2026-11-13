@@ -1,4 +1,42 @@
 {
- "_info": "Kronika výprav, nejnovější nahoře se řadí sám. Pole zápisu: date (RRRR-MM-DD), title, dungeon (nepovinné), party (slugy postav z party.json), text (seznam odstavců), facts (krátká čísla a fakta pod zápisem). Na hlavní stránce je jen první odstavec posledního zápisu, celý text je na kronika.html.",
- "entries": []
+ "_info": "Kronika výprav, nejnovější nahoře se řadí sám. Pole zápisu: date (RRRR-MM-DD), title, dungeon (nepovinné), party (slugy postav z party.json), text (seznam odstavců), facts (krátká čísla a fakta pod zápisem), titles (nepovinné: ruční tituly za ten večer, slug → emoji, title, detail; přebijí ty ze statistik, platí jen den po výpravě). Na hlavní stránce je jen první odstavec posledního zápisu, celý text je na kronika.html.",
+ "entries": [
+  {
+   "date": "2026-11-12",
+   "title": "Čtyři prsteny nad Undercity",
+   "dungeon": "Ruins of Lordaeron",
+   "party": [
+    "kozel-mourningale",
+    "zrza-jegod",
+    "johnie-rotking",
+    "horaes-velký"
+   ],
+   "text": [
+    "Cesta začala klasikou: Zrza s Johniem, špatný zeppelin a místo Undercity Grom'gol. Pak už jsme konečně vylezli z kanálů nad Undercity, vyčistili ruiny až na hřbitov a Rath'mael šel k zemi. Pět smrtí, dvě z nich Horaes, ale kdo by to počítal. Každý +2 levely, na zdraví!",
+    "Healerský set Rotmender's padal jak na běžícím pásu, a kdo v něm teď chodí nejvíc? Mág. Tři kusy. Kozel jako healer má dva a dělá, že mu to nevadí.",
+    "Johnie si vzal obouruční sekeru, ale klid, štít zůstává, sekera je na sólo levelování. A za Baronovu hlavu dostal každý stejný prsten, takže teď chodíme jak parta ze svatby. A Zrza? Greed ani jednou. Ani včera, ani nikdy."
+   ],
+   "facts": [
+    "Zeppelin do Grom'golu 🎈",
+    "Rath'mael ⚰️",
+    "+8 levelů",
+    "5 smrtí",
+    "Mág v healerském setu",
+    "4 stejné prsteny",
+    "Zrza: 0× greed"
+   ],
+   "titles": {
+    "zrza-jegod": {
+     "emoji": "🎈",
+     "title": "Špatný zeppelin",
+     "detail": "Místo Undercity Grom'gol. Stranglethorn je taky hezký."
+    },
+    "johnie-rotking": {
+     "emoji": "🧳",
+     "title": "Věrný spolucestující",
+     "detail": "Kam Zrza, tam Johnie. I do Grom'golu."
+    }
+   }
+  }
+ ]
 }

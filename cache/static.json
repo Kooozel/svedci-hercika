@@ -310,6 +310,26 @@
 "req": 0,
 "sub": "Bandages"
 },
+"2582": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132680.jpg",
+"inv": "CHEST",
+"kind": "Armor",
+"level": 17,
+"name": "Green Woolen Vest",
+"quality": "UNCOMMON",
+"req": 12,
+"sub": "Cloth"
+},
+"2583": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132543.jpg",
+"inv": "FEET",
+"kind": "Armor",
+"level": 19,
+"name": "Woolen Boots",
+"quality": "UNCOMMON",
+"req": 14,
+"sub": "Cloth"
+},
 "2584": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133762.jpg",
 "inv": "CLOAK",
@@ -640,6 +660,16 @@
 "req": 9,
 "sub": "Cloth"
 },
+"4310": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132939.jpg",
+"inv": "HAND",
+"kind": "Armor",
+"level": 17,
+"name": "Heavy Woolen Gloves",
+"quality": "UNCOMMON",
+"req": 12,
+"sub": "Cloth"
+},
 "4312": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132543.jpg",
 "inv": "FEET",
@@ -669,6 +699,26 @@
 "quality": "COMMON",
 "req": 0,
 "sub": "Miscellaneous"
+},
+"5498": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134122.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 15,
+"name": "Small Lustrous Pearl",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Other"
+},
+"5542": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133763.jpg",
+"inv": "CLOAK",
+"kind": "Armor",
+"level": 19,
+"name": "Pearl-clasped Cloak",
+"quality": "UNCOMMON",
+"req": 14,
+"sub": "Cloth"
 },
 "5957": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132760.jpg",
@@ -1163,6 +1213,42 @@
 ]
 ]
 },
+"2372": {
+"item": 2582,
+"name": "Green Woolen Vest",
+"reagents": [
+[
+2997,
+2
+],
+[
+2321,
+2
+],
+[
+2605,
+1
+]
+]
+},
+"2373": {
+"item": 2583,
+"name": "Woolen Boots",
+"reagents": [
+[
+2997,
+4
+],
+[
+2321,
+2
+],
+[
+2318,
+2
+]
+]
+},
 "2378": {
 "item": 4307,
 "name": "Heavy Linen Gloves",
@@ -1206,6 +1292,20 @@
 [
 2321,
 2
+]
+]
+},
+"2381": {
+"item": 4310,
+"name": "Heavy Woolen Gloves",
+"reagents": [
+[
+2997,
+3
+],
+[
+2321,
+1
 ]
 ]
 },
@@ -1261,6 +1361,24 @@
 "reagents": [
 [
 2770,
+1
+]
+]
+},
+"3973": {
+"item": 5542,
+"name": "Pearl-clasped Cloak",
+"reagents": [
+[
+2997,
+3
+],
+[
+2321,
+2
+],
+[
+5498,
 1
 ]
 ]

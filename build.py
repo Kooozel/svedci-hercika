@@ -971,6 +971,21 @@ def evening_titles(members, base, today, catalog):
     return out
 
 
+def chronicle_titles(chronicle, base, today, slugs):
+    """Tituly napsané ručně u zápisu v kronice: platí jen první den po výpravě (večer, za který se tituly dávají)."""
+    since = (base or {}).get("date")
+    if not since:  # bez včerejšího stavu nevíme, který večer to byl
+        return {}
+    out = {}
+    for entry in chronicle:
+        if since <= entry["date"] < today.isoformat():
+            for s, t in (entry.get("titles") or {}).items():
+                if s in slugs and s not in out:
+                    out[s] = {"key": "_kronika", "emoji": t.get("emoji", "📖"), "title": t["title"],
+                              "detail": t.get("detail", "")}
+    return out
+
+
 def party_counters(members, base):
     olds = base["members"] if has_daily(base) else {}
     out = []
@@ -1347,11 +1362,10 @@ def evening_box(members, base, titles, counters):
     for c in counters:
         if not c["total"]:
             continue
+        delta = f'+{num(c["delta"])} od včera · ' if c["delta"] else ""
+        foot = f'<small>{delta}další milník {num(c["next"])}</small>'
         if c["crossed"]:
-            foot = f'<small class="c-hit">🎉 právě {num(c["crossed"])}!</small>'
-        else:
-            delta = f'+{num(c["delta"])} od včera · ' if c["delta"] else ""
-            foot = f'<small>{delta}další milník {num(c["next"])}</small>'
+            foot = f'<small class="c-hit">🎉 přes {num(c["crossed"])}!</small>{foot}'
         tiles.append(f'<li class="ctr{" ctr-hit" if c["crossed"] else ""}"><span class="c-emoji">{c["emoji"]}</span>'
                      f'<b>{num(c["total"])}</b><span>{e(c["label"])}</span>{foot}</li>')
     hit = any(c["crossed"] for c in counters)
@@ -2183,7 +2197,7 @@ for(const t of document.querySelectorAll('time[data-ts]')){
 def main():
     party = json.loads((ROOT / "party.json").read_text(encoding="utf-8"))
     dungeons = [d for d in json.loads((ROOT / "dungeons.json").read_text(encoding="utf-8"))
-                if not d.get("alliance_side")]
+                if not d.get("alliance_side") and not d.get("done")]
     region = party["region"]
     try:
         token = api_token()
@@ -2200,6 +2214,8 @@ def main():
     if token:
         add_icons(token, region, members)
     rows, best = plan_dungeons(ok, dungeons)
+    # ručně domluvená příští výprava přebije odhad podle levelů
+    best = next((r for r in rows if r["name"] == party.get("next")), best)
     static = Static(token, region)
     try:  # co vyrobit je bonus, stránka musí vzniknout i bez něj
         plan = crafting(ok, static)
@@ -2223,12 +2239,12 @@ def main():
     today = local_day(built)
     base = load_baseline(party, built)
     catalog_titles = json.loads((ROOT / "titles.json").read_text(encoding="utf-8"))
-    titles = evening_titles(ok, base, today, catalog_titles)
-    counters = party_counters(ok, base)
-
     kronika = ROOT / "kronika.json"
     chronicle = sorted(json.loads(kronika.read_text(encoding="utf-8")).get("entries") or [] if kronika.exists() else [],
                        key=lambda x: x["date"], reverse=True)
+    titles = evening_titles(ok, base, today, catalog_titles)
+    titles.update(chronicle_titles(chronicle, base, today, {m["slug"] for m in ok}))
+    counters = party_counters(ok, base)
 
     OUT.mkdir(exist_ok=True)
     (OUT / "kronika.html").write_text(render_chronicle(party, chronicle, ok), encoding="utf-8")
