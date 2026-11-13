@@ -1966,5 +1966,1154 @@
 ]
 ]
 }
+},
+"tooltips": {
+"10410": {
+"v": 1,
+"values": {
+"AGILITY": 9,
+"ARMOR": 78,
+"STAMINA": 4,
+"STRENGTH": 5
+}
+},
+"10411": {
+"v": 1,
+"values": {
+"AGILITY": 6,
+"ARMOR": 61,
+"STAMINA": 6
+}
+},
+"10412": {
+"v": 1,
+"values": {
+"AGILITY": 3,
+"ARMOR": 49,
+"STAMINA": 5
+}
+},
+"10413": {
+"v": 1,
+"values": {
+"AGILITY": 6,
+"ARMOR": 52,
+"STRENGTH": 4
+}
+},
+"11121": {
+"v": 1,
+"values": {
+"DPS": 17.1
+}
+},
+"1155": {
+"v": 1,
+"values": {
+"DPS": 17.7,
+"SPELL_POWER": 32,
+"SPIRIT": 11
+}
+},
+"1292": {
+"v": 1,
+"values": {
+"AGILITY": 2,
+"DPS": 16.2,
+"STRENGTH": 5
+}
+},
+"1318": {
+"v": 1,
+"values": {
+"DPS": 19.7
+}
+},
+"13245": {
+"v": 1,
+"values": {
+"ARMOR": 528,
+"BLOCK": 10,
+"DEFENSE_SKILL_RATING": 5
+}
+},
+"1454": {
+"v": 1,
+"values": {
+"DPS": 18.3,
+"STAMINA": 4,
+"STRENGTH": 5
+}
+},
+"1481": {
+"v": 1,
+"values": {
+"DPS": 17.2
+}
+},
+"1482": {
+"v": 1,
+"values": {
+"DPS": 15.6
+}
+},
+"1483": {
+"v": 1,
+"values": {
+"DPS": 14.0,
+"STAMINA": 3,
+"STRENGTH": 3
+}
+},
+"1484": {
+"v": 1,
+"values": {
+"DPS": 14.0,
+"INTELLECT": 5,
+"SHADOW_RESISTANCE": 8,
+"SHADOW_SPELL_DAMAGE": 27,
+"STAMINA": 6
+}
+},
+"1486": {
+"v": 1,
+"values": {
+"ARMOR": 104,
+"SPELL_POWER": 13
+}
+},
+"1489": {
+"v": 1,
+"values": {
+"ARMOR": 94,
+"SPIRIT": 8,
+"STAMINA": 8,
+"STRENGTH": 5
+}
+},
+"1491": {
+"v": 1,
+"values": {
+"AGILITY": 6,
+"SPIRIT": 3
+}
+},
+"16886": {
+"v": 1,
+"values": {
+"ATTACK_POWER": 16,
+"DPS": 20.4
+}
+},
+"16887": {
+"v": 1,
+"values": {
+"INTELLECT": 8,
+"STAMINA": 4
+}
+},
+"17694": {
+"v": 1,
+"values": {
+"AGILITY": 4,
+"STRENGTH": 4
+}
+},
+"17695": {
+"v": 1,
+"values": {
+"ARMOR": 31,
+"SPELL_POWER": 5,
+"STAMINA": 3
+}
+},
+"1935": {
+"v": 1,
+"values": {
+"AGILITY": 4,
+"DPS": 15.5,
+"STRENGTH": 3
+}
+},
+"1974": {
+"v": 1,
+"values": {
+"ARMOR": 17,
+"INTELLECT": 5,
+"MANA_REGEN": 3,
+"STAMINA": 1
+}
+},
+"2205": {
+"v": 1,
+"values": {
+"DPS": 21.0
+}
+},
+"2271": {
+"v": 1,
+"values": {
+"DPS": 15.7,
+"SPELL_POWER": 28,
+"SPIRIT": 10,
+"STAMINA": 9
+}
+},
+"2292": {
+"v": 1,
+"values": {
+"ARMOR": 43,
+"INTELLECT": 5,
+"SHADOW_RESISTANCE": 5,
+"SHADOW_SPELL_DAMAGE": 14,
+"STAMINA": 3
+}
+},
+"251485": {
+"v": 1,
+"values": {
+"AGILITY": 2,
+"DPS": 12.2,
+"STAMINA": 2
+}
+},
+"251486": {
+"v": 1,
+"values": {
+"ARMOR": 17,
+"SPELL_POWER": 3,
+"STAMINA": 4
+}
+},
+"251533": {
+"v": 1,
+"values": {
+"DPS": 20.5,
+"STAMINA": 4,
+"STRENGTH": 8
+}
+},
+"251534": {
+"v": 1,
+"values": {
+"DPS": 15.2,
+"SPELL_POWER": 26,
+"SPIRIT": 10
+}
+},
+"2567": {
+"v": 1,
+"values": {
+"DPS": 10.9,
+"INTELLECT": 2,
+"SPELL_POWER": 28,
+"SPIRIT": 5
+}
+},
+"270023": {
+"v": 1,
+"values": {
+"ARMOR": 67,
+"INTELLECT": 6,
+"STRENGTH": 3
+}
+},
+"270024": {
+"v": 1,
+"values": {
+"ARMOR": 142,
+"SPIRIT": 5,
+"STAMINA": 4
+}
+},
+"270030": {
+"v": 1,
+"values": {
+"ARMOR": 26,
+"SPELL_DAMAGE_DONE": 3,
+"SPELL_HEALING_DONE": 9,
+"STAMINA": 6
+}
+},
+"270031": {
+"v": 1,
+"values": {
+"ARMOR": 88,
+"SPELL_POWER": 14,
+"STAMINA": 9
+}
+},
+"270032": {
+"v": 1,
+"values": {
+"ARMOR": 44,
+"ATTACK_POWER": 10,
+"STAMINA": 7
+}
+},
+"270043": {
+"v": 1,
+"values": {
+"ARMOR": 106,
+"SPIRIT": 11,
+"STAMINA": 5,
+"STRENGTH": 10
+}
+},
+"271201": {
+"v": 1,
+"values": {
+"ARMOR": 104,
+"STAMINA": 7,
+"STRENGTH": 3
+}
+},
+"271202": {
+"v": 1,
+"values": {
+"AGILITY": 4,
+"ARMOR": 37,
+"SPELL_POWER": 5
+}
+},
+"271203": {
+"v": 1,
+"values": {
+"AGILITY": 9,
+"DPS": 17.5,
+"SPIRIT": 5
+}
+},
+"271204": {
+"v": 1,
+"values": {
+"DPS": 13.6,
+"STAMINA": 5
+}
+},
+"271205": {
+"v": 1,
+"values": {
+"ARMOR": 184,
+"SHADOW_RESISTANCE": 5,
+"STRENGTH": 8
+}
+},
+"271206": {
+"v": 1,
+"values": {
+"ARMOR": 37,
+"SHADOW_SPELL_DAMAGE": 7,
+"SPIRIT": 9
+}
+},
+"271207": {
+"v": 1,
+"values": {
+"ARMOR": 35,
+"MANA_REGEN": 4,
+"STAMINA": 5
+}
+},
+"271208": {
+"v": 1,
+"values": {
+"ARMOR": 119,
+"INTELLECT": 6,
+"STRENGTH": 6
+}
+},
+"271209": {
+"v": 1,
+"values": {
+"AGILITY": 9,
+"ARMOR": 164,
+"STRENGTH": 4
+}
+},
+"271210": {
+"v": 1,
+"values": {
+"ARMOR": 22,
+"SPELL_POWER": 6,
+"SPIRIT": 5
+}
+},
+"271211": {
+"v": 1,
+"values": {
+"ARMOR": 131,
+"STAMINA": 5,
+"STRENGTH": 7
+}
+},
+"271212": {
+"v": 1,
+"values": {
+"AGILITY": 7,
+"ARMOR": 89,
+"SPIRIT": 9
+}
+},
+"271213": {
+"v": 1,
+"values": {
+"ARMOR": 547,
+"BLOCK": 11,
+"BLOCK_PCT": 1.0,
+"STRENGTH": 5
+}
+},
+"271214": {
+"v": 1,
+"values": {
+"ARMOR": 29,
+"SPELL_DAMAGE_DONE": 5,
+"SPELL_HEALING_DONE": 15,
+"STAMINA": 7
+}
+},
+"271215": {
+"v": 1,
+"values": {
+"DPS": 15.1,
+"FROST_RESISTANCE": 13,
+"FROST_SPELL_DAMAGE": 32
+}
+},
+"271216": {
+"v": 1,
+"values": {
+"DPS": 9.6,
+"SHADOW_RESISTANCE": 5,
+"SPELL_POWER": 24
+}
+},
+"271217": {
+"v": 1,
+"values": {
+"DPS": 18.2
+}
+},
+"271218": {
+"v": 1,
+"values": {
+"DPS": 14.6,
+"SPIRIT": 5
+}
+},
+"273084": {
+"v": 1,
+"values": {
+"ARMOR": 20
+}
+},
+"273088": {
+"v": 1,
+"values": {
+"AGILITY": 1,
+"ARCANE_RESISTANCE": 1,
+"FIRE_RESISTANCE": 1,
+"FROST_RESISTANCE": 1,
+"INTELLECT": 1,
+"NATURE_RESISTANCE": 1,
+"SHADOW_RESISTANCE": 1,
+"SPIRIT": 1,
+"STAMINA": 1,
+"STRENGTH": 1
+}
+},
+"273089": {
+"v": 1,
+"values": {
+"ARMOR": 22,
+"MANA_REGEN": 3
+}
+},
+"273137": {
+"v": 1,
+"values": {
+"SPELL_DAMAGE_DONE": 3,
+"SPELL_HEALING_DONE": 10,
+"STAMINA": 3
+}
+},
+"273456": {
+"v": 1,
+"values": {
+"AGILITY": 2,
+"ATTACK_POWER": 6,
+"DPS": 14.6
+}
+},
+"273457": {
+"v": 1,
+"values": {
+"INTELLECT": 2,
+"SPIRIT": 2
+}
+},
+"273637": {
+"v": 1,
+"values": {
+"DPS": 10.9,
+"SHADOW_RESISTANCE": 6,
+"SPELL_POWER": 28
+}
+},
+"273643": {
+"v": 1,
+"values": {
+"MANA_REGEN": 2
+}
+},
+"273645": {
+"v": 1,
+"values": {
+"ARMOR": 35
+}
+},
+"273646": {
+"v": 1,
+"values": {
+"ARMOR": 43,
+"NATURE_RESISTANCE": 10,
+"STRENGTH": 8
+}
+},
+"273647": {
+"v": 1,
+"values": {
+"AGILITY": 10,
+"ARMOR": 84,
+"FIRE_RESISTANCE": 7,
+"STRENGTH": 5
+}
+},
+"273839": {
+"v": 1,
+"values": {
+"STAMINA": 5
+}
+},
+"273840": {
+"v": 1,
+"values": {}
+},
+"273846": {
+"v": 1,
+"values": {
+"ARMOR": 123,
+"BLOCK_VALUE": 6,
+"SHADOW_RESISTANCE": 5,
+"STRENGTH": 8
+}
+},
+"279864": {
+"v": 1,
+"values": {
+"ATTACK_POWER": 4,
+"DPS": 15.2,
+"STAMINA": 6
+}
+},
+"279865": {
+"v": 1,
+"values": {
+"ARMOR": 18,
+"STAMINA": 3,
+"STRENGTH": 3
+}
+},
+"279867": {
+"v": 1,
+"values": {
+"DEFENSE_SKILL_RATING": 1,
+"STAMINA": 3
+}
+},
+"279874": {
+"v": 1,
+"values": {
+"DPS": 8.1,
+"SPELL_DAMAGE_DONE": 10,
+"SPELL_HEALING_DONE": 30,
+"STAMINA": 3
+}
+},
+"279875": {
+"v": 1,
+"values": {
+"AGILITY": 3,
+"ARMOR": 37,
+"STAMINA": 3
+}
+},
+"279876": {
+"v": 1,
+"values": {
+"DPS": 12.4
+}
+},
+"279877": {
+"v": 1,
+"values": {
+"ARMOR": 24,
+"NATURE_RESISTANCE": 4,
+"SPELL_POWER": 5
+}
+},
+"2807": {
+"v": 1,
+"values": {
+"AGILITY": 3,
+"DPS": 15.0,
+"STRENGTH": 3
+}
+},
+"286978": {
+"v": 1,
+"values": {
+"ARMOR": 41,
+"INTELLECT": 10,
+"SPELL_DAMAGE_DONE": 4,
+"SPELL_HEALING_DONE": 11
+}
+},
+"286979": {
+"v": 1,
+"values": {
+"ARMOR": 25,
+"INTELLECT": 3,
+"SPIRIT": 8
+}
+},
+"286980": {
+"v": 1,
+"values": {
+"ARMOR": 22,
+"INTELLECT": 6,
+"STAMINA": 6
+}
+},
+"3078": {
+"v": 1,
+"values": {
+"DPS": 13.3
+}
+},
+"3191": {
+"v": 1,
+"values": {
+"DPS": 21.7,
+"STAMINA": 9,
+"STRENGTH": 9
+}
+},
+"3194": {
+"v": 1,
+"values": {
+"DPS": 18.3,
+"SHADOW_RESISTANCE": 2
+}
+},
+"3230": {
+"v": 1,
+"values": {
+"ARMOR": 63,
+"ATTACK_POWER": 4,
+"STAMINA": 7
+}
+},
+"3324": {
+"v": 1,
+"values": {
+"ARMOR": 30,
+"SPELL_DAMAGE_DONE": 2,
+"SPELL_HEALING_DONE": 6,
+"SPIRIT": 6
+}
+},
+"3413": {
+"v": 1,
+"values": {
+"DPS": 17.3,
+"STAMINA": 3,
+"STRENGTH": 3
+}
+},
+"3414": {
+"v": 1,
+"values": {
+"DPS": 12.1,
+"INTELLECT": 2,
+"SPELL_POWER": 32,
+"STAMINA": 6
+}
+},
+"3415": {
+"v": 1,
+"values": {
+"DPS": 16.0,
+"INTELLECT": 3,
+"SPELL_DAMAGE_DONE": 17,
+"SPELL_HEALING_DONE": 52,
+"SPIRIT": 12,
+"STAMINA": 4
+}
+},
+"3416": {
+"v": 1,
+"values": {
+"ARMOR": 211,
+"STAMINA": 9,
+"STRENGTH": 9
+}
+},
+"3417": {
+"v": 1,
+"values": {
+"DPS": 23.0,
+"SPIRIT": 6,
+"STAMINA": 5,
+"STRENGTH": 10
+}
+},
+"3748": {
+"v": 1,
+"values": {
+"AGILITY": 2,
+"ARMOR": 34,
+"INTELLECT": 8,
+"SPELL_POWER": 4
+}
+},
+"4534": {
+"v": 1,
+"values": {
+"ARMOR": 84,
+"SPIRIT": 4,
+"STAMINA": 4
+}
+},
+"5243": {
+"v": 1,
+"values": {
+"DPS": 23.2
+}
+},
+"5254": {
+"v": 1,
+"values": {
+"ARCANE_RESISTANCE": 2,
+"ARMOR": 87,
+"FIRE_RESISTANCE": 2,
+"FROST_RESISTANCE": 2,
+"NATURE_RESISTANCE": 2,
+"SHADOW_RESISTANCE": 2
+}
+},
+"5404": {
+"v": 1,
+"values": {
+"AGILITY": 5,
+"ARMOR": 68,
+"SPIRIT": 7
+}
+},
+"5970": {
+"v": 1,
+"values": {
+"AGILITY": 6,
+"ARMOR": 25,
+"SPELL_POWER": 7
+}
+},
+"6220": {
+"v": 1,
+"values": {
+"DPS": 17.8,
+"FIRE_RESISTANCE": 3
+}
+},
+"6226": {
+"v": 1,
+"values": {
+"ARMOR": 42,
+"SPELL_DAMAGE_DONE": 4,
+"SPELL_HEALING_DONE": 13,
+"STAMINA": 10
+}
+},
+"6314": {
+"v": 1,
+"values": {
+"ARMOR": 22,
+"ATTACK_POWER": 10,
+"STAMINA": 3
+}
+},
+"6318": {
+"v": 1,
+"values": {
+"DPS": 16.0,
+"SPELL_DAMAGE_DONE": 17,
+"SPELL_HEALING_DONE": 52,
+"SPIRIT": 12,
+"STAMINA": 5
+}
+},
+"6319": {
+"v": 1,
+"values": {
+"ARMOR": 54,
+"SPELL_POWER": 7,
+"STAMINA": 5
+}
+},
+"6320": {
+"v": 1,
+"values": {
+"ARMOR": 585,
+"BLOCK": 12,
+"HEALTH_REGEN": 4,
+"STAMINA": 3,
+"STRENGTH": 5
+}
+},
+"6321": {
+"v": 1,
+"values": {
+"STAMINA": 2,
+"STRENGTH": 5
+}
+},
+"6323": {
+"v": 1,
+"values": {
+"DPS": 16.7,
+"STAMINA": 3,
+"STRENGTH": 2
+}
+},
+"6324": {
+"v": 1,
+"values": {
+"ARMOR": 46,
+"SHADOW_RESISTANCE": 8,
+"SPELL_DAMAGE_DONE": 6,
+"SPELL_HEALING_DONE": 18,
+"SPIRIT": 6,
+"STAMINA": 5
+}
+},
+"6335": {
+"v": 1,
+"values": {
+"ARMOR": 82,
+"STAMINA": 7
+}
+},
+"6340": {
+"v": 1,
+"values": {
+"AGILITY": 4,
+"ARMOR": 22,
+"STAMINA": 6
+}
+},
+"6392": {
+"v": 1,
+"values": {
+"AGILITY": 2,
+"ARMOR": 26,
+"INTELLECT": 3,
+"SPELL_POWER": 9,
+"SPIRIT": 5
+}
+},
+"6414": {
+"v": 1,
+"values": {
+"ATTACK_POWER": 6,
+"STAMINA": 8
+}
+},
+"6447": {
+"v": 1,
+"values": {
+"ARMOR": 530,
+"BLOCK": 9,
+"MANA_REGEN": 2
+}
+},
+"6448": {
+"v": 1,
+"values": {
+"AGILITY": 3,
+"DPS": 13.9,
+"STRENGTH": 3
+}
+},
+"6449": {
+"v": 1,
+"values": {
+"AGILITY": 6,
+"ARMOR": 20,
+"NATURE_RESISTANCE": 2
+}
+},
+"6459": {
+"v": 1,
+"values": {
+"ARMOR": 134,
+"HEALTH_REGEN": 6,
+"STAMINA": 7
+}
+},
+"6460": {
+"v": 1,
+"values": {
+"AGILITY": 3,
+"ARMOR": 107,
+"STRENGTH": 7
+}
+},
+"6461": {
+"v": 1,
+"values": {
+"ARMOR": 32,
+"HEALTH_REGEN": 10,
+"MANA_REGEN": 3
+}
+},
+"6463": {
+"v": 1,
+"values": {
+"STAMINA": 3
+}
+},
+"6465": {
+"v": 1,
+"values": {
+"ARMOR": 40,
+"SPELL_DAMAGE_DONE": 3,
+"SPELL_HEALING_DONE": 9,
+"SPIRIT": 10,
+"STRENGTH": 3
+}
+},
+"6469": {
+"v": 1,
+"values": {
+"DPS": 12.1
+}
+},
+"6472": {
+"v": 1,
+"values": {
+"DPS": 15.5
+}
+},
+"6473": {
+"v": 1,
+"values": {
+"ARMOR": 91,
+"INTELLECT": 3,
+"SPIRIT": 10,
+"STRENGTH": 3
+}
+},
+"6627": {
+"v": 1,
+"values": {
+"ARMOR": 194,
+"STAMINA": 4,
+"STRENGTH": 10
+}
+},
+"6629": {
+"v": 1,
+"values": {
+"ARMOR": 20,
+"STAMINA": 6
+}
+},
+"6630": {
+"v": 1,
+"values": {
+"ARMOR": 547,
+"BLOCK": 11,
+"INTELLECT": 5,
+"SPELL_POWER": 5
+}
+},
+"6631": {
+"v": 1,
+"values": {
+"DPS": 14.7,
+"NATURE_RESISTANCE": 9,
+"SPELL_DAMAGE_DONE": 15,
+"SPELL_HEALING_DONE": 45,
+"SPIRIT": 5,
+"STAMINA": 2
+}
+},
+"6632": {
+"v": 1,
+"values": {
+"ARMOR": 19,
+"SPELL_POWER": 3,
+"STAMINA": 5
+}
+},
+"6633": {
+"v": 1,
+"values": {
+"ATTACK_POWER": 6,
+"DPS": 15.0,
+"STAMINA": 3
+}
+},
+"6641": {
+"v": 1,
+"values": {
+"DPS": 22.4,
+"SPELL_DAMAGE_DONE": 11,
+"SPELL_HEALING_DONE": 33
+}
+},
+"6642": {
+"v": 1,
+"values": {
+"ARMOR": 208,
+"SPIRIT": 5,
+"STAMINA": 12,
+"STRENGTH": 3
+}
+},
+"6901": {
+"v": 1,
+"values": {
+"ARMOR": 23,
+"SPELL_DAMAGE_DONE": 3,
+"SPELL_HEALING_DONE": 7,
+"SPIRIT": 8
+}
+},
+"6902": {
+"v": 1,
+"values": {
+"ARMOR": 43,
+"STAMINA": 3,
+"STRENGTH": 6
+}
+},
+"6903": {
+"v": 1,
+"values": {
+"ARMOR": 40,
+"SPELL_POWER": 12,
+"SPIRIT": 9
+}
+},
+"6904": {
+"v": 1,
+"values": {
+"DPS": 17.7,
+"NATURE_RESISTANCE": 2
+}
+},
+"6905": {
+"v": 1,
+"values": {
+"DPS": 22.4,
+"SPELL_DAMAGE_DONE": 8,
+"SPELL_HEALING_DONE": 24,
+"STRENGTH": 8
+}
+},
+"6906": {
+"v": 1,
+"values": {
+"ARMOR": 132,
+"NATURE_RESISTANCE": 5,
+"STAMINA": 5,
+"STRENGTH": 8
+}
+},
+"6907": {
+"v": 1,
+"values": {
+"ARMOR": 248
+}
+},
+"6908": {
+"v": 1,
+"values": {
+"ARMOR": 25,
+"SPELL_POWER": 8,
+"STAMINA": 7
+}
+},
+"6909": {
+"v": 1,
+"values": {
+"DPS": 25.6
+}
+},
+"6910": {
+"v": 1,
+"values": {
+"ARMOR": 41,
+"HEALTH_REGEN": 5,
+"MANA_REGEN": 5,
+"SPELL_POWER": 5,
+"STAMINA": 5
+}
+},
+"6911": {
+"v": 1,
+"values": {
+"ARMOR": 58,
+"SPELL_DAMAGE_DONE": 12,
+"STAMINA": 5
+}
+},
+"7001": {
+"v": 1,
+"values": {
+"DPS": 29.0,
+"SHADOW_SPELL_DAMAGE": 6,
+"SPIRIT": 3
+}
+},
+"7002": {
+"v": 1,
+"values": {
+"ARMOR": 642,
+"BLOCK": 13,
+"FROST_RESISTANCE": 5,
+"SPIRIT": 3,
+"STAMINA": 8
+}
+},
+"888": {
+"v": 1,
+"values": {
+"ARMOR": 61,
+"SPELL_DAMAGE_DONE": 5,
+"SPELL_HEALING_DONE": 15,
+"STAMINA": 4,
+"STRENGTH": 4
+}
+},
+"935": {
+"v": 1,
+"values": {
+"DPS": 13.5,
+"STAMINA": 4
+}
+}
 }
 }

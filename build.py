@@ -94,7 +94,7 @@ def item_stats(i):
         t = s["type"]["type"]
         out[t] = out.get(t, 0) + s["value"]
     if a := (i.get("armor") or {}).get("value"):
-        out["ARMOR"] = a
+        out["ARMOR"] = out.get("ARMOR", 0) + a
     if b := (i.get("shield_block") or {}).get("value"):
         out["BLOCK"] = b
     if d := ((i.get("weapon") or {}).get("dps") or {}).get("value"):
@@ -111,10 +111,68 @@ def gear_entry(i):
          "id": i["item"]["id"], "sub": (i.get("item_subclass") or {}).get("name"),
          "enchanted": any((x.get("enchantment_slot") or {}).get("type") == "PERMANENT"
                           for x in i.get("enchantments") or []),
-         "stats": item_stats(i)}
+         "values": item_stats(i)}
     if i.get("bonus_list"):
         g["bonus"] = i["bonus_list"]
     return g
+
+
+# Wowhead tooltip pro Forever: staty lootu, který Blizzard API nezná (docs/staty-forever.md, kap. 1 a 4)
+WOWHEAD_TOOLTIP = "https://nether.wowhead.com/forever/tooltip/item/{id}"
+TOOLTIP_V = 1  # zvýšit při změně parseru, cache se pak stáhne znovu
+TOOLTIP_RULES = [  # (regex na řádek, klíče skupin); klíče jsou jako enum statů v Blizzard API, kde ho API má
+    (r"(\d+) Armor", ["ARMOR"]),
+    (r"([+-]\d+) Armor", ["ARMOR"]),  # bonusový armor
+    (r"(\d+) Block", ["BLOCK"]),
+    (r"\+(\d+) Block Value", ["BLOCK_VALUE"]),
+    (r"\(([\d.]+) damage per second\)", ["DPS"]),
+    (r"\+(\d+) (Strength|Agility|Stamina|Intellect|Spirit)\.?", [None]),
+    (r"(?:Equip: )?\+(\d+) (Fire|Frost|Nature|Shadow|Arcane) Resistance\.?", [None]),
+    (r"Equip: \+(\d+) Attack Power\.", ["ATTACK_POWER"]),
+    (r"Equip: Increases damage and healing done by magical spells and effects by up to (\d+) ?\.", ["SPELL_POWER"]),
+    (r"Equip: Increases healing done by up to (\d+) and damage done by up to (\d+) .*",
+     ["SPELL_HEALING_DONE", "SPELL_DAMAGE_DONE"]),
+    (r"Equip: Increases damage done by magical spells and effects by up to (\d+) ?\.", ["SPELL_DAMAGE_DONE"]),
+    (r"Equip: Increases damage done by (\w+) spells and effects by up to (\d+) ?\.", [None]),
+    (r"(?:Equip: )?Restores \+?(\d+) mana per 5 sec\.", ["MANA_REGEN"]),
+    (r"(?:Equip: )?Restores \+?(\d+) health per 5 sec\.", ["HEALTH_REGEN"]),
+    (r"Equip: Increased Defense \+(\d+)\.", ["DEFENSE_SKILL_RATING"]),
+    (r"Equip: Increases your chance to Block attacks with a shield by ([\d.]+)%\.", ["BLOCK_PCT"]),
+]
+
+
+def tooltip_lines(tip):
+    """Řádky textu tooltipu bez setových bonusů a bez patičky (cena, kdo dropí)."""
+    tip = re.split(r'<a href="/[^"]*item-set=|<div class="whtt-', tip)[0]
+    tip = re.sub(r"<!--.*?-->", "", tip, flags=re.S)
+    tip = re.sub(r"<br\s*/?>|</?(?:td|th|tr|table)[^>]*>", "\n", tip)
+    tip = html.unescape(re.sub(r"<[^>]+>", "", tip))
+    return [ln for ln in (re.sub(r"\s+", " ", x).strip() for x in tip.split("\n")) if ln]
+
+
+def tooltip_values(tip):
+    """(staty, náhodný suffix) z HTML Wowhead tooltipu; efekty bez statu (procy, proti zvířatům…) se nepočítají."""
+    out, random = {}, False
+    for ln in tooltip_lines(tip):
+        if ln == "<Random enchantment>":
+            random = True
+            continue
+        for rx, keys in TOOLTIP_RULES:
+            mt = re.fullmatch(rx, ln)
+            if not mt:
+                continue
+            g = mt.groups()
+            if keys == [None]:  # klíč je v textu: "+3 Strength", "+5 Shadow Resistance", "Shadow spells … 7"
+                num, word = (g[0], g[1]) if g[0][0].isdigit() or g[0][0] in "+-" else (g[1], g[0])
+                key = word.upper() + ("_RESISTANCE" if "Resistance" in ln else "_SPELL_DAMAGE" if "spells" in ln else "")
+                pairs = [(key, num)]
+            else:
+                pairs = zip(keys, g)
+            for k, v in pairs:
+                v = float(v) if "." in v else int(v)
+                out[k] = round(out.get(k, 0) + v, 1) if k == "DPS" else out.get(k, 0) + v
+            break
+    return out, random
 
 
 def api_get(token, region, path, kind):
@@ -519,6 +577,23 @@ class Static:
                     "icon": media_icon(self.token, self.region, "item", iid)}
         return self._get("items", iid, fetch)
 
+    def tooltip(self, iid):
+        """Staty z Wowhead tooltipu ({"v", "values", "random"}); nepotřebuje API klíče."""
+        store = self.data.setdefault("tooltips", {})
+        hit = store.get(str(iid))
+        if hit and hit.get("v") == TOOLTIP_V:
+            return hit
+        try:
+            d = http_json(urllib.request.Request(WOWHEAD_TOOLTIP.format(id=iid), headers={"User-Agent": USER_AGENT}))
+        except Exception as exc:
+            print(f"tooltip {iid}: {exc}", file=sys.stderr)
+            return hit
+        values, random = tooltip_values(d.get("tooltip") or "")
+        store[str(iid)] = hit = {"v": TOOLTIP_V, "values": values, **({"random": True} if random else {})}
+        self.dirty = True
+        time.sleep(0.2)  # ohleduplně k Wowheadu, stahuje se jen nové
+        return hit
+
     def save(self):
         if self.dirty:
             self.PATH.parent.mkdir(exist_ok=True)
@@ -620,6 +695,12 @@ def loot_item(raw, static):
     # s inv je kus zapsaný ručně (API ho nezná), id je jen pro Wowhead tooltip
     it = dict(static.item(raw["id"]) or {}) if raw.get("id") and not raw.get("inv") else {}
     it.update({k: v for k, v in raw.items() if v is not None})
+    tip = static.tooltip(raw["id"]) if raw.get("id") else None
+    values = {**((tip or {}).get("values") or {}), **(raw.get("values") or {})}  # ručně zapsané má přednost
+    if values:
+        it["values"] = values
+    if (tip or {}).get("random"):
+        it["random"] = True
     it.setdefault("name", "?")
     it.setdefault("kind", "Weapon" if it.get("inv") in WEAPON_INV else "Armor")
     return it

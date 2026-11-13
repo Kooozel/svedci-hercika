@@ -70,6 +70,10 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   s tím, o kolik item levelů je lepší než to, co nosí (🎲 = upgrade pro víc lidí, domluvit se před rollem). Pod tím odměny
   z questů. Forever bossy ani většinu jejich lootu v API zatím nemá, takže typ (`inv`, `sub`), `level` a `req` se píšou ručně
   ze zdrojů (Warcraft Wiki, Method). Když API předmět zná (třeba questová odměna), stačí `id`.
+  Číselné staty kusů (armor, DPS, Str, spell power…) se berou z Wowhead tooltipu podle `id` a ukládají do
+  `cache/static.json` (stahuje se jen nové, klíče k tomu nejsou potřeba). Ručně zapsané `values` u kusu mají přednost,
+  `stats` je jen popisek na stránku. Nošená výbava má staty z API. Hodnocení upgradů podle statů se teprve chystá
+  (podklad v `docs/staty-forever.md`).
 
 Po pushnutí do `main` se stránka přegeneruje hned.
 

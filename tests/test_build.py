@@ -213,6 +213,9 @@ class FakeStatic:
     def item(self, iid):
         return self.items.get(iid)
 
+    def tooltip(self, iid):
+        return (getattr(self, "tooltips", None) or {}).get(iid)
+
 
 class Crafting(unittest.TestCase):
     boots = {"name": "Gemmed Copper Boots", "inv": "FEET", "level": 15, "req": 10, "kind": "Armor", "sub": "Mail"}
@@ -328,8 +331,57 @@ class ItemStats(unittest.TestCase):
                "item_subclass": {"name": "Leather"}, "bonus_list": [12725], "armor": {"value": 53},
                "stats": [stat("STRENGTH", 3)]}
         g = build.gear_entry(raw)
-        self.assertEqual((g["slot"], g["level"], g["stats"], g["bonus"]), ("FEET", 20, {"STRENGTH": 3, "ARMOR": 53}, [12725]))
+        self.assertEqual((g["slot"], g["level"], g["values"], g["bonus"]), ("FEET", 20, {"STRENGTH": 3, "ARMOR": 53}, [12725]))
         self.assertNotIn("bonus", build.gear_entry({**raw, "bonus_list": None}))
+
+
+TOOLTIPS = json.loads((Path(__file__).parent / "fixtures" / "wowhead_tooltips.json").read_text(encoding="utf-8"))
+
+
+def tip(iid):
+    return build.tooltip_values(TOOLTIPS[str(iid)]["tooltip"])
+
+
+class Tooltip(unittest.TestCase):
+    """Staty lootu ze skutečných Wowhead tooltipů pro Forever (tests/fixtures)."""
+
+    def test_set_bonus_not_counted(self):
+        self.assertEqual(tip(286978), ({"ARMOR": 41, "INTELLECT": 10, "SPELL_HEALING_DONE": 11, "SPELL_DAMAGE_DONE": 4}, False))
+
+    def test_weapon_dps(self):
+        self.assertEqual(tip(271203), ({"DPS": 17.5, "AGILITY": 9, "SPIRIT": 5}, False))
+
+    def test_shield_block_and_regen(self):
+        self.assertEqual(tip(6320)[0], {"ARMOR": 585, "BLOCK": 12, "STRENGTH": 5, "STAMINA": 3, "HEALTH_REGEN": 4})
+        self.assertEqual(tip(13245)[0], {"ARMOR": 528, "BLOCK": 10, "DEFENSE_SKILL_RATING": 5})
+        self.assertEqual(tip(271213)[0], {"ARMOR": 547, "BLOCK": 11, "STRENGTH": 5, "BLOCK_PCT": 1.0})
+
+    def test_block_value_and_resistance(self):
+        self.assertEqual(tip(273846)[0], {"ARMOR": 123, "STRENGTH": 8, "BLOCK_VALUE": 6, "SHADOW_RESISTANCE": 5})
+
+    def test_spell_power_variants(self):
+        self.assertEqual(tip(271202)[0], {"ARMOR": 37, "AGILITY": 4, "SPELL_POWER": 5})
+        self.assertEqual(tip(271206)[0], {"ARMOR": 37, "SPIRIT": 9, "SHADOW_SPELL_DAMAGE": 7})
+        self.assertEqual(tip(6461)[0], {"ARMOR": 32, "MANA_REGEN": 3, "HEALTH_REGEN": 10})
+
+    def test_attack_power_without_situational(self):
+        self.assertEqual(tip(6314)[0], {"ARMOR": 22, "STAMINA": 3, "ATTACK_POWER": 10})  # proti zvířatům se nepočítá
+
+    def test_bonus_armor_adds_up(self):
+        self.assertEqual(tip(3230)[0], {"ARMOR": 63, "STAMINA": 7, "ATTACK_POWER": 4})
+
+    def test_random_enchantment(self):
+        self.assertEqual(tip(9776), ({"ARMOR": 53}, True))
+
+    def test_loot_item_gets_values_manual_wins(self):
+        static = FakeStatic({}, {})
+        static.tooltips = {271201: {"v": build.TOOLTIP_V, "values": {"ARMOR": 104, "STRENGTH": 3}}, 9776: {"values": {"ARMOR": 53}, "random": True}}
+        it = build.loot_item({"id": 271201, "name": "Atrophic Girdle", "inv": "WAIST", "stats": "+3 Str",
+                              "values": {"STRENGTH": 4}}, static)
+        self.assertEqual((it["values"], it["stats"]), ({"ARMOR": 104, "STRENGTH": 4}, "+3 Str"))
+        boots = build.loot_item({"id": 9776, "name": "Bandit Boots", "inv": "FEET"}, static)
+        self.assertTrue(boots["random"])
+        self.assertNotIn("values", build.loot_item({"name": "Bez id", "inv": "FEET"}, static))
 
 
 if __name__ == "__main__":
