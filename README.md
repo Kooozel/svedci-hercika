@@ -10,6 +10,8 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   (malými písmeny, diakritika zůstává, třeba `horaes-velký`). `size` je počet míst v partě (prázdná se ukážou jako volná).
 - **Role:** odhadují se podle specu. Když někdo hraje jinak (Johnie tankuje s body v Holy), přepiš to v `party.json`
   v `roles`, třeba `"johnie-rotking": "tank"` (tank / heal / dps).
+- **Druhý pád jména:** v `genitive` (třeba `"zrza-jegod": "Zrzy"`), aby stránka psala „od Zrzy“.
+  Nová postava bez něj dostane první pád.
 - **Novinky od včerejška:** porovná levely, XP, profese, výbavu a achievementy s posledním snímkem v `history/`
   před dneškem (ranní stav před včerejším večerem). Večerní push ho neposune. Bez historie se vezme `party.json`
   z nasazené stránky (`site_url`).

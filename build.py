@@ -81,6 +81,42 @@ def api_token():
     return http_json(req)["access_token"]
 
 
+# Forever API u předmětu nevypíše spell power caster zbraní, ve hře ale platí (docs/staty-forever.md, kap. 1.1)
+WEAPON_SPELL = {272996: {"SPELL_HEALING_DONE": 33, "SPELL_DAMAGE_DONE": 11},  # Trogg Scepter
+                251534: {"SPELL_POWER": 26}}  # Gnarled Necromancer's Staff
+
+
+def item_stats(i):
+    """Staty předmětu z API (nošený kus nebo preview_item): {"STRENGTH": 3, "ARMOR": 53, "DPS": 11.8}.
+    Náhodný suffix je u nošeného kusu už ve stats."""
+    out = {}
+    for s in i.get("stats") or []:
+        t = s["type"]["type"]
+        out[t] = out.get(t, 0) + s["value"]
+    if a := (i.get("armor") or {}).get("value"):
+        out["ARMOR"] = a
+    if b := (i.get("shield_block") or {}).get("value"):
+        out["BLOCK"] = b
+    if d := ((i.get("weapon") or {}).get("dps") or {}).get("value"):
+        out["DPS"] = round(d, 1)
+    for k, v in WEAPON_SPELL.get((i.get("item") or {}).get("id"), {}).items():
+        out.setdefault(k, v)
+    return out
+
+
+def gear_entry(i):
+    """Nošený kus z /equipment pro stránku a porovnání upgradů."""
+    g = {"slot": i["slot"]["type"], "name": i["name"], "quality": i["quality"]["type"],
+         "level": (i.get("level") or {}).get("value"), "inv": i["inventory_type"]["type"],
+         "id": i["item"]["id"], "sub": (i.get("item_subclass") or {}).get("name"),
+         "enchanted": any((x.get("enchantment_slot") or {}).get("type") == "PERMANENT"
+                          for x in i.get("enchantments") or []),
+         "stats": item_stats(i)}
+    if i.get("bonus_list"):
+        g["bonus"] = i["bonus_list"]
+    return g
+
+
 def api_get(token, region, path, kind):
     """kind je profile, static nebo dynamic; Forever má namespace {kind}-forever-{region}."""
     url = (f"https://{region}.api.blizzard.com{urllib.parse.quote(path)}"
@@ -100,18 +136,14 @@ def fetch_api(token, region, slug):
     profs = get("/professions")
     extra = {"recipes": [{"prof": p["profession"]["name"], "id": r["id"], "name": r["name"]}
                          for g in ("primaries", "secondaries") for p in profs.get(g) or []
-                         for t in p.get("tiers") or [] for r in t.get("known_recipes") or []]}
+                         for t in p.get("tiers") or [] for r in t.get("known_recipes") or []
+                         if r["name"] != p["profession"]["name"]]}  # API vrací i samotnou profesi (Fishing)
     assets = {a["key"]: a["value"] for a in get("/character-media").get("assets") or []}
     quests = get("/quests")
     done = get("/quests/completed").get("quests") or []
     login = c.get("last_login_timestamp")
     try:  # výbava a pet jsou bonus, kvůli nim nepadáme na Armory
-        extra["gear"] = [{"slot": i["slot"]["type"], "name": i["name"], "quality": i["quality"]["type"],
-                          "level": (i.get("level") or {}).get("value"), "inv": i["inventory_type"]["type"],
-                          "id": i["item"]["id"], "sub": (i.get("item_subclass") or {}).get("name"),
-                          "enchanted": any((x.get("enchantment_slot") or {}).get("type") == "PERMANENT"
-                                           for x in i.get("enchantments") or [])}
-                         for i in get("/equipment").get("equipped_items") or []]
+        extra["gear"] = [gear_entry(i) for i in get("/equipment").get("equipped_items") or []]
     except Exception as exc:
         print(f"{slug}: výbava ({exc})", file=sys.stderr)
     try:  # statistiky jsou pro tituly a počítadla, bez nich stránka jede dál
@@ -178,6 +210,7 @@ def char_stats(d):
         return v.get("value") if isinstance(v, dict) else v
     def signed(v):  # API občas vrací záporné číslo jako uint32 (base armor 4294967288 = −8)
         return v - 2 ** 32 if isinstance(v, int) and v >= 2 ** 31 else v
+    # base drží jen sick(); u armoru je to armor postavy bez výbavy, na kartě se ukazuje rozdíl od včerejška
     out = {k: (signed(d[k]["base"]), signed(d[k]["effective"])) for k in
            ("strength", "agility", "stamina", "intellect", "spirit", "armor", "defense") if isinstance(d.get(k), dict)}
     out.update({k: val(k) for k in ("health", "power", "attack_power", "ranged_attack_power", "main_hand_dps",
@@ -318,6 +351,8 @@ def load_party(party, token):
         role = (party.get("roles") or {}).get(m["slug"])
         if m["ok"] and role:
             m["roles"] = [role] if isinstance(role, str) else list(role)
+        if gen := (party.get("genitive") or {}).get(m["slug"]):
+            m["gen"] = gen
     return members
 
 
@@ -734,11 +769,22 @@ def crafting(members, static):
 
 # ---------- co se změnilo od včerejška ----------
 
+def snap_attrs(m):
+    """Čísla z karty postavy pro rozdíl od včerejška: u atributů effective, jinak hodnota."""
+    out = {}
+    for k, v in (m.get("cstats") or {}).items():
+        v = v[1] if isinstance(v, (tuple, list)) else v
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            out[k] = v
+    return out
+
+
 def snapshot(m):
     return {"level": m["level"], "xp": m.get("xp"),
             "gear": [g["name"] for g in m["gear"]] if "gear" in m else None,
             "profs": {p["name"]: p["skill"] for p in m.get("professions") or []},
             "stats": m.get("stats"), "achievements": m.get("achievements"), "updated": m.get("updated"),
+            "attrs": snap_attrs(m), "sick": sick(m) if m.get("cstats") else None,
             "recipes": sorted({r["name"] for r in m["recipes"]}) if "recipes" in m else None}
 
 
@@ -768,15 +814,12 @@ def load_baseline(party, built):
     past = load_history(local_day(built))
     if past:
         snap = past[-1]
+        if any("attrs" not in b for b in snap["members"].values()):
+            add_attrs(snap["members"], fetch_deployed(party))
         return {"at": snap["built"], "date": snap["date"], "titles": snap.get("titles") or {},
                 "members": snap["members"]}
-    url = party.get("site_url")
-    if not url:
-        return None
-    try:
-        prev = http_json(urllib.request.Request(url.rstrip("/") + "/party.json", headers={"User-Agent": USER_AGENT}))
-    except Exception as exc:
-        print(f"Včerejší stav: {exc}", file=sys.stderr)
+    prev = fetch_deployed(party)
+    if not prev:
         return None
     if local_day(prev["built"]) == local_day(built) and prev.get("baseline"):
         return {"date": local_day(prev["baseline"]["at"]).isoformat(), **prev["baseline"]}
@@ -784,8 +827,31 @@ def load_baseline(party, built):
             "members": {m["slug"]: snapshot(m) for m in prev.get("members") or [] if m.get("ok")}}
 
 
+def fetch_deployed(party):
+    """party.json z nasazené stránky, None když není kde ho vzít."""
+    url = party.get("site_url")
+    if not url:
+        return None
+    try:
+        return http_json(urllib.request.Request(url.rstrip("/") + "/party.json", headers={"User-Agent": USER_AGENT}))
+    except Exception as exc:
+        print(f"Včerejší stav: {exc}", file=sys.stderr)
+        return None
+
+
+def add_attrs(members, prev):
+    """Starší snímky v history/ nemají staty karty, doplní se z nasazeného party.json."""
+    for m in (prev or {}).get("members") or []:
+        b = members.get(m.get("slug"))
+        if b is not None and "attrs" not in b and m.get("cstats"):
+            b["attrs"], b["sick"] = snap_attrs(m), sick(m)
+
+
 def xp_total(level, xp):
     return sum(XP_TO_NEXT[:level - 1]) + (xp or 0)
+
+
+NEWS_STATS = ("armor", "strength", "agility", "stamina", "intellect", "spirit")
 
 
 def changes(m, base):
@@ -808,8 +874,11 @@ def changes(m, base):
            if b.get("achievements") is not None else [])
     learned = (sorted({r["name"] for r in m.get("recipes") or []} - set(b["recipes"]))
                if b.get("recipes") is not None else [])
+    old, now = b.get("attrs"), snap_attrs(m)
+    stats = ([(k, now[k] - old[k]) for k in NEWS_STATS if k in now and k in old and now[k] != old[k]]
+             if gear and old and not b.get("sick") and not (m.get("cstats") and sick(m)) else [])
     return {"from": b["level"], "to": m["level"], "xp": max(0, gained), "profs": profs, "gear": gear, "ach": ach,
-            "learned": learned}
+            "learned": learned, "stats": stats}
 
 
 # ---------- tituly a počítadla party ----------
@@ -1021,6 +1090,11 @@ def first(m):
     return m["name"].split()[0]
 
 
+def first_gen(m):
+    """Druhý pád křestního jména (od Zrzy), z party.json; bez něj první pád."""
+    return m.get("gen") or first(m)
+
+
 def cls_color(m):
     return CLASS_COLOR.get(m.get("class_slug"), "#ccc")
 
@@ -1127,19 +1201,22 @@ def stat_rows(m):
     if not c:
         return ""
 
-    def attr(key, label):
-        if key not in c:
-            return ""
-        base, eff = c[key]
-        bonus = (f' <small class="st-bonus">+{eff - base}</small>' if eff > base
-                 else f' <small class="st-malus">−{base - eff}</small>' if eff < base and key != "armor" else "")
-        return f'<li><span>{label}</span><b>{num(eff)}{bonus}</b></li>'
+    prev, since = (m.get("yday") or {}).get("attrs") or {}, (m.get("yday") or {}).get("label", "")
 
-    def plain(key, label, fmt="{}"):
+    def plain(key, label, fmt=num):
         v = c.get(key)
         if v is None:
             return ""
-        return f'<li><span>{label}</span><b>{fmt(v) if callable(fmt) else fmt.format(v)}</b></li>'
+        v = v[1] if isinstance(v, (tuple, list)) else v
+        show = fmt if callable(fmt) else fmt.format
+        bonus = ""
+        if key in prev:  # plus/mínus od posledního ranního snímku
+            d, zero = v - prev[key], show(0)
+            if show(abs(d)) != zero:
+                cls_, sign = ("st-bonus", "+") if d > 0 else ("st-malus", "−")
+                bonus = f' <small class="{cls_}" title="{e(since)}">{sign}{show(abs(d))}</small>'
+        return f'<li><span>{label}</span><b>{show(v)}{bonus}</b></li>'
+    attr = plain
 
     def pct(v):
         return f"{v:.1f} %".replace(".", ",")
@@ -1304,7 +1381,7 @@ def next_box(rows, best, members, checks):
 def pak_dot(r, m):
     mark, kind = fit_mark(r["status"][m["slug"]])
     return (f'<span class="pk-dot pk-{kind}" style="--cls:{cls_color(m)}" '
-            f'title="{e(first(m))}: {"sedí" if kind == "fit" else mark + " lvl"}">{e(first(m)[0]) if kind == "fit" else mark}</span>')
+            f'title="{e(first(m))}: {"sedí" if kind == "fit" else mark + " lvl"}">{"✓" if kind == "fit" else mark}</span>')
 
 
 def since_label(base, today):
@@ -1319,6 +1396,12 @@ def since_label(base, today):
 
 
 WEEKDAY_FROM = ["pondělního", "úterního", "středečního", "čtvrtečního", "pátečního", "sobotního", "nedělního"]
+
+
+def yday(m, base, today):
+    """Staty z posledního ranního snímku pro +/− na kartě; nemocný snímek se nepočítá."""
+    b = ((base or {}).get("members") or {}).get(m["slug"]) or {}
+    return {"attrs": b["attrs"], "label": since_label(base, today)} if b.get("attrs") and not b.get("sick") else None
 
 
 def news_box(members, base, today):
@@ -1339,6 +1422,11 @@ def news_box(members, base, today):
             more = f' a {len(ch["learned"]) - 3} další' if len(ch["learned"]) > 3 else ""
             extra += f'<p class="nw-profs">📜 nové recepty: {e(", ".join(ch["learned"][:3]))}{more}</p>'
         gear = "".join(item_link(g, compact=True) for g in ch["gear"])
+        if ch["stats"]:
+            gear += '<p class="nw-profs">' + " · ".join(
+                f'<b class="{"st-bonus" if d > 0 else "st-malus"}">{"+" if d > 0 else "−"}{num(abs(d))}</b> {k.capitalize()}'
+                for k, d in ch["stats"]) + '</p>'
+
         rows.append(f'<li style="--cls:{cls_color(m)}">{avatar(m, "nw-av")}<div class="nw-main">'
                     f'<p class="nw-head"><b class="who-n">{e(first(m))}</b>{lvl}{xp}</p>'
                     f'{f"<p class=nw-profs>{profs}</p>" if profs else ""}{extra}'
@@ -1561,16 +1649,16 @@ def craft_box(plan, members):
     """Co se vyplatí vyrobit: upgrady, enchanty a profese na stropu. Prázdné části se neukazují."""
     by_slug = {m["slug"]: m for m in members}
 
-    def who(slug):
+    def who(slug, name=first):
         m = by_slug.get(slug)
-        return f'<b style="color:{cls_color(m)}">{e(first(m))}</b>' if m else e(slug)
+        return f'<b style="color:{cls_color(m)}">{e(name(m))}</b>' if m else e(slug)
 
     rows = []
     for u in plan["ups"]:
         target = "sobě" if u["target"] == u["crafter"] else who(u["target"])
         gain = "prázdný slot" if u["upgrade"] == "empty" else f'+{u["upgrade"]} ilvl'
         slot = SLOT_LABEL.get(ITEM_SLOTS[u["item"]["inv"]][0], "")
-        need = " · ".join([f'potřebuje {r["qty"]}× {e(r["name"])} od {", ".join(who(s) for s in r["from"])}'
+        need = " · ".join([f'potřebuje {r["qty"]}× {e(r["name"])} od {", ".join(who(s, first_gen) for s in r["from"])}'
                            for r in u["reagents"]] + ([f'přijde o enchant na {e(u["loses"])}'] if u["loses"] else []))
         rows.append(f'<li>{item_link(u["item"])}<span class="cf-who">{who(u["crafter"])} → {target}</span>'
                     f'<span class="cf-gain">{e(slot)} · {gain}</span>'
@@ -1828,6 +1916,8 @@ def render_chronicle(party, entries, members):
 
 
 def render(party, members, rows, best, built, checks, base, titles, counters, chronicle, today, plan=None, loot=None):
+    for m in members:
+        m["yday"] = yday(m, base, today)
     ok = [m for m in members if m["ok"]]
     has_tank = any("tank" in m["roles"] for m in ok)
     has_heal = any("heal" in m["roles"] for m in ok)
@@ -2264,7 +2354,7 @@ def main():
         ensure_ascii=False, indent=1), encoding="utf-8")
     (OUT / "index.html").write_text(render(party, members, rows, best, built, checks, base, titles, counters,
                                                     chronicle, today, plan, loot), encoding="utf-8")
-    public = [{k: v for k, v in m.items() if k != "quests_done"} for m in members]
+    public = [{k: v for k, v in m.items() if k not in ("quests_done", "yday")} for m in members]
     (OUT / "party.json").write_text(json.dumps({"built": built, "members": public, "ready_check": checks,
                                                 "baseline": base,
                                                 "titles": {s: t["key"] for s, t in titles.items()}}, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -10,6 +10,12 @@
     "johnie-rotking",
     "horaes-velký"
   ],
+  "genitive": {
+    "kozel-mourningale": "Kozla",
+    "zrza-jegod": "Zrzy",
+    "johnie-rotking": "Johnieho",
+    "horaes-velký": "Horaese"
+  },
   "roles": {
     "johnie-rotking": "tank"
   }

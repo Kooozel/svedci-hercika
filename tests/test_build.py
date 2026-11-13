@@ -161,6 +161,48 @@ class Sheet(unittest.TestCase):
         self.assertFalse(build.sick({"cstats": healthy}))
 
 
+    def test_bonus_since_yesterday(self):
+        m = {"cstats": {"armor": (16, 799), "stamina": (40, 72), "dodge": 4.1}, "roles": [],
+             "yday": {"attrs": {"armor": 780, "stamina": 75, "dodge": 4.12}, "label": "od včerejšího rána"}}
+        html = build.stat_rows(m)
+        self.assertIn("+19</small>", html)
+        self.assertIn("−3</small>", html)
+        self.assertIn('title="od včerejšího rána"', html)
+        self.assertEqual(html.count("<small"), 2)  # dodge −0,02 se zaokrouhlí na nulu
+        m["yday"] = None  # bez včerejška žádné plus ani mínus
+        self.assertNotIn("<small", build.stat_rows(m))
+
+    def test_sick_snapshot_gives_no_bonus(self):
+        sick = {k: (40, 10) for k in ("strength", "agility", "stamina", "intellect", "spirit")}
+        snap = build.snapshot({"level": 20, "cstats": sick})
+        self.assertTrue(snap["sick"])
+        base = {"date": "2026-11-12", "members": {"a": snap}}
+        self.assertIsNone(build.yday({"slug": "a"}, base, date(2026, 11, 13)))
+        snap["sick"] = False
+        self.assertEqual(build.yday({"slug": "a"}, base, date(2026, 11, 13))["label"], "od včerejšího rána")
+
+    def test_old_history_gets_attrs_from_deployed(self):
+        members = {"a": {"level": 20}, "b": {"level": 20, "attrs": {"armor": 1}}}
+        build.add_attrs(members, {"members": [{"slug": "a", "cstats": {"armor": [16, 500], "dodge": 4.0}},
+                                              {"slug": "b", "cstats": {"armor": [16, 900]}}]})
+        self.assertEqual(members["a"]["attrs"], {"armor": 500, "dodge": 4.0})
+        self.assertFalse(members["a"]["sick"])
+        self.assertEqual(members["b"]["attrs"], {"armor": 1})  # co snímek má, se nepřepisuje
+
+    def test_news_stats_with_new_gear(self):
+        m = {"slug": "a", "level": 20, "xp": 0, "gear": [{"slot": "CHEST", "name": "Nová vesta"}],
+             "cstats": {"armor": (16, 520), "stamina": (40, 60)}}
+        base = {"members": {"a": {"level": 20, "xp": 0, "gear": ["Stará vesta"], "profs": {},
+                                  "achievements": None, "recipes": None,
+                                  "attrs": {"armor": 500, "stamina": 60}, "sick": False}}}
+        self.assertEqual(build.changes(m, base)["stats"], [("armor", 20)])
+        m["gear"] = [{"slot": "CHEST", "name": "Stará vesta"}]  # bez nové výbavy se staty do novinek nepíšou
+        self.assertEqual(build.changes(m, base)["stats"], [])
+
+    def test_genitive_falls_back_to_first_name(self):
+        self.assertEqual(build.first_gen({"name": "Zrza Jegod", "gen": "Zrzy"}), "Zrzy")
+        self.assertEqual(build.first_gen({"name": "Nový Kluk"}), "Nový")
+
 class FakeStatic:
     def __init__(self, recipes, items):
         self.recipes, self.items = recipes, items
@@ -250,6 +292,44 @@ class ReadyCheckLimits(unittest.TestCase):
         self.assertIn('class="share share-cls"', html)
         self.assertIn('q-cls" style="--cls:#F48CBA"', html)
         self.assertIn('class="st st-na"', html)
+
+
+def stat(t, v, bonus=False):
+    return {"type": {"type": t, "name": t.title()}, "value": v, **({"is_equip_bonus": True} if bonus else {})}
+
+
+class ItemStats(unittest.TestCase):
+    """Staty z /equipment (zkrácené skutečné odpovědi Forever API, viz docs/staty-forever.md)."""
+
+    def test_armor_and_suffix_stats(self):
+        boots = {"item": {"id": 9776}, "name": "Bandit Boots of the Boar", "bonus_list": [12725],
+                 "armor": {"value": 53}, "stats": [stat("STRENGTH", 3), stat("SPIRIT", 3, True)]}
+        self.assertEqual(build.item_stats(boots), {"STRENGTH": 3, "SPIRIT": 3, "ARMOR": 53})
+
+    def test_weapon_dps_and_shield_block(self):
+        wand = {"item": {"id": 5242}, "stats": [stat("SPELL_POWER", 1, True)],
+                "weapon": {"dps": {"value": 11.785713}, "attack_speed": {"value": 1400}}}
+        self.assertEqual(build.item_stats(wand), {"SPELL_POWER": 1, "DPS": 11.8})
+        shield = {"item": {"id": 3651}, "armor": {"value": 300}, "shield_block": {"value": 820}}
+        self.assertEqual(build.item_stats(shield), {"ARMOR": 300, "BLOCK": 820})
+
+    def test_caster_weapon_spell_power_filled_in(self):
+        # API u Trogg Scepter vrací jen Spirit, ve hře má +33 healing a +11 damage
+        scepter = {"item": {"id": 272996}, "stats": [stat("SPIRIT", 4, True)], "weapon": {"dps": {"value": 8.125}}}
+        self.assertEqual(build.item_stats(scepter),
+                         {"SPIRIT": 4, "SPELL_HEALING_DONE": 33, "SPELL_DAMAGE_DONE": 11, "DPS": 8.1})
+
+    def test_empty_item(self):
+        self.assertEqual(build.item_stats({"item": {"id": 1}}), {})
+
+    def test_gear_entry_keeps_stats_and_bonus(self):
+        raw = {"slot": {"type": "FEET"}, "name": "Bandit Boots of the Boar", "quality": {"type": "UNCOMMON"},
+               "level": {"value": 20}, "inventory_type": {"type": "FEET"}, "item": {"id": 9776},
+               "item_subclass": {"name": "Leather"}, "bonus_list": [12725], "armor": {"value": 53},
+               "stats": [stat("STRENGTH", 3)]}
+        g = build.gear_entry(raw)
+        self.assertEqual((g["slot"], g["level"], g["stats"], g["bonus"]), ("FEET", 20, {"STRENGTH": 3, "ARMOR": 53}, [12725]))
+        self.assertNotIn("bonus", build.gear_entry({**raw, "bonus_list": None}))
 
 
 if __name__ == "__main__":
