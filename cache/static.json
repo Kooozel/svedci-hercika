@@ -150,6 +150,16 @@
 "req": 1,
 "sub": "Wand"
 },
+"249410": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/136240.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 25,
+"name": "Sulfuric Acid",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Other"
+},
 "250510": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132960.jpg",
 "inv": "HAND",
@@ -470,6 +480,26 @@
 "req": 0,
 "sub": "Metal & Stone"
 },
+"2842": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133215.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 10,
+"name": "Silver Bar",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Metal & Stone"
+},
+"2848": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133483.jpg",
+"inv": "WEAPON",
+"kind": "Weapon",
+"level": 22,
+"name": "Bronze Mace",
+"quality": "UNCOMMON",
+"req": 17,
+"sub": "Mace"
+},
 "2853": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132602.jpg",
 "inv": "WRIST",
@@ -478,6 +508,16 @@
 "name": "Copper Bracers",
 "quality": "COMMON",
 "req": 2,
+"sub": "Mail"
+},
+"2854": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132602.jpg",
+"inv": "WRIST",
+"kind": "Armor",
+"level": 19,
+"name": "Runed Copper Bracers",
+"quality": "UNCOMMON",
+"req": 14,
 "sub": "Mail"
 },
 "2857": {
@@ -509,6 +549,26 @@
 "quality": "COMMON",
 "req": 5,
 "sub": "Other"
+},
+"2865": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134583.jpg",
+"inv": "LEGS",
+"kind": "Armor",
+"level": 21,
+"name": "Rough Bronze Leggings",
+"quality": "UNCOMMON",
+"req": 16,
+"sub": "Mail"
+},
+"2866": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132630.jpg",
+"inv": "CHEST",
+"kind": "Armor",
+"level": 23,
+"name": "Rough Bronze Cuirass",
+"quality": "UNCOMMON",
+"req": 18,
+"sub": "Mail"
 },
 "2996": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132890.jpg",
@@ -819,6 +879,16 @@
 "quality": "COMMON",
 "req": 1,
 "sub": "Ammo Pouch"
+},
+"818": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134118.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 15,
+"name": "Tigerseye",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Other"
 }
 },
 "recipes": {
@@ -903,6 +973,16 @@
 "name": "Mining",
 "reagents": []
 },
+"1599": {
+"item": 2842,
+"name": "Smelt Silver",
+"reagents": [
+[
+2775,
+1
+]
+]
+},
 "1600": {
 "item": 2841,
 "name": "Smelt Bronze",
@@ -937,6 +1017,20 @@
 ]
 ]
 },
+"1635": {
+"item": 2854,
+"name": "Runed Copper Bracers",
+"reagents": [
+[
+2840,
+10
+],
+[
+3470,
+3
+]
+]
+},
 "1636": {
 "item": 2863,
 "name": "Coarse Sharpening Stone",
@@ -954,6 +1048,44 @@
 [
 2840,
 10
+]
+]
+},
+"1639": {
+"item": 2865,
+"name": "Rough Bronze Leggings",
+"reagents": [
+[
+2841,
+6
+]
+]
+},
+"1640": {
+"item": 2866,
+"name": "Rough Bronze Cuirass",
+"reagents": [
+[
+2841,
+7
+]
+]
+},
+"1649": {
+"item": 2848,
+"name": "Bronze Mace",
+"reagents": [
+[
+2841,
+6
+],
+[
+2880,
+4
+],
+[
+2319,
+1
 ]
 ]
 },
@@ -1968,6 +2100,26 @@
 }
 },
 "tooltips": {
+"10045": {
+"v": 1,
+"values": {
+"ARMOR": 12
+}
+},
+"10046": {
+"v": 1,
+"values": {
+"ARMOR": 11
+}
+},
+"10047": {
+"v": 1,
+"values": {
+"ARMOR": 24,
+"SPELL_POWER": 2,
+"STAMINA": 3
+}
+},
 "10410": {
 "v": 1,
 "values": {
@@ -2001,10 +2153,24 @@
 "STRENGTH": 4
 }
 },
+"10421": {
+"v": 1,
+"values": {
+"ARMOR": 108,
+"STAMINA": 1
+}
+},
 "11121": {
 "v": 1,
 "values": {
 "DPS": 17.1
+}
+},
+"11287": {
+"v": 1,
+"values": {
+"DPS": 11.3,
+"SPELL_POWER": 1
 }
 },
 "1155": {
@@ -2169,6 +2335,44 @@
 "STAMINA": 3
 }
 },
+"2302": {
+"v": 1,
+"values": {
+"ARMOR": 31
+}
+},
+"247789": {
+"v": 1,
+"values": {
+"DPS": 4.0
+}
+},
+"250510": {
+"v": 1,
+"values": {
+"ARMOR": 115,
+"DEFENSE_SKILL_RATING": 3,
+"SPELL_POWER": 5,
+"STAMINA": 5
+}
+},
+"250515": {
+"v": 1,
+"values": {
+"ARMOR": 98,
+"DEFENSE_SKILL_RATING": 2,
+"SPELL_POWER": 5,
+"STAMINA": 4
+}
+},
+"250620": {
+"v": 1,
+"values": {
+"ARMOR": 109,
+"STAMINA": 4,
+"STRENGTH": 4
+}
+},
 "251485": {
 "v": 1,
 "values": {
@@ -2201,6 +2405,25 @@
 "SPIRIT": 10
 }
 },
+"253885": {
+"v": 1,
+"values": {
+"ARMOR": 17,
+"INTELLECT": 3,
+"SPELL_POWER": 4,
+"STAMINA": 3
+}
+},
+"253887": {
+"v": 1,
+"values": {
+"ARMOR": 17,
+"INTELLECT": 3,
+"SPELL_DAMAGE_DONE": 2,
+"SPELL_HEALING_DONE": 6,
+"SPIRIT": 3
+}
+},
 "2567": {
 "v": 1,
 "values": {
@@ -2208,6 +2431,65 @@
 "INTELLECT": 2,
 "SPELL_POWER": 28,
 "SPIRIT": 5
+}
+},
+"2568": {
+"v": 1,
+"values": {
+"ARMOR": 15
+}
+},
+"2569": {
+"v": 1,
+"values": {
+"ARMOR": 17,
+"STAMINA": 2
+}
+},
+"2570": {
+"v": 1,
+"values": {
+"ARMOR": 6
+}
+},
+"2578": {
+"v": 1,
+"values": {
+"ARMOR": 26,
+"SPELL_POWER": 2,
+"STAMINA": 2
+}
+},
+"2580": {
+"v": 1,
+"values": {
+"ARMOR": 11,
+"SPELL_POWER": 1
+}
+},
+"2582": {
+"v": 1,
+"values": {
+"ARMOR": 30,
+"SPELL_POWER": 4,
+"SPIRIT": 4
+}
+},
+"2583": {
+"v": 1,
+"values": {
+"ARMOR": 22,
+"INTELLECT": 2,
+"SPELL_POWER": 2,
+"SPIRIT": 2
+}
+},
+"2584": {
+"v": 1,
+"values": {
+"ARMOR": 15,
+"SPELL_POWER": 1,
+"SPIRIT": 1
 }
 },
 "270023": {
@@ -2571,6 +2853,50 @@
 "STRENGTH": 3
 }
 },
+"2848": {
+"v": 1,
+"values": {
+"DPS": 11.2,
+"STAMINA": 3
+}
+},
+"2853": {
+"v": 1,
+"values": {
+"ARMOR": 35
+}
+},
+"2854": {
+"v": 1,
+"values": {
+"ARMOR": 72,
+"STAMINA": 2,
+"STRENGTH": 2
+}
+},
+"2857": {
+"v": 1,
+"values": {
+"ARMOR": 91,
+"STAMINA": 2,
+"STRENGTH": 3
+}
+},
+"2865": {
+"v": 1,
+"values": {
+"ARMOR": 149,
+"SPIRIT": 4,
+"STAMINA": 5
+}
+},
+"2866": {
+"v": 1,
+"values": {
+"ARMOR": 177,
+"STAMINA": 8
+}
+},
 "286978": {
 "v": 1,
 "values": {
@@ -2688,6 +3014,67 @@
 "SPELL_POWER": 4
 }
 },
+"4243": {
+"v": 1,
+"values": {
+"AGILITY": 4,
+"ARMOR": 73,
+"STAMINA": 3
+}
+},
+"4246": {
+"v": 1,
+"values": {
+"AGILITY": 2,
+"ARMOR": 40,
+"STAMINA": 2
+}
+},
+"4307": {
+"v": 1,
+"values": {
+"ARMOR": 12,
+"SPELL_POWER": 1
+}
+},
+"4308": {
+"v": 1,
+"values": {
+"ARMOR": 10,
+"SPIRIT": 1
+}
+},
+"4309": {
+"v": 1,
+"values": {
+"ARMOR": 23,
+"INTELLECT": 2,
+"SPELL_POWER": 2
+}
+},
+"4310": {
+"v": 1,
+"values": {
+"ARMOR": 19,
+"INTELLECT": 2,
+"SPELL_POWER": 2
+}
+},
+"4312": {
+"v": 1,
+"values": {
+"ARMOR": 20,
+"SPELL_POWER": 2,
+"STAMINA": 2
+}
+},
+"4343": {
+"v": 1,
+"values": {
+"ARMOR": 17,
+"SPELL_POWER": 1
+}
+},
 "4534": {
 "v": 1,
 "values": {
@@ -2721,12 +3108,34 @@
 "SPIRIT": 7
 }
 },
+"5542": {
+"v": 1,
+"values": {
+"ARMOR": 16,
+"INTELLECT": 3,
+"SPELL_POWER": 2
+}
+},
+"5957": {
+"v": 1,
+"values": {
+"AGILITY": 1,
+"ARMOR": 55
+}
+},
 "5970": {
 "v": 1,
 "values": {
 "AGILITY": 6,
 "ARMOR": 25,
 "SPELL_POWER": 7
+}
+},
+"6214": {
+"v": 1,
+"values": {
+"DPS": 10.8,
+"STRENGTH": 4
 }
 },
 "6220": {
@@ -2743,6 +3152,13 @@
 "SPELL_DAMAGE_DONE": 4,
 "SPELL_HEALING_DONE": 13,
 "STAMINA": 10
+}
+},
+"6238": {
+"v": 1,
+"values": {
+"ARMOR": 19,
+"SPIRIT": 1
 }
 },
 "6314": {
@@ -3096,6 +3512,24 @@
 "FROST_RESISTANCE": 5,
 "SPIRIT": 3,
 "STAMINA": 8
+}
+},
+"7026": {
+"v": 1,
+"values": {
+"ARMOR": 9
+}
+},
+"7276": {
+"v": 1,
+"values": {
+"ARMOR": 8
+}
+},
+"7277": {
+"v": 1,
+"values": {
+"ARMOR": 21
 }
 },
 "888": {

@@ -33,8 +33,8 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu, jinak se otevře ta
   z „Já jsem“ v ready checku.
 - **Ready check:** „Já jsem“ schová úkoly ostatních, pamatuje si to prohlížeč.
-- **Profese:** „Co vyrobit pro partu“ ukáže jen upgrady, které někdo z party umí vyrobit (prázdný slot nebo vyšší
-  item level, class je unese, level stačí; nejlepší kus na slot), u nich suroviny, které musí dodat někdo jiný
+- **Profese:** „Co vyrobit pro partu“ ukáže jen upgrady, které někdo z party umí vyrobit (prázdný slot nebo lepší
+  staty pro classu a roli, class je unese, level stačí; nejlepší kus na slot), u nich suroviny, které musí dodat někdo jiný
   (kůže od skinnera, Copper Rod od kováře…), kusy bez enchantu, které umí enchanter z party, a profese na stropu
   skillu. Pod tím je přehled profesí. Detaily receptů a předmětů se ukládají do `cache/static.json`, takže se
   z API stahuje jen to nové (ranní běh cache commitne). Smazáním souboru se stáhne znovu.
@@ -67,13 +67,17 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 
 - **Bossové a loot:** `bosses.json`, ručně přepsané (s Claudem) pro dungeony, ke kterým se parta blíží. U bosse je krátká
   taktika a loot, u kusu jsou jen ti, kdo ho unesou a komu sedí hlavní stat (`stat`: Caster, Spirit, Agility, Strength…),
-  s tím, o kolik item levelů je lepší než to, co nosí (🎲 = upgrade pro víc lidí, domluvit se před rollem). Pod tím odměny
+  s tím, jestli je to velký nebo malý upgrade podle statů (🎲 = upgrade pro víc lidí, domluvit se před rollem). Pod tím odměny
   z questů. Forever bossy ani většinu jejich lootu v API zatím nemá, takže typ (`inv`, `sub`), `level` a `req` se píšou ručně
   ze zdrojů (Warcraft Wiki, Method). Když API předmět zná (třeba questová odměna), stačí `id`.
   Číselné staty kusů (armor, DPS, Str, spell power…) se berou z Wowhead tooltipu podle `id` a ukládají do
   `cache/static.json` (stahuje se jen nové, klíče k tomu nejsou potřeba). Ručně zapsané `values` u kusu mají přednost,
-  `stats` je jen popisek na stránku. Nošená výbava má staty z API. Hodnocení upgradů podle statů se teprve chystá
-  (podklad v `docs/staty-forever.md`).
+  `stats` je jen popisek na stránku. Nošená výbava má staty z API.
+- **Upgrady podle statů:** loot i „Co vyrobit pro partu“ sečtou staty kusu podle vah (`weights.json`) a porovnají
+  s tím, co postava nosí (prsten a trinket se slabším z obou, 2H zbraň s main hand a off hand dohromady).
+  Stránka ukáže jen hrubě **velký upgrade** (aspoň o 20 % a 4 body lepší), **malý upgrade** (aspoň o 10 % a 1 bod)
+  nebo **nic moc**, přesná čísla schválně ne (`BIG_UP`, `SMALL_UP` v `build.py`). Kde staty neznáme, rozhoduje item
+  level (+N ilvl). Podklad je v `docs/staty-forever.md`. ▼ nejslabší kus na kartě je dál podle item levelu.
 - **Váhy statů:** `weights.json`, hrubé odhady pro classu a roli: hlavní staty (`main`), vedlejší (`minor`), kolik
   bodů je +1 DPS zbraně podle slotu (`weapon`) a převody jednotek (`units`, třeba 2 AP = 1 Str). Profil se hledá
   podle classy, role a specu (`"shaman dps enhancement"`, pak `"shaman dps"`, pak `"shaman"`).

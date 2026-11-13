@@ -440,6 +440,72 @@ class Weights(unittest.TestCase):
                 self.assertTrue(set(w["stats"]) <= known, f"{cls} {r}: {set(w['stats']) - known}")
 
 
+def armed(cls, roles, gear, level=25, spec=None):
+    m = member(cls[0], level=level, cls=cls, gear=gear)
+    m["roles"], m["spec"] = roles, spec
+    m["weights"] = build.weights_for(m, WEIGHTS)
+    return m
+
+
+def worn(slot, values, inv=None, level=20, name=None):
+    return {"slot": slot, "inv": inv or slot, "level": level, "name": name or slot.title(), "values": values}
+
+
+class Scoring(unittest.TestCase):
+    """Upgrade podle statů a vah; bez statů se porovnává item level."""
+
+    def test_item_score_counts_weapon_dps_by_slot(self):
+        w = build.weights_for(who("hunter", ["dps"]), WEIGHTS)
+        self.assertEqual(build.item_score({"AGILITY": 4, "DPS": 11.0, "SPIRIT": 3}, "RANGED", w), 81.0)
+        self.assertEqual(build.item_score({"AGILITY": 4, "DPS": 11.0}, "MAIN_HAND", w), 15.0)
+
+    def test_big_small_and_not_worth_it(self):
+        z = armed("hunter", ["dps"], [worn("LEGS", {"AGILITY": 4, "ARMOR": 80})])
+        legs = lambda v: {"inv": "LEGS", "sub": "Leather", "level": 22, "values": v}  # noqa: E731
+        self.assertEqual(build.upgrade(legs({"AGILITY": 9, "STAMINA": 4}), z), "big")
+        self.assertEqual(build.upgrade(legs({"AGILITY": 6}), z), "small")
+        self.assertIsNone(build.upgrade(legs({"AGILITY": 4, "SPIRIT": 7}), z))  # Spirit hunterovi nic
+
+    def test_stats_beat_item_level(self):
+        k = armed("priest", ["heal"], [worn("CHEST", {"INTELLECT": 10, "SPELL_HEALING_DONE": 11}, inv="ROBE", level=23)])
+        bear = {"inv": "CHEST", "sub": "Cloth", "level": 30, "values": {"STRENGTH": 8, "STAMINA": 8}}
+        self.assertIsNone(build.upgrade(bear, k))  # vyšší ilvl, ale staty pro warriora
+
+    def test_ring_compares_with_weaker_one(self):
+        z = armed("hunter", ["dps"], [worn("FINGER_1", {"AGILITY": 8}, inv="FINGER"), worn("FINGER_2", {"STAMINA": 2}, inv="FINGER")])
+        self.assertEqual(build.upgrade({"inv": "FINGER", "level": 20, "values": {"AGILITY": 5}}, z), "big")
+
+    def test_two_hand_against_main_and_off_hand(self):
+        j = armed("paladin", ["dps"], [worn("MAIN_HAND", {"DPS": 10.0}, inv="WEAPON"),
+                                       worn("OFF_HAND", {"STRENGTH": 10, "ARMOR": 300}, inv="SHIELD")])
+        two = {"inv": "TWOHWEAPON", "sub": "Two-Handed Sword", "kind": "Weapon", "level": 22, "values": {"DPS": 11.0}}
+        self.assertIsNone(build.upgrade(two, j))  # +1 DPS nevyváží ztrátu štítu se Str
+        self.assertEqual(build.upgrade({**two, "values": {"DPS": 14.0}}, j), "big")
+
+    def test_falls_back_to_item_level_without_stats(self):
+        k = armed("priest", ["heal"], [{"slot": "CHEST", "inv": "ROBE", "level": 15, "name": "Robe"}])
+        self.assertEqual(build.upgrade({"inv": "CHEST", "sub": "Cloth", "level": 20, "values": {"INTELLECT": 5}}, k), 5)
+        self.assertEqual(build.upgrade({"inv": "CHEST", "sub": "Cloth", "level": 20}, k), 5)
+
+    def test_loot_chips_say_big_small(self):
+        by_slug = {"k": member("k", cls="priest")}
+        html_big = build.loot_who({"k": {"gain": "big", "lvl": 0}}, by_slug)
+        self.assertIn("velký upgrade", html_big)
+        self.assertIn("malý upgrade", build.loot_who({"k": {"gain": "small", "lvl": 0}}, by_slug))
+        self.assertIn("+3 ilvl", build.loot_who({"k": {"gain": 3, "lvl": 0}}, by_slug))
+        self.assertIn("nic moc", build.loot_who({"k": {"gain": None, "lvl": 0}}, by_slug))
+
+    def test_crafting_uses_tooltip_stats(self):
+        smith = armed("paladin", ["tank"], [worn("FEET", {"ARMOR": 100, "STAMINA": 2}, level=10)])
+        static = FakeStatic({1: {"item": 10, "reagents": []}}, {10: {"name": "Boots", "inv": "FEET", "level": 15,
+                                                                  "req": 10, "kind": "Armor", "sub": "Mail"}})
+        static.tooltips = {10: {"values": {"ARMOR": 180, "STAMINA": 6}}}
+        smith["recipes"] = [{"id": 1, "name": "Boots", "prof": "Blacksmithing"}]
+        smith["professions"] = [{"name": "Blacksmithing", "primary": True, "skill": 50, "max": 75}]
+        up = build.crafting([smith], static)["ups"]
+        self.assertEqual([(u["item"]["name"], u["upgrade"]) for u in up], [("Boots", "big")])
+
+
 if __name__ == "__main__":
     unittest.main()
 

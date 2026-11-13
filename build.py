@@ -636,9 +636,41 @@ def best_armor(m):
     return max((a for a in ARMOR_RANK if can_use({"sub": a}, m)), key=ARMOR_RANK.index)
 
 
+BIG_UP, SMALL_UP = (0.2, 4), (0.1, 1)  # o kolik lepší skóre: podíl toho, co nosí, a nejméně bodů
+
+
+def item_score(values, slot, w):
+    """Body kusu podle vah (weights_for): staty × váha a DPS zbraně × body za DPS v tom slotu."""
+    stats = w["stats"]
+    score = sum(v * stats.get(k, 0) for k, v in values.items() if k != "DPS")
+    return round(score + (values.get("DPS") or 0) * w["weapon"].get(slot, 0), 2)
+
+
+def stat_gain(item, slots, worn, m):
+    """"big" / "small" / None podle skóre, False = staty nevíme (kus, nošená výbava nebo váhy)."""
+    w = m.get("weights")
+    old_items = [worn[s] for s in slots]
+    if item["inv"] == "TWOHWEAPON" and "OFF_HAND" in worn:  # 2H nahradí main hand i off hand
+        old_items = [worn["MAIN_HAND"], worn["OFF_HAND"]]
+    if not w or "values" not in item or any("values" not in g for g in old_items):
+        return False
+    new = item_score(item["values"], slots[0], w)
+    if item["inv"] == "TWOHWEAPON":
+        old = sum(item_score(g["values"], g["slot"], w) for g in old_items)
+    else:  # prsten a trinket proti slabšímu z obou
+        old = min(item_score(g["values"], g["slot"], w) for g in old_items)
+    delta = new - old
+    if delta >= max(BIG_UP[0] * old, BIG_UP[1]):
+        return "big"
+    if delta >= max(SMALL_UP[0] * old, SMALL_UP[1]):
+        return "small"
+    return None
+
+
 def upgrade(item, m):
-    """None = nehodí se, "empty" = má ten slot prázdný, jinak o kolik item levelů je lepší.
-    Slabší typ zbroje (látka pro paladina) jen do prázdného slotu."""
+    """None = nehodí se nebo nestojí za to, "empty" = má ten slot prázdný, "big" / "small" = upgrade podle statů
+    a vah, číslo = o kolik item levelů je lepší (když staty nevíme). Slabší typ zbroje (látka pro paladina)
+    jen do prázdného slotu."""
     if "gear" not in m or item.get("inv") not in ITEM_SLOTS or not can_use(item, m):
         return None
     if (item.get("req") or 0) > m["level"]:
@@ -656,6 +688,9 @@ def upgrade(item, m):
     sub = item.get("sub")
     if sub in ARMOR_RANK and ARMOR_RANK.index(sub) < ARMOR_RANK.index(best_armor(m)):
         return None
+    gain = stat_gain(item, slots, worn, m)
+    if gain is not False:
+        return gain
     diff = (item.get("level") or 0) - min((worn[s].get("level") or 0) for s in slots)
     return diff if diff > 0 else None
 
@@ -725,8 +760,8 @@ def loot_item(raw, static):
 
 def loot_fit(item, m):
     """Komu se kus hodí. None = ne (classa ho neunese, jiný stat, slabší typ zbroje, caster s 2H bez staffu).
-    Jinak gain: "empty" prázdný slot, číslo o kolik ilvl je lepší, None nosí stejné nebo lepší,
-    "?" neznámý item level nebo výbava; lvl = kolik levelů chybí na req; second = druhá volba
+    Jinak gain: "empty" prázdný slot, "big" / "small" upgrade podle statů, číslo o kolik ilvl je lepší (staty
+    neznáme), None nosí stejně dobré nebo lepší, "?" neznámý item level nebo výbava; lvl = kolik levelů chybí na req; second = druhá volba
     (heal nebo spell damage jiné školy, caster z toho využije jen část)."""
     if item.get("inv") not in ITEM_SLOTS or not can_use(item, m):
         return None
@@ -826,12 +861,16 @@ def crafting(members, static):
             it = static.item(rec["item"])
             if not it:
                 continue
+            if it.get("inv") in ITEM_SLOTS and (tip := static.tooltip(rec["item"])) and tip.get("values"):
+                it = {**it, "values": tip["values"]}  # API staty receptových kusů nemá, bere se Wowhead
             for t in members:
                 d = upgrade(it, t)
                 if d is None:
                     continue
                 key = (t["slug"], ITEM_SLOTS[it["inv"]][0])
-                score = (it.get("level") or 0, t["slug"] == m["slug"])
+                w = t.get("weights")
+                points = item_score(it["values"], key[1], w) if w and "values" in it else 0
+                score = (points, it.get("level") or 0, t["slug"] == m["slug"])
                 if key not in best or score > best[key]["score"]:
                     reagents = []
                     for iid, qty in rec["reagents"]:
@@ -1754,7 +1793,7 @@ def craft_box(plan, members):
     rows = []
     for u in plan["ups"]:
         target = "sobě" if u["target"] == u["crafter"] else who(u["target"])
-        gain = "prázdný slot" if u["upgrade"] == "empty" else f'+{u["upgrade"]} ilvl'
+        gain = gain_text(u["upgrade"])[0]
         slot = SLOT_LABEL.get(ITEM_SLOTS[u["item"]["inv"]][0], "")
         need = " · ".join([f'potřebuje {r["qty"]}× {e(r["name"])} od {", ".join(who(s, first_gen) for s in r["from"])}'
                            for r in u["reagents"]] + ([f'přijde o enchant na {e(u["loses"])}'] if u["loses"] else []))
@@ -1774,26 +1813,36 @@ def craft_box(plan, members):
     body = (f'<ul class="craft">{"".join(rows)}</ul>' if rows
             else '<p class="muted">Nic, co by se teď vyplatilo vyrobit.</p>')
     return (f'<div class="craft-box"><h3 class="sub-h">Co vyrobit pro partu</h3>{body}'
-            f'<p class="note">Jen upgrady (prázdný slot nebo vyšší item level, class je unese, level stačí) a suroviny, '
-            f'které musí dodat někdo jiný z party. Staty se neporovnávají.</p></div>')
+            f'<p class="note">Jen upgrady (prázdný slot nebo lepší staty pro classu a roli, class je unese, level stačí) '
+            f'a suroviny, které musí dodat někdo jiný z party. Kde staty neznáme, rozhoduje item level.</p></div>')
+
+
+def gain_text(g):
+    """Text a tooltip štítku upgradu (upgrade() / loot_fit)."""
+    if g is None:
+        return "nic moc", "nosí stejně dobrý nebo lepší kus (podle statů a vah pro classu a roli)"
+    if g == "?":
+        return "?", "neznámé staty nebo výbava, porovnej ve hře"
+    if g == "empty":
+        return "prázdný slot", "ten slot má prázdný"
+    if g == "big":
+        return "velký upgrade", "podle statů a vah pro classu a roli výrazně lepší než to, co nosí"
+    if g == "small":
+        return "malý upgrade", "podle statů a vah pro classu a roli o něco lepší než to, co nosí"
+    return f"+{g} ilvl", f"staty neznáme, o {g} item levelů lepší než to, co nosí"
 
 
 def loot_who(fits, by_slug):
     """Štítky postav, kterým se kus hodí: upgrade barvou classy, ostatní tlumeně."""
     chips = []
-    order = sorted(fits.items(), key=lambda kv: (kv[1].get("second", False), kv[1]["gain"] is None, kv[1]["gain"] == "?",
+    rank = {"empty": 0, "big": 1, "small": 2, "?": 4, None: 5}
+    order = sorted(fits.items(), key=lambda kv: (kv[1].get("second", False), rank.get(kv[1]["gain"], 3),
                                                  list(by_slug).index(kv[0])))
     for slug, f in order:
         m = by_slug[slug]
         g = f["gain"]
-        if g is None:
-            text, cls, tip = "má lepší", " lt-no", "nosí stejný nebo lepší kus"
-        elif g == "?":
-            text, cls, tip = "?", " lt-maybe", "neznámý item level nebo výbava, porovnej ve hře"
-        elif g == "empty":
-            text, cls, tip = "prázdný slot", "", "ten slot má prázdný"
-        else:
-            text, cls, tip = f"+{g} ilvl", "", f"o {g} item levelů lepší než to, co nosí"
+        text, tip = gain_text(g)
+        cls = {None: " lt-no", "?": " lt-maybe", "small": " lt-small"}.get(g, "")
         if f.get("second"):
             cls += " lt-second"
             tip = "druhá volba: heal nebo damage jiné školy nevyužije, " + tip
@@ -1873,8 +1922,9 @@ def loot_section(lists, members):
                      f'{note}</details>')
     return (f'<section id="loot"><h2 class="sec">Bossové a loot</h2>{"".join(parts)}'
             f'<p class="note legend">U kusu jsou jen ti, kdo ho unesou a komu sedí staty (caster, heal, frost nebo shadow damage, agility, strength). '
-            f'<b>+N ilvl</b> = o tolik item levelů lepší než to, co nosí · <b>prázdný slot</b> · <b>má lepší</b> = nosí stejné nebo lepší · '
-            f'<b>lvl N</b> = nasadí až na tom levelu · <b>2. volba</b> (tlumeně) = heal nebo damage jiné školy z kusu nevyužije, ale zbytek ano · 🎲 upgrade pro víc lidí, domluvte se před rollem. Staty se neporovnávají, jen item level. '
+            f'<b>velký / malý upgrade</b> = podle statů a hrubých vah pro classu a roli (<code>weights.json</code>) · <b>prázdný slot</b> · '
+            f'<b>nic moc</b> = nosí stejně dobré nebo lepší · <b>+N ilvl</b> = staty neznáme, rozhoduje item level · '
+            f'<b>lvl N</b> = nasadí až na tom levelu · <b>2. volba</b> (tlumeně) = heal nebo damage jiné školy z kusu nevyužije, ale zbytek ano · 🎲 upgrade pro víc lidí, domluvte se před rollem. '
             f'Bossové a loot jsou schované jako spoiler, ukážou se po kliknutí. Přepisuješ je v <code>bosses.json</code>.</p></section>')
 
 
@@ -2318,6 +2368,7 @@ background:var(--cls);color:#1a120c;padding:0 4px}
 border:1px solid color-mix(in srgb,var(--cls) 40%,transparent)}
 .lt-who b{color:var(--cls);font-weight:600}.lt-who small{color:var(--warn)}
 .lt-who.lt-no{color:var(--muted);opacity:.6;background:transparent}.lt-who.lt-maybe{color:var(--warn)}
+.lt-who.lt-small{color:var(--text);opacity:.85;background:transparent}
 .lt-none{font-size:12px;color:var(--muted)}
 .lt-flag{font-size:12px;padding:1px 8px;border-radius:999px;background:#4a3a14;color:var(--warn);font-weight:600}
 .lt-who.dim{opacity:.25}
@@ -2412,6 +2463,12 @@ def main():
     rows, best = plan_dungeons(ok, dungeons)
     # ručně domluvená příští výprava přebije odhad podle levelů
     best = next((r for r in rows if r["name"] == party.get("next")), best)
+    try:  # váhy statů pro hodnocení upgradů; bez nich se porovnává item level
+        weights = json.loads((ROOT / "weights.json").read_text(encoding="utf-8"))
+        for m in ok:
+            m["weights"] = weights_for(m, weights)
+    except Exception as exc:
+        print(f"Váhy: {exc}", file=sys.stderr)
     static = Static(token, region)
     try:  # co vyrobit je bonus, stránka musí vzniknout i bez něj
         plan = crafting(ok, static)
@@ -2452,7 +2509,7 @@ def main():
         ensure_ascii=False, indent=1), encoding="utf-8")
     (OUT / "index.html").write_text(render(party, members, rows, best, built, checks, base, titles, counters,
                                                     chronicle, today, plan, loot), encoding="utf-8")
-    public = [{k: v for k, v in m.items() if k not in ("quests_done", "yday")} for m in members]
+    public = [{k: v for k, v in m.items() if k not in ("quests_done", "yday", "weights")} for m in members]
     (OUT / "party.json").write_text(json.dumps({"built": built, "members": public, "ready_check": checks,
                                                 "baseline": base,
                                                 "titles": {s: t["key"] for s, t in titles.items()}}, ensure_ascii=False, indent=2), encoding="utf-8")
