@@ -130,6 +130,16 @@
 "req": 0,
 "sub": "Cloth"
 },
+"2455": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134850.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Minor Mana Potion",
+"quality": "COMMON",
+"req": 5,
+"sub": "Potions"
+},
 "247786": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132841.jpg",
 "inv": "NON_EQUIP",
@@ -1609,6 +1619,16 @@
 ]
 ]
 },
+"4292": {
+"item": null,
+"name": "Enchant Chest - Minor Absorption",
+"reagents": [
+[
+10938,
+1
+]
+]
+},
 "4293": {
 "item": null,
 "name": "Enchant Bracer - Minor Deflect",
@@ -1623,6 +1643,20 @@
 "item": null,
 "name": "Enchant Chest - Minor Intellect",
 "reagents": [
+[
+10938,
+1
+]
+]
+},
+"4300": {
+"item": null,
+"name": "Enchant Cloak - Minor Resistance",
+"reagents": [
+[
+10940,
+1
+],
 [
 10938,
 1
@@ -1657,6 +1691,20 @@
 "item": null,
 "name": "Fishing",
 "reagents": []
+},
+"4352": {
+"item": null,
+"name": "Enchant Chest - Lesser Stamina",
+"reagents": [
+[
+10940,
+1
+],
+[
+10938,
+1
+]
+]
 },
 "4767": {
 "item": null,
