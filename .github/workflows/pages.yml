@@ -31,13 +31,17 @@ jobs:
           BNET_CLIENT_ID: ${{ secrets.BNET_CLIENT_ID }}
           BNET_CLIENT_SECRET: ${{ secrets.BNET_CLIENT_SECRET }}
       - name: Uložit denní historii a cache receptů
-        # plánovaný i ruční běh; historii uloží první běh dne, pozdější ji nepřepíšou.
+        # Historii uloží první běh dne, pozdější ji nepřepíšou. GitHub plánované běhy někdy úplně
+        # zahodí (13. 11. oba), proto ji uloží i push nebo ruční běh, ale jen do 16:00 českého času,
+        # aby se jako "ranní stav" neuložil stav po večerním hraní.
         # cache/static.json (recepty a předměty z API) se commitne, když přibylo něco nového.
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           day=$(python3 -c "import json; print(json.load(open('site/snapshot.json'))['date'])")
+          hour=$(TZ=Europe/Prague date +%-H)
           mkdir -p history
-          if [ -f "history/$day.json" ]; then echo "history/$day.json už existuje"; else cp site/snapshot.json "history/$day.json"; fi
+          if [ -f "history/$day.json" ]; then echo "history/$day.json už existuje"
+          elif [ "$hour" -ge 16 ]; then echo "po 16:00, historie pro $day se neukládá"
+          else cp site/snapshot.json "history/$day.json"; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
           git add history cache
