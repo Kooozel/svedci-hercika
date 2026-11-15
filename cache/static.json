@@ -60,6 +60,16 @@
 "req": 1,
 "sub": "Potions"
 },
+"1210": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134074.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 20,
+"name": "Shadowgem",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Other"
+},
 "1251": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133685.jpg",
 "inv": "NON_EQUIP",
@@ -179,6 +189,16 @@
 "quality": "UNCOMMON",
 "req": 0,
 "sub": "Other"
+},
+"249427": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/348551.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 25,
+"name": "Pristine Leather",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Leather"
 },
 "250510": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132960.jpg",
@@ -649,6 +669,16 @@
 "quality": "COMMON",
 "req": 0,
 "sub": "Metal & Stone"
+},
+"3480": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135036.jpg",
+"inv": "SHOULDER",
+"kind": "Armor",
+"level": 22,
+"name": "Rough Bronze Shoulders",
+"quality": "UNCOMMON",
+"req": 17,
+"sub": "Mail"
 },
 "3576": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133219.jpg",
@@ -1220,6 +1250,24 @@
 [
 2836,
 2
+]
+]
+},
+"1862": {
+"item": 3480,
+"name": "Rough Bronze Shoulders",
+"reagents": [
+[
+2841,
+5
+],
+[
+1210,
+1
+],
+[
+3478,
+1
 ]
 ]
 },
@@ -3123,6 +3171,14 @@
 "SPIRIT": 6,
 "STAMINA": 5,
 "STRENGTH": 10
+}
+},
+"3480": {
+"v": 1,
+"values": {
+"ARMOR": 130,
+"STAMINA": 4,
+"STRENGTH": 3
 }
 },
 "3748": {
