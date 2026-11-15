@@ -70,6 +70,16 @@
 "req": 0,
 "sub": "Bandages"
 },
+"15869": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134237.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 20,
+"name": "Silver Skeleton Key",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Other"
+},
 "20744": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134711.jpg",
 "inv": "NON_EQUIP",
@@ -840,6 +850,26 @@
 "req": 5,
 "sub": "Cloth"
 },
+"6338": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135138.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 20,
+"name": "Silver Rod",
+"quality": "COMMON",
+"req": 0,
+"sub": "Enchanting"
+},
+"6350": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132535.jpg",
+"inv": "FEET",
+"kind": "Armor",
+"level": 18,
+"name": "Rough Bronze Boots",
+"quality": "UNCOMMON",
+"req": 13,
+"sub": "Mail"
+},
 "6888": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132834.jpg",
 "inv": "NON_EQUIP",
@@ -902,6 +932,20 @@
 }
 },
 "recipes": {
+"11183": {
+"item": 15869,
+"name": "Silver Skeleton Key",
+"reagents": [
+[
+2842,
+1
+],
+[
+3470,
+1
+]
+]
+},
 "13137": {
 "item": 20744,
 "name": "Minor Wizard Oil",
@@ -1703,6 +1747,34 @@
 [
 10938,
 1
+]
+]
+},
+"4389": {
+"item": 6350,
+"name": "Rough Bronze Boots",
+"reagents": [
+[
+2841,
+6
+],
+[
+3470,
+6
+]
+]
+},
+"4390": {
+"item": 6338,
+"name": "Silver Rod",
+"reagents": [
+[
+2842,
+1
+],
+[
+3470,
+2
 ]
 ]
 },
@@ -3284,6 +3356,14 @@
 "AGILITY": 4,
 "ARMOR": 22,
 "STAMINA": 6
+}
+},
+"6350": {
+"v": 1,
+"values": {
+"ARMOR": 111,
+"STAMINA": 3,
+"STRENGTH": 2
 }
 },
 "6392": {
