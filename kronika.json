@@ -2,6 +2,50 @@
  "_info": "Kronika výprav, nejnovější nahoře se řadí sám. Pole zápisu: date (RRRR-MM-DD), title, dungeon (nepovinné), party (slugy postav z party.json), text (seznam odstavců), facts (krátká čísla a fakta pod zápisem), titles (nepovinné: ruční tituly za ten večer, slug → emoji, title, detail; přebijí ty ze statistik, platí jen den po výpravě). Na hlavní stránce je jen první odstavec posledního zápisu, celý text je na kronika.html.",
  "entries": [
   {
+   "date": "2026-11-14",
+   "title": "Ve WC na jistotu, kůže nikde",
+   "dungeon": "Wailing Caverns",
+   "party": [
+    "kozel-mourningale",
+    "zrza-jegod",
+    "johnie-rotking",
+    "horaes-velký"
+   ],
+   "text": [
+    "Do WC jsme lezli přelevelení, takže to byla procházka. Fanglordi šli k zemi jak kuželky, druid se probudil a Mutanus si ani neškrtl. Čtyři smrti, každý jednu, ať nikdo nemá řeči. Johnie +2, Kozel +1, Zrza s Horaesem jen tak u toho.",
+    "A pak to kyselý pivo na konec: jeden quest na zabíjení jsme prošvihli a Deviate Hides nepadly ani jedna. Zrza stahoval, co se dalo, ale kůže padají z mobů, ne z nože. Nalpak čeká dál. Kozel z vzteku vyhodil tři questy z logu a nikdo se radši neptal.",
+    "Johnie odešel jak z výprodeje: nový hrudník, želví štít, palcát, a sólo sekera je pryč. A zpráva večera: Zrza dal poprvé v životě greed. Pětkrát! Minulá kronika odvolává.",
+    "Zrza s Johniem šli domů zase spolu, oba s Resurrection Sickness. Horaes do sebe obrátil dalších jedenáct pití a každý jsme cestou zakousli osm zvířátek. Na zdraví!"
+   ],
+   "facts": [
+    "Mutanus ⚰️",
+    "Všichni čtyři Fanglordi",
+    "+3 levely",
+    "4 smrti, každý jednu",
+    "Deviate Hides: 0 🦎",
+    "Jeden quest nedodělaný 😬",
+    "Zrza: první greed 💰",
+    "Johnie: konečně se štítem 🐢"
+   ],
+   "titles": {
+    "zrza-jegod": {
+     "emoji": "💰",
+     "title": "Konečně greed",
+     "detail": "Pětkrát. Kronika odvolává, co tvrdila."
+    },
+    "johnie-rotking": {
+     "emoji": "🐢",
+     "title": "Želví tank",
+     "detail": "Sekeru odložil, štít z Kreshe nasadil."
+    },
+    "kozel-mourningale": {
+     "emoji": "🗑️",
+     "title": "Úklid questlogu",
+     "detail": "Tři questy pryč. Které, to zůstane mezi ním a Nalpakem."
+    }
+   }
+  },
+  {
    "date": "2026-11-12",
    "title": "Čtyři prsteny nad Undercity",
    "dungeon": "Ruins of Lordaeron",

@@ -22,7 +22,8 @@
    {"name": "Postrach králíků", "line": "{v}. Druidi o tom vědí."},
    {"name": "Lovec veverek", "line": "{v}. Nevinnost nezná slitování."},
    {"name": "Ekoterorista", "line": "{v}. Cenarion Circle píše stížnost."},
-   {"name": "Zabiják roztomilosti", "line": "{v}. Ty oči už se ti budou zdát."}
+   {"name": "Zabiják roztomilosti", "line": "{v}. Ty oči už se ti budou zdát."},
+   {"name": "Postrach Barrens", "line": "{v}. Cestou do WC nepřežil ani jeden králík."}
   ]},
   "Total deaths": {"emoji": "🪦", "min": 1, "bonus": 0.7, "forms": ["{n} smrt", "{n} smrti", "{n} smrtí"], "titles": [
    {"name": "Kaskadér", "line": "{v}. Pády jsou jeho specialita."},
@@ -61,7 +62,8 @@
    {"name": "Chamtivec", "line": "{v}. Zlato se samo nesebere."},
    {"name": "Obchodník", "line": "{v}. Vendor ho zdraví jménem."},
    {"name": "Skromný sběratel", "line": "{v}. Nepotřebuje, ale vezme."},
-   {"name": "Dodavatel prachu", "line": "{v}. Enchanter v partě už čeká."}
+   {"name": "Dodavatel prachu", "line": "{v}. Enchanter v partě už čeká."},
+   {"name": "Konvertita", "line": "{v}. Kdo by to do něj řekl."}
   ]},
   "Times camped": {"emoji": "⛺", "min": 1, "bonus": 0.4, "forms": ["{n}× tábořil", "{n}× tábořil", "{n}× tábořil"], "titles": [
    {"name": "Trampík", "line": "{v}. Kytara chybí, ale jinak dobrý."},
@@ -115,6 +117,15 @@
    {"name": "Hrobník", "line": "{v}. Hřbitov za plotem je zase klidný."},
    {"name": "Kristofova pomsta", "line": "{v}. Deathguard Kristof děkuje."}
   ]},
+  "Mutanus the Devourer kills (Wailing Caverns)": {"emoji": "🐛", "min": 1, "bonus": 0.5, "forms": ["{n}× Mutanus", "{n}× Mutanus", "{n}× Mutanus"], "titles": [
+   {"name": "Budíček pro druida", "line": "{v}. Naralex se konečně vyspal."},
+   {"name": "Požírač požírače", "line": "{v}. Mutanus nesežral nikoho."},
+   {"name": "Kůže nikde", "line": "{v}. Boss padl, Deviate Hides ne."}
+  ]},
+  "Redeemed by paladins": {"emoji": "✨", "min": 1, "bonus": 0.7, "forms": ["{n}× zvednut paladinem", "{n}× zvednut paladinem", "{n}× zvednut paladinem"], "titles": [
+   {"name": "Zachráněná duše", "line": "{v}. Světlo má slabost pro tanky."},
+   {"name": "Lazar", "line": "{v}. Spirit healer zůstal bez kšeftu."}
+  ]},
   "Elixirs consumed": {"emoji": "🧴", "min": 1, "bonus": 0.3, "forms": ["{n} elixír", "{n} elixíry", "{n} elixírů"], "titles": [
    {"name": "Pokusný králík", "line": "{v}. Zelené bublinky, prý to pomáhá."},
    {"name": "Zázračný nápoj", "line": "{v}. Placebo taky funguje."}
@@ -156,7 +167,8 @@
    {"name": "Hrdina podzemí", "line": "{v}. Někdo musí jít první."},
    {"name": "Pull magnet", "line": "{v}. Moby ho prostě milují."},
    {"name": "Obětní beránek", "line": "{v}. Pro dobro party."},
-   {"name": "Host Lordaeronu", "line": "{v}. Ruiny si chtěly nechat suvenýr."}
+   {"name": "Host Lordaeronu", "line": "{v}. Ruiny si chtěly nechat suvenýr."},
+   {"name": "Host Wailing Caverns", "line": "{v}. Jeskyně taky naříkala."}
   ]},
   "_skill": {"emoji": "🔨", "min": 10, "bonus": 0.45, "forms": ["+{n} bod", "+{n} body", "+{n} bodů"], "titles": [
    {"name": "Mistr řemesla", "line": "{skill} {v}. Kovadlina ještě dýmá."},
