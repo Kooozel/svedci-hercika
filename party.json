@@ -7,16 +7,19 @@
     "kozel-mourningale",
     "zrza-jegod",
     "johnie-rotking",
-    "horaes-velký"
+    "horaes-velký",
+    "cildac-velky"
   ],
   "genitive": {
     "kozel-mourningale": "Kozla",
     "zrza-jegod": "Zrzy",
     "johnie-rotking": "Johnieho",
-    "horaes-velký": "Horaese"
+    "horaes-velký": "Horaese",
+    "cildac-velky": "Cildy"
   },
   "roles": {
     "johnie-rotking": "tank",
-    "kozel-mourningale": "heal"
+    "kozel-mourningale": "heal",
+    "cildac-velky": "dps"
   }
 }
