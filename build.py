@@ -205,7 +205,7 @@ def fetch_api(token, region, slug):
     except Exception as exc:
         print(f"{slug}: výbava ({exc})", file=sys.stderr)
     try:  # statistiky jsou pro tituly a počítadla, bez nich stránka jede dál
-        extra["stats"] = flat_stats(get("/achievements/statistics"))
+        extra["stats"], extra["stats_at"] = flat_stats(get("/achievements/statistics"))
     except Exception as exc:
         print(f"{slug}: statistiky ({exc})", file=sys.stderr)
     try:  # staty postavy (stamina, armor, crit…) pro kartu postavy
@@ -246,19 +246,22 @@ def fetch_api(token, region, slug):
 
 
 def flat_stats(data):
-    """Strom kategorií statistik zploští na {anglický název: počet}; API vrací jen nenulové."""
-    out = {}
+    """Strom kategorií statistik zploští na {anglický název: počet} a {název: kdy se naposledy změnila (unix s)}.
+    API vrací jen nenulové. Čas je herní, ale do API se dostane až s odhlášením (uložením profilu)."""
+    out, at = {}, {}
 
     def walk(cat):
         for s in cat.get("statistics") or []:
             if isinstance(s.get("quantity"), (int, float)):
                 out[s["name"]] = int(s["quantity"])
+                if s.get("last_updated_timestamp"):
+                    at[s["name"]] = s["last_updated_timestamp"] // 1000
         for sub in cat.get("sub_categories") or []:
             walk(sub)
 
     for cat in data.get("categories") or []:
         walk(cat)
-    return out
+    return out, at
 
 
 def char_stats(d):
@@ -922,7 +925,7 @@ def snapshot(m):
     return {"level": m["level"], "xp": m.get("xp"),
             "gear": [g["name"] for g in m["gear"]] if "gear" in m else None,
             "profs": {p["name"]: p["skill"] for p in m.get("professions") or []},
-            "stats": m.get("stats"), "achievements": m.get("achievements"), "updated": m.get("updated"),
+            "stats": m.get("stats"), "stats_at": m.get("stats_at"), "achievements": m.get("achievements"), "updated": m.get("updated"),
             "attrs": snap_attrs(m), "sick": sick(m) if m.get("cstats") else None,
             "recipes": sorted({r["name"] for r in m["recipes"]}) if "recipes" in m else None}
 

@@ -162,6 +162,13 @@ class Sheet(unittest.TestCase):
         self.assertFalse(build.sick({"cstats": healthy}))
 
 
+    def test_flat_stats_keep_times(self):
+        data = {"categories": [{"statistics": [{"name": "Total deaths", "quantity": 23.0,
+                                                "last_updated_timestamp": 1794827928000}],
+                                "sub_categories": [{"statistics": [{"name": "Food eaten", "quantity": 11.0}]}]}]}
+        self.assertEqual(build.flat_stats(data), ({"Total deaths": 23, "Food eaten": 11}, {"Total deaths": 1794827928}))
+        self.assertEqual(build.snapshot({"level": 1, "stats_at": {"Total deaths": 1}})["stats_at"], {"Total deaths": 1})
+
     def test_card_stats_by_role(self):
         m = {"slug": "a", "level": 20, "class_slug": "paladin", "roles": ["tank"],
              "cstats": {"health": 1726, "armor": (16, 1124), "attack_power": 185,
