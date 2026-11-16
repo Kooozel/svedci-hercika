@@ -40,6 +40,16 @@
 "req": 2,
 "sub": "Mail"
 },
+"10938": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132867.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 10,
+"name": "Lesser Magic Essence",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Enchanting"
+},
 "11287": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135139.jpg",
 "inv": "RANGEDRIGHT",
@@ -48,6 +58,16 @@
 "name": "Lesser Magic Wand",
 "quality": "UNCOMMON",
 "req": 5,
+"sub": "Wand"
+},
+"11288": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135144.jpg",
+"inv": "RANGEDRIGHT",
+"kind": "Weapon",
+"level": 23,
+"name": "Greater Magic Wand",
+"quality": "UNCOMMON",
+"req": 13,
 "sub": "Wand"
 },
 "118": {
@@ -290,6 +310,16 @@
 "req": 10,
 "sub": "Cloth"
 },
+"253907": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132689.jpg",
+"inv": "CHEST",
+"kind": "Armor",
+"level": 20,
+"name": "Filigreed Shadow Gown",
+"quality": "RARE",
+"req": 15,
+"sub": "Cloth"
+},
 "2568": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135009.jpg",
 "inv": "CHEST",
@@ -418,6 +448,16 @@
 "name": "Roasted Boar Meat",
 "quality": "COMMON",
 "req": 1,
+"sub": "Food & Drink"
+},
+"2684": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134021.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Coyote Steak",
+"quality": "COMMON",
+"req": 5,
 "sub": "Food & Drink"
 },
 "279944": {
@@ -610,6 +650,16 @@
 "req": 18,
 "sub": "Mail"
 },
+"2868": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132606.jpg",
+"inv": "WRIST",
+"kind": "Armor",
+"level": 25,
+"name": "Patterned Bronze Bracers",
+"quality": "UNCOMMON",
+"req": 20,
+"sub": "Mail"
+},
 "2996": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132890.jpg",
 "inv": "NON_EQUIP",
@@ -679,6 +729,16 @@
 "quality": "UNCOMMON",
 "req": 17,
 "sub": "Mail"
+},
+"3530": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133684.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 1,
+"name": "Wool Bandage",
+"quality": "COMMON",
+"req": 0,
+"sub": "Bandages"
 },
 "3576": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133219.jpg",
@@ -790,6 +850,26 @@
 "req": 11,
 "sub": "Cloth"
 },
+"4314": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135037.jpg",
+"inv": "SHOULDER",
+"kind": "Armor",
+"level": 22,
+"name": "Double-Stitched Woolen Shoulders",
+"quality": "UNCOMMON",
+"req": 17,
+"sub": "Cloth"
+},
+"4316": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134581.jpg",
+"inv": "LEGS",
+"kind": "Armor",
+"level": 22,
+"name": "Heavy Woolen Pants",
+"quality": "UNCOMMON",
+"req": 17,
+"sub": "Cloth"
+},
 "4343": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134586.jpg",
 "inv": "LEGS",
@@ -810,6 +890,16 @@
 "req": 0,
 "sub": "Miscellaneous"
 },
+"4470": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135435.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 5,
+"name": "Simple Wood",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
 "5498": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134122.jpg",
 "inv": "NON_EQUIP",
@@ -819,6 +909,16 @@
 "quality": "UNCOMMON",
 "req": 0,
 "sub": "Other"
+},
+"5525": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134432.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 10,
+"name": "Boiled Clams",
+"quality": "COMMON",
+"req": 1,
+"sub": "Food & Drink"
 },
 "5542": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133763.jpg",
@@ -890,6 +990,16 @@
 "req": 0,
 "sub": "Enchanting"
 },
+"6339": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135138.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 20,
+"name": "Runed Silver Rod",
+"quality": "COMMON",
+"req": 1,
+"sub": "Enchanting"
+},
 "6350": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132535.jpg",
 "inv": "FEET",
@@ -899,6 +1009,16 @@
 "quality": "UNCOMMON",
 "req": 13,
 "sub": "Mail"
+},
+"6452": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134437.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 16,
+"name": "Anti-Venom",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
 },
 "6888": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132834.jpg",
@@ -940,6 +1060,16 @@
 "req": 4,
 "sub": "Leather"
 },
+"7278": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134401.jpg",
+"inv": "BAG",
+"kind": "Quiver",
+"level": 5,
+"name": "Light Leather Quiver",
+"quality": "COMMON",
+"req": 1,
+"sub": "Quiver"
+},
 "7279": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133581.jpg",
 "inv": "BAG",
@@ -959,6 +1089,16 @@
 "quality": "UNCOMMON",
 "req": 0,
 "sub": "Other"
+},
+"858": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134830.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 13,
+"name": "Lesser Healing Potion",
+"quality": "COMMON",
+"req": 3,
+"sub": "Potions"
 }
 },
 "recipes": {
@@ -1048,6 +1188,16 @@
 "reagents": [
 [
 769,
+1
+]
+]
+},
+"1538": {
+"item": 2684,
+"name": "Coyote Steak",
+"reagents": [
+[
+2673,
 1
 ]
 ]
@@ -1155,6 +1305,20 @@
 ]
 ]
 },
+"1642": {
+"item": 2868,
+"name": "Patterned Bronze Bracers",
+"reagents": [
+[
+2841,
+5
+],
+[
+3478,
+2
+]
+]
+},
 "1649": {
 "item": 2848,
 "name": "Bronze Mace",
@@ -1220,6 +1384,16 @@
 [
 2589,
 2
+]
+]
+},
+"1840": {
+"item": 3530,
+"name": "Wool Bandage",
+"reagents": [
+[
+2592,
+1
 ]
 ]
 },
@@ -1561,6 +1735,34 @@
 ]
 ]
 },
+"2385": {
+"item": 4314,
+"name": "Double-stitched Woolen Shoulders",
+"reagents": [
+[
+2997,
+3
+],
+[
+2321,
+2
+]
+]
+},
+"2387": {
+"item": 4316,
+"name": "Heavy Woolen Pants",
+"reagents": [
+[
+2997,
+5
+],
+[
+2321,
+4
+]
+]
+},
 "2408": {
 "item": 4343,
 "name": "Brown Linen Pants",
@@ -1595,6 +1797,20 @@
 "reagents": [
 [
 2770,
+1
+]
+]
+},
+"3964": {
+"item": 5525,
+"name": "Boiled Clams",
+"reagents": [
+[
+5503,
+1
+],
+[
+159,
 1
 ]
 ]
@@ -1798,6 +2014,104 @@
 ]
 ]
 },
+"4360": {
+"item": null,
+"name": "Enchant Bracer - Minor Spirit",
+"reagents": [
+[
+10938,
+1
+]
+]
+},
+"4362": {
+"item": null,
+"name": "Enchant Cloak - Minor Protection",
+"reagents": [
+[
+10940,
+2
+]
+]
+},
+"4364": {
+"item": null,
+"name": "Enchant Bracer - Minor Agility",
+"reagents": [
+[
+10940,
+1
+],
+[
+10938,
+2
+]
+]
+},
+"4365": {
+"item": null,
+"name": "Enchant Bracer - Minor Strength",
+"reagents": [
+[
+10940,
+3
+]
+]
+},
+"4367": {
+"item": null,
+"name": "Enchant Weapon - Minor Striking",
+"reagents": [
+[
+10940,
+1
+],
+[
+10938,
+1
+],
+[
+10978,
+1
+]
+]
+},
+"4368": {
+"item": null,
+"name": "Enchant 2H Weapon - Minor Impact",
+"reagents": [
+[
+10940,
+1
+],
+[
+10978,
+1
+]
+]
+},
+"4370": {
+"item": 6339,
+"name": "Runed Silver Rod",
+"reagents": [
+[
+6338,
+1
+],
+[
+10940,
+3
+],
+[
+10938,
+4
+],
+[
+1210,
+1
+]
+]
+},
 "4389": {
 "item": 6350,
 "name": "Rough Bronze Boots",
@@ -1823,6 +2137,54 @@
 [
 3470,
 2
+]
+]
+},
+"4399": {
+"item": null,
+"name": "Enchant Chest - Stamina",
+"reagents": [
+[
+10940,
+2
+],
+[
+10998,
+1
+]
+]
+},
+"4401": {
+"item": null,
+"name": "Enchant Cloak - Lesser Fire Resistance",
+"reagents": [
+[
+6371,
+1
+],
+[
+10998,
+1
+]
+]
+},
+"4402": {
+"item": null,
+"name": "Enchant Boots - Minor Stamina",
+"reagents": [
+[
+10940,
+4
+]
+]
+},
+"4417": {
+"item": 6452,
+"name": "Anti-Venom",
+"reagents": [
+[
+1475,
+1
 ]
 ]
 },
@@ -1884,6 +2246,20 @@
 [
 2320,
 3
+]
+]
+},
+"4989": {
+"item": 7278,
+"name": "Light Leather Quiver",
+"reagents": [
+[
+2318,
+4
+],
+[
+2320,
+2
 ]
 ]
 },
@@ -2019,6 +2395,24 @@
 ],
 [
 2447,
+1
+]
+]
+},
+"54192": {
+"item": 858,
+"name": "Lesser Healing Potion",
+"reagents": [
+[
+3371,
+1
+],
+[
+2678,
+2
+],
+[
+2450,
 1
 ]
 ]
@@ -2191,6 +2585,28 @@
 ]
 ]
 },
+"55434": {
+"item": 253907,
+"name": "Filigreed Shadow Gown",
+"reagents": [
+[
+2997,
+8
+],
+[
+2321,
+4
+],
+[
+249409,
+2
+],
+[
+1210,
+2
+]
+]
+},
 "6576": {
 "item": 10045,
 "name": "Simple Linen Pants",
@@ -2252,6 +2668,48 @@
 "name": "Disenchant",
 "reagents": []
 },
+"7356": {
+"item": null,
+"name": "Enchant Shield - Minor Stamina",
+"reagents": [
+[
+10998,
+1
+],
+[
+10940,
+1
+]
+]
+},
+"7377": {
+"item": null,
+"name": "Enchant Cloak - Lesser Protection",
+"reagents": [
+[
+10940,
+3
+],
+[
+10978,
+1
+]
+]
+},
+"7416": {
+"item": null,
+"name": "Enchant Shield - Lesser Protection",
+"reagents": [
+[
+10940,
+1
+],
+[
+10978,
+1
+]
+]
+},
 "7999": {
 "item": 11287,
 "name": "Lesser Magic Wand",
@@ -2263,6 +2721,20 @@
 [
 10938,
 1
+]
+]
+},
+"8000": {
+"item": 11288,
+"name": "Greater Magic Wand",
+"reagents": [
+[
+4470,
+1
+],
+[
+10938,
+2
 ]
 ]
 }
@@ -2339,6 +2811,13 @@
 "values": {
 "DPS": 11.3,
 "SPELL_POWER": 1
+}
+},
+"11288": {
+"v": 1,
+"values": {
+"DPS": 17.5,
+"SPELL_POWER": 2
 }
 },
 "1155": {
@@ -2590,6 +3069,16 @@
 "SPELL_DAMAGE_DONE": 2,
 "SPELL_HEALING_DONE": 6,
 "SPIRIT": 3
+}
+},
+"253907": {
+"v": 1,
+"values": {
+"ARMOR": 37,
+"INTELLECT": 5,
+"SHADOW_SPELL_DAMAGE": 9,
+"SPIRIT": 3,
+"STAMINA": 4
 }
 },
 "2567": {
@@ -3065,6 +3554,13 @@
 "STAMINA": 8
 }
 },
+"2868": {
+"v": 1,
+"values": {
+"ARMOR": 80,
+"STRENGTH": 5
+}
+},
 "286978": {
 "v": 1,
 "values": {
@@ -3242,6 +3738,22 @@
 "ARMOR": 20,
 "SPELL_POWER": 2,
 "STAMINA": 2
+}
+},
+"4314": {
+"v": 1,
+"values": {
+"ARMOR": 27,
+"SPELL_POWER": 4,
+"STAMINA": 4
+}
+},
+"4316": {
+"v": 1,
+"values": {
+"ARMOR": 31,
+"SPELL_POWER": 3,
+"SPIRIT": 6
 }
 },
 "4343": {
