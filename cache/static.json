@@ -460,6 +460,16 @@
 "req": 1,
 "sub": "Food & Drink"
 },
+"2682": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133708.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 10,
+"name": "Cooked Crab Claw",
+"quality": "COMMON",
+"req": 1,
+"sub": "Food & Drink"
+},
 "2684": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134021.jpg",
 "inv": "NON_EQUIP",
@@ -1208,6 +1218,20 @@
 "reagents": [
 [
 2673,
+1
+]
+]
+},
+"1544": {
+"item": 2682,
+"name": "Cooked Crab Claw",
+"reagents": [
+[
+2675,
+1
+],
+[
+2678,
 1
 ]
 ]
