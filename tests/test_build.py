@@ -162,22 +162,21 @@ class Sheet(unittest.TestCase):
         self.assertFalse(build.sick({"cstats": healthy}))
 
 
-    def test_body_lines_instead_of_numbers(self):
+    def test_card_stats_by_role(self):
         m = {"slug": "a", "level": 20, "class_slug": "paladin", "roles": ["tank"],
-             "cstats": {"health": 726, "armor": (16, 1124), "attack_power": 185,
+             "cstats": {"health": 1726, "armor": (16, 1124), "attack_power": 185,
                         **{k: (20, 30) for k in ("strength", "agility", "stamina", "intellect", "spirit")}}}
-        self.assertEqual(set(build.body_values(m)), {"hp", "armor", "melee"})
-        html = build.stat_rows(m)
-        for label in ("Vydrží", "Kryje", "Bije"):
-            self.assertIn(label, html)
-        self.assertNotIn("1124", html)  # přesná čísla na kartě nejsou
-        self.assertIn(build.Q.line("body.armor.high", "x"), build.Q.variants("body.armor.high"))  # 1124/20 je high
+        self.assertEqual(build.stat_values(m), [("HP", 1726), ("Armor", 1124), ("Attack Power", 185)])
+        self.assertIn("1\xa0726", build.stat_rows(m))
+        lock = {"level": 11, "class_slug": "warlock", "roles": ["dps"],
+                "cstats": {"health": 300, "spell_power": 0, "intellect": (20, 25)}}
+        self.assertEqual(build.stat_values(lock), [("HP", 300), ("Intellect", 25)])  # nulový spell power pryč
 
     def test_sick_card_shows_sickness_only(self):
         sick = {k: (40, 10) for k in ("strength", "agility", "stamina", "intellect", "spirit")}
         html = build.stat_rows({"slug": "a", "level": 20, "roles": [], "cstats": sick})
         self.assertIn("Resurrection Sickness", html)
-        self.assertNotIn("Vydrží", html)
+        self.assertNotIn("<li>", html)
 
     def test_old_history_gets_attrs_from_deployed(self):
         members = {"a": {"level": 20}, "b": {"level": 20, "attrs": {"armor": 1}}}
@@ -187,12 +186,10 @@ class Sheet(unittest.TestCase):
         self.assertFalse(members["a"]["sick"])
         self.assertEqual(members["b"]["attrs"], {"armor": 1})  # co snímek má, se nepřepisuje
 
-    def test_news_quips_by_own_level(self):
-        ch = {"from": 20, "to": 20, "xp": 1000}
-        self.assertEqual(build.xp_news(ch), "crumb")  # level 20 chce 23 200, čtvrtina je 5 800
-        self.assertEqual(build.xp_news({**ch, "xp": 9000}), "chunk")
-        self.assertEqual(build.xp_news({**ch, "to": 21}), "level")
-        self.assertEqual(build.xp_news({**ch, "to": 23}), "multi")
+    def test_news_xp_numbers(self):
+        ch = {"from": 20, "to": 20, "xp": 11600}
+        self.assertEqual(build.xp_news(ch), "+11\xa0600 XP (50 % levelu)")  # level 20 chce 23 200
+        self.assertEqual(build.xp_news({**ch, "to": 21}), "+11\xa0600 XP")  # level je vidět zvlášť
 
     def test_prof_news_only_new_and_rank_up(self):
         m = {"slug": "a", "professions": [{"name": "Tailoring", "skill": 80}, {"name": "Fishing", "skill": 1},
@@ -504,11 +501,10 @@ class Scoring(unittest.TestCase):
 
     def test_loot_chips_say_big_small(self):
         by_slug = {"k": member("k", cls="priest")}
-        q = build.Q
-        self.assertIn(q.label("loot.big"), build.loot_who({"k": {"gain": "big", "lvl": 0}}, by_slug))
-        self.assertIn(q.label("loot.small"), build.loot_who({"k": {"gain": "small", "lvl": 0}}, by_slug))
+        self.assertIn("velký upgrade", build.loot_who({"k": {"gain": "big", "lvl": 0}}, by_slug))
+        self.assertIn("malý upgrade", build.loot_who({"k": {"gain": "small", "lvl": 0}}, by_slug))
         self.assertIn("+3 ilvl", build.loot_who({"k": {"gain": 3, "lvl": 0}}, by_slug))  # v tooltipu
-        self.assertIn(q.label("loot.none"), build.loot_who({"k": {"gain": None, "lvl": 0}}, by_slug))
+        self.assertIn("nic moc", build.loot_who({"k": {"gain": None, "lvl": 0}}, by_slug))
 
     def test_crafting_uses_tooltip_stats(self):
         smith = armed("paladin", ["tank"], [worn("FEET", {"ARMOR": 100, "STAMINA": 2}, level=10)])
@@ -577,17 +573,17 @@ class Quips(unittest.TestCase):
 
     def test_no_repeat_on_page_and_daily_change(self):
         q = build.Quips(self.data, date(2026, 11, 13))
-        lines = [q.line("outfit.work", s) for s in ("a", "b", "c", "d")]
-        self.assertEqual(len(set(lines)), 4)  # 4 varianty, 4 postavy, nikdo nemá stejnou
+        lines = [q.line("gap_tail", s) for s in ("a", "b", "c")]
+        self.assertEqual(len(set(lines)), 3)  # 3 postavy, nikdo nemá stejnou
         again = build.Quips(self.data, date(2026, 11, 13))
-        self.assertEqual(again.line("outfit.work", "a"), lines[0])  # stejný den, stejný build
-        days = {build.Quips(self.data, date(2026, 11, d)).label("loot.big") for d in range(1, 8)}
+        self.assertEqual(again.line("gap_tail", "a"), lines[0])  # stejný den, stejný build
+        days = {build.Quips(self.data, date(2026, 11, d)).label("loot.fight") for d in range(1, 8)}
         self.assertGreater(len(days), 1)  # štítek se během týdne mění
 
     def test_format_and_fallback(self):
         q = build.Quips(self.data, date(2026, 11, 13))
-        self.assertIn("21", q.line("xpbar.start", "a", next=21))
-        self.assertEqual(build.Quips({}).label("loot.big", "velký upgrade"), "velký upgrade")
+        self.assertIn("Kozel", q.line("prof_low.Cooking", "a", who="Kozel"))
+        self.assertEqual(build.Quips({}).label("loot.fight", "🎲 víc zájemců"), "🎲 víc zájemců")
 
     def test_bare_line(self):
         self.assertEqual(build.bare_line(["NECK", "FINGER_1", "FINGER_2", "TRINKET_2"]),

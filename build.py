@@ -1391,45 +1391,36 @@ def doll(m):
 CASTERS = {"mage", "warlock", "priest"}
 
 
-# hrubé stupně: (klíč z cstats, hranice na level pro low / mid, štítek); nad druhou hranicí high
-BODY = {"hp": ("Vydrží", (24, 32)), "heal": ("Léčí", (1.5, 3.5)), "spell": ("Kouzlí", (4, 6.5)),
-        "ranged": ("Střílí", (5, 8.5)), "melee": ("Bije", (5.5, 9.5)), "armor": ("Kryje", (25, 45))}
+# řádky „Jak na tom je“: (štítek, klíč z cstats); HP mají všichni, zbytek podle role a classy
+STAT_ROWS = {"tank": [("Armor", "armor"), ("Attack Power", "attack_power")],
+             "heal": [("Healing", "spell_healing"), ("Intellect", "intellect")],
+             "hunter": [("Ranged AP", "ranged_attack_power"), ("Agility", "agility")],
+             "caster": [("Spell Power", "spell_power"), ("Intellect", "intellect")],
+             "melee": [("Attack Power", "attack_power"), ("Strength", "strength")]}
 
 
-def body_values(m):
-    """Hrubá čísla na level pro řádky „Jak na tom je“ podle role a classy."""
+def stat_values(m):
+    """[(štítek, hodnota)] pro kartu: HP a dva hlavní staty role, nulové (spell power na nízkém levelu) vynechá."""
     c = m.get("cstats") or {}
 
     def v(key):
         x = c.get(key) or 0
         return x[1] if isinstance(x, (tuple, list)) else x
-    out = {"hp": v("health")}
     cls, roles = m.get("class_slug"), m.get("roles") or []
-    if "tank" in roles:
-        out |= {"armor": v("armor"), "melee": v("attack_power")}
-    elif "heal" in roles:
-        out["heal"] = v("spell_healing")
-    elif cls == "hunter":
-        out["ranged"] = v("ranged_attack_power")
-    elif cls in CASTERS:
-        out["spell"] = v("spell_power") + v("intellect")
-    else:
-        out["melee"] = v("attack_power")
-    return {k: x / max(1, m["level"]) for k, x in out.items()}
+    kind = ("tank" if "tank" in roles else "heal" if "heal" in roles else "hunter" if cls == "hunter"
+            else "caster" if cls in CASTERS else "melee")
+    rows = [("HP", v("health"))] + [(label, v(key)) for label, key in STAT_ROWS[kind]]
+    return [(label, round(x)) for label, x in rows if x]
 
 
 def stat_rows(m):
-    """Místo statů pár hospodských řádků („Vydrží: jak dubový sud“), přesná čísla jsou na Armory."""
+    """HP a hlavní staty role, víc je na Armory."""
     if not m.get("cstats"):
         return ""
     if sick(m):
         return sickness(m)
-    rows = []
-    for key, per_lvl in body_values(m).items():
-        label, (low, mid) = BODY[key]
-        tier = "low" if per_lvl < low else "mid" if per_lvl < mid else "high"
-        rows.append(f'<li><span>{label}</span><b>{e(Q.line(f"body.{key}.{tier}", m["slug"], tier))}</b></li>')
-    return f'<div class="st-group st-body"><h4>Jak na tom je</h4><ul>{"".join(rows)}</ul></div>'
+    rows = "".join(f'<li><span>{label}</span><b>{num(x)}</b></li>' for label, x in stat_values(m))
+    return f'<div class="st-group st-body"><h4>Jak na tom je</h4><ul>{rows}</ul></div>'
 
 
 def sick(m):
@@ -1475,13 +1466,6 @@ def bare_line(missing):
     return f"Chodí {and_join(words)}." if words else ""
 
 
-def outfit_tier(avg, level):
-    """Jak je oblečený: průměrný item level proti levelu postavy."""
-    if avg is None:
-        return "work"
-    return "fine" if avg >= level else "work" if avg >= level - 4 else "rags"
-
-
 def sheet_side(m):
     gi = gear_info(m) if "gear" in m else None
     bits = []
@@ -1492,8 +1476,8 @@ def sheet_side(m):
                    and not (s == "OFF_HAND" and two_hand) and not (s == "RANGED" and m["class_slug"] in NO_RANGED)]
         bare = bare_line(missing)
         gap = f'<p class="d-gap">{e(bare)} {e(Q.line("gap_tail", m["slug"]))}</p>' if bare else ""
-        outfit = Q.line(f"outfit.{outfit_tier(gi['avg'], m['level'])}", m["slug"])
-        bits.append(f'<div class="d-sum"><p class="d-outfit">{e(outfit)}</p>{gap}</div>')
+        outfit = f'<p class="d-outfit">Průměrný item level <b>{gi["avg"]}</b></p>' if gi["avg"] else ""
+        bits.append(f'<div class="d-sum">{outfit}{gap}</div>')
     bits.append(stat_rows(m))
     if m.get("professions"):
         bits.append(f'<div class="st-group"><h4>Řemesla</h4>{prof_bars(m)}</div>')
@@ -1503,17 +1487,12 @@ def sheet_side(m):
     return f'<aside class="sheet-side">{"".join(bits)}</aside>'
 
 
-def xp_tier(pct):
-    return "start" if pct < 20 else "mid" if pct < 60 else "late" if pct < 90 else "almost"
-
-
 def xp_bar(m, big=False):
     if not m.get("xp_next"):
         return ""
     pct = min(100, round(100 * m["xp"] / m["xp_next"]))
-    label = (f'<span class="xp-num">{e(Q.line("xpbar." + xp_tier(pct), m["slug"], next=m["level"] + 1))}</span>'
-             if big else "")
-    return (f'<div class="xp" title="{pct} % do dalšího levelu">{label}'
+    label = f'<span class="xp-num">{pct} % do {m["level"] + 1}</span>' if big else ""
+    return (f'<div class="xp" title="{num(m["xp"])} / {num(m["xp_next"])} XP">{label}'
             f'<span class="bar"><span style="width:{pct}%"></span></span></div>')
 
 
@@ -1622,14 +1601,10 @@ WEEKDAY_FROM = ["pondělního", "úterního", "středečního", "čtvrtečního"
 
 
 def xp_news(ch):
-    """Hláška ke včerejšímu XP podle toho, kolik postava nahrála vůči svému levelu (ne vůči ostatním)."""
-    ups = ch["to"] - ch["from"]
-    if ups >= 2:
-        return "multi"
-    if ups == 1:
-        return "level"
+    """XP od včerejška a kolik to je z levelu, na kterém včera začínal."""
     need = XP_TO_NEXT[ch["from"] - 1] if 0 < ch["from"] <= len(XP_TO_NEXT) else 0
-    return "chunk" if need and ch["xp"] >= need / 4 else "crumb"
+    pct = f" ({round(100 * ch['xp'] / need)} % levelu)" if need and ch["to"] == ch["from"] else ""
+    return f"+{num(ch['xp'])} XP{pct}"
 
 
 def prof_news(m, ch):
@@ -1638,20 +1613,19 @@ def prof_news(m, ch):
     skills = {p["name"]: p["skill"] for p in m.get("professions") or []}
     for name, d in ch["profs"]:
         if d is None:
-            out.append(Q.line("news.newprof", m["slug"], what=ACTIVITY.get(name, name)))
+            out.append(f"🎒 Nové řemeslo: {ACTIVITY.get(name, name)}.")
         elif skill_rank(skills[name] - d) != skill_rank(skills[name]):
-            out.append(Q.line("news.rankup", m["slug"], rank=skill_rank(skills[name]),
-                              craft=CRAFTSMAN.get(name, name)))
+            out.append(f"🎓 Nově {skill_rank(skills[name])} {CRAFTSMAN.get(name, name)} ({skills[name]}).")
     if ch["learned"]:
         n = len(ch["learned"])
         name = ch["learned"][(Q.day + zlib.crc32(m["slug"].encode())) % n]  # každý den jiný příklad
-        out.append(f"📜 Nový recept: {name}." if n == 1 else Q.line(
-            "news.recipes", m["slug"], v=pl(n, ("{n} nový recept", "{n} nové recepty", "{n} nových receptů")), name=name))
+        out.append(f"📜 Nový recept: {name}." if n == 1 else
+                   f"📜 {pl(n, ('{n} nový recept', '{n} nové recepty', '{n} nových receptů'))}, třeba {name}.")
     return out
 
 
 def news_box(members, base, today):
-    """Novinky po postavách: levely s hláškou, nové řemeslo nebo stupeň, recepty jednou větou a nové kusy výbavy."""
+    """Novinky po postavách: levely a XP, nové řemeslo nebo stupeň, recepty jednou větou a nové kusy výbavy."""
     rows, quiet = [], []
     for m in members:
         ch = changes(m, base)
@@ -1661,9 +1635,7 @@ def news_box(members, base, today):
             quiet.append(m)
             continue
         lvl = f'<span class="nw-lvl">{ch["from"]} → {ch["to"]}</span>' if ch["to"] > ch["from"] else ""
-        title = f' title="+{num(ch["xp"])} XP"' if ch["xp"] else ""
-        quip = (f'<span class="nw-xp"{title}>{e(Q.line("news." + xp_news(ch), m["slug"]))}</span>'
-                if ch["xp"] or lvl else "")
+        quip = f'<span class="nw-xp">{e(xp_news(ch))}</span>' if ch["xp"] else ""
         extra = "".join(f'<p class="nw-ach">🏆 {e(a)}</p>' for a in ch["ach"])
         extra += "".join(f'<p class="nw-profs">{e(x)}</p>' for x in prof_news(m, ch))
         gear = "".join(item_link(g, compact=True) for g in ch["gear"])
@@ -1673,7 +1645,7 @@ def news_box(members, base, today):
     if quiet:
         names = ", ".join(first(m) for m in quiet)
         rows.append(f'<li class="nw-quiet"><span class="nw-avs">{"".join(avatar(m, "nw-av") for m in quiet)}</span>'
-                    f'<span>{e(Q.line("news.quiet", names, f"{names}: nic nového", names=names))}</span></li>')
+                    f'<span>{e(names)}: nic nového</span></li>')
     body = f'<ul class="nw">{"".join(rows)}</ul>' if rows else '<p class="muted">Nic nového, nikdo nehrál.</p>'
     return f'<section class="news"><p class="eyebrow">Novinky {since_label(base, today)}</p>{body}</section>'
 
@@ -1946,18 +1918,18 @@ def craft_box(plan, members):
 
 
 def gain_text(g):
-    """Text a tooltip štítku upgradu (upgrade() / loot_fit); text je hláška dne z hlasky.json."""
+    """Text a tooltip štítku upgradu (upgrade() / loot_fit)."""
     if g is None:
-        return Q.label("loot.none", "nic moc"), "nosí stejně dobrý nebo lepší kus"
+        return "nic moc", "nosí stejně dobrý nebo lepší kus"
     if g == "?":
         return "?", "neznámé staty nebo výbava, porovnej ve hře"
     if g == "empty":
-        return Q.label("loot.empty", "prázdný slot"), "ten slot má prázdný"
+        return "prázdný slot", "ten slot má prázdný"
     if g == "big":
-        return Q.label("loot.big", "velký upgrade"), "výrazně lepší než to, co nosí"
+        return "velký upgrade", "výrazně lepší než to, co nosí"
     if g == "small":
-        return Q.label("loot.small", "malý upgrade"), "o něco lepší než to, co nosí"
-    return Q.label("loot.maybe", "asi lepší"), f"staty neznáme, o {g} item levelů lepší než to, co nosí (+{g} ilvl)"
+        return "malý upgrade", "o něco lepší než to, co nosí"
+    return "asi lepší", f"staty neznáme, o {g} item levelů lepší než to, co nosí (+{g} ilvl)"
 
 
 def loot_who(fits, by_slug):
@@ -1974,7 +1946,7 @@ def loot_who(fits, by_slug):
         if f.get("second"):
             cls += " lt-second"
             tip = "druhá volba: heal nebo damage jiné školy nevyužije, " + tip
-            text = f'{Q.label("loot.second", "2. volba")} · {text}'
+            text = f'2. volba · {text}'
         lvl = f' <small>lvl {m["level"] + f["lvl"]}</small>' if f["lvl"] else ""
         if f["lvl"]:
             tip += f', nasadí až na levelu {m["level"] + f["lvl"]}'
@@ -2057,12 +2029,12 @@ def loot_section(lists, members):
                      f'</details>')
     return (f'<section id="loot"><h2 class="sec">Bossové a loot</h2>{"".join(parts)}'
             f'<p class="note legend">U kusu jsou jen ti, komu se hodí. '
-            f'<b>{e(Q.label("loot.big", "velký upgrade"))}</b> = výrazně lepší než to, co nosí · '
-            f'<b>{e(Q.label("loot.small", "malý upgrade"))}</b> = o něco lepší · '
-            f'<b>{e(Q.label("loot.empty", "prázdný slot"))}</b> = ten slot má prázdný · '
-            f'<b>{e(Q.label("loot.none", "nic moc"))}</b> = nosí stejně dobré nebo lepší · '
-            f'<b>{e(Q.label("loot.maybe", "asi lepší"))}</b> = staty neznáme · <b>lvl N</b> = až na tom levelu · '
-            f'<b>{e(Q.label("loot.second", "2. volba"))}</b> (tlumeně) = využije jen část · '
+            f'<b>velký upgrade</b> = výrazně lepší než to, co nosí · '
+            f'<b>malý upgrade</b> = o něco lepší · '
+            f'<b>prázdný slot</b> = ten slot má prázdný · '
+            f'<b>nic moc</b> = nosí stejně dobré nebo lepší · '
+            f'<b>asi lepší</b> = staty neznáme · <b>lvl N</b> = až na tom levelu · '
+            f'<b>2. volba</b> (tlumeně) = využije jen část · '
             f'{e(Q.label("loot.fight", "🎲 víc zájemců"))} = hodí se víc lidem. '
             f'Bossové jsou schovaní, ať si nikdo nekazí překvapení.</p></section>')
 
