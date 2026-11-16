@@ -240,6 +240,16 @@
 "req": 12,
 "sub": "Mail"
 },
+"250528": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133141.jpg",
+"inv": "HEAD",
+"kind": "Armor",
+"level": 25,
+"name": "Veteran's Silvered Chain Helm",
+"quality": "RARE",
+"req": 20,
+"sub": "Mail"
+},
 "250620": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132554.jpg",
 "inv": "FEET",
@@ -2517,6 +2527,32 @@
 ]
 ]
 },
+"54740": {
+"item": 250528,
+"name": "Veteran's Silvered Chain Helm",
+"reagents": [
+[
+2841,
+15
+],
+[
+3478,
+6
+],
+[
+2842,
+4
+],
+[
+249427,
+4
+],
+[
+5498,
+6
+]
+]
+},
 "55366": {
 "item": 253664,
 "name": "Linen Reagent Bag",
@@ -3010,6 +3046,14 @@
 "DEFENSE_SKILL_RATING": 2,
 "SPELL_POWER": 5,
 "STAMINA": 4
+}
+},
+"250528": {
+"v": 1,
+"values": {
+"ARMOR": 163,
+"STAMINA": 9,
+"STRENGTH": 10
 }
 },
 "250620": {
