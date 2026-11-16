@@ -4,7 +4,7 @@
   {"name": "Ruins of Lordaeron", "zone": "Tirisfal Glades", "min": 15, "max": 20, "new": true, "note": "nad Undercity, Horda má víc questů", "done": "2026-11-12"},
   {"name": "Wailing Caverns", "zone": "The Barrens", "min": 15, "max": 25, "done": "2026-11-14"},
   {"name": "The Deadmines", "zone": "Westfall", "min": 18, "max": 23, "alliance_side": true},
-  {"name": "Shadowfang Keep", "zone": "Silverpine Forest", "min": 22, "max": 30},
+  {"name": "Shadowfang Keep", "zone": "Silverpine Forest", "min": 22, "max": 30, "done": "2026-11-15"},
   {"name": "The Stockade", "zone": "Stormwind", "min": 22, "max": 30, "alliance_side": true, "note": "uprostřed Stormwindu"},
   {"name": "Excavation Site: Wetlands", "zone": "Wetlands", "min": 24, "max": 29, "new": true},
   {"name": "Blackfathom Deeps", "zone": "Ashenvale", "min": 24, "max": 32},

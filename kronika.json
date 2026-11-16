@@ -2,6 +2,49 @@
  "_info": "Kronika výprav, nejnovější nahoře se řadí sám. Pole zápisu: date (RRRR-MM-DD), title, dungeon (nepovinné), party (slugy postav z party.json), text (seznam odstavců), facts (krátká čísla a fakta pod zápisem), titles (nepovinné: ruční tituly za ten večer, slug → emoji, title, detail; přebijí ty ze statistik, platí jen den po výpravě). Na hlavní stránce je jen první odstavec posledního zápisu, celý text je na kronika.html.",
  "entries": [
   {
+   "date": "2026-11-15",
+   "title": "Arugal ve věži, želva v kůlně",
+   "dungeon": "Shadowfang Keep",
+   "party": [
+    "kozel-mourningale",
+    "zrza-jegod",
+    "johnie-rotking",
+    "horaes-velký"
+   ],
+   "text": [
+    "Silverpine, hrad, vlci a nahoře ve věži Arugal. Šel k zemi, i když jsme si cestou párkrát lehli. Devět smrtí: Zrza s Johniem po třech, Horaes dvě a Kozel jednu, takže healer zase přežil nejlíp a nikdo se neptá jak. Johnie +2, ostatní +1.",
+    "Minulá kronika slavila želví štít a ten už je zase v kůlně. Johnie si od velitele odnesl Commander's Crest, k tomu Wolfmaster Cape a bronzová ramena i náramky, které si ukoval sám. Lektvarů vypil devatenáct a paladin ho zvedal třikrát. Tank, jak má být.",
+    "Zrza dal zase greed, sedmkrát, takže to už není náhoda, ale nový Zrza. Přibyl mu luk Venomstrike a taky nové rukavice s páskem. A Kozlův sobotní úklid questlogu? Zrza vyhodil jedenáct questů a rekord je jeho.",
+    "Kozel s Horaesem si za Arugala odnesli Seal of Sylvanas a Ghostly Mantle, takže chodí v páru jak minule s prsteny. Kozel k tomu přidal Belt of Arugal a rozložil všechno, co nešlo obléct, takže z něj najednou je enchanter. Horaes do sebe obrátil devatenáct pití a každý jsme cestou zakousli tucet zvířátek. Zrza s Johniem tentokrát odešli domů bez Resurrection Sickness. Na zdraví!"
+   ],
+   "facts": [
+    "Arugal ⚰️",
+    "+5 levelů",
+    "9 smrtí, Kozel jen jednu 😇",
+    "Johnie: Commander's Crest 🛡️",
+    "Zrza: 7× greed 💰",
+    "Zrza: 11 questů do koše 🗑️",
+    "Kozel: enchanter z nouze ✨"
+   ],
+   "titles": {
+    "zrza-jegod": {
+     "emoji": "🗑️",
+     "title": "Mistr úklidu",
+     "detail": "Jedenáct questů pryč, Kozlův rekord nepřežil ani den."
+    },
+    "johnie-rotking": {
+     "emoji": "🛡️",
+     "title": "Velitelský tank",
+     "detail": "Želva šla do kůlny, velitel přišel o štít."
+    },
+    "kozel-mourningale": {
+     "emoji": "✨",
+     "title": "Rozkladač",
+     "detail": "Co nešlo obléct, šlo na prach."
+    }
+   }
+  },
+  {
    "date": "2026-11-14",
    "title": "Ve WC na jistotu, kůže nikde",
    "dungeon": "Wailing Caverns",
