@@ -525,7 +525,8 @@ def ready_check(token, region, rows, best, members, catalog):
         take = sum(1 for q in quests for st in q["status"].values() if st in ("missing", "pre", "chain"))
         share = sum(1 for q in quests for st in q["status"].values() if st == "share")
         if quests and (r is best or any(not q["unclaimed"] for q in quests)):
-            checks.append({"title": title, "min": r["min"], "max": r["max"], "best": r is best,
+            checks.append({"title": title, "min": r["min"], "max": r["max"], "difficulty": r.get("difficulty"),
+                           "best": r is best,
                            "quests": quests, "members": list(active), "take": take, "share": share,
                            "source": catalog[title].get("source"), "tavern": catalog[title].get("tavern")})
     return checks
@@ -1829,6 +1830,25 @@ def todo_cards(check, cols):
     return f'<div class="todos">{"".join(cards)}</div>'
 
 
+DIFFICULTY = [("na krev", "Hard"), ("dá se", "Medium"), ("akorát", "At Level"), ("procházka", "Easy")]
+
+
+def level_scale(check, levels):
+    """Stupnice obtížnosti z Wowhead průvodce (difficulty v dungeons.json) místo rozpětí levelů.
+    Zvýrazní stupeň, na který stačí nejslabší z party; bez stupnice zůstane rozpětí."""
+    steps = check.get("difficulty")
+    if not steps:
+        return f'<span class="range">level {check["min"]}–{check["max"]}</span>'
+    low = min(levels) if levels else 0
+    reached = [i for i, lvl in enumerate(steps) if low >= lvl]
+    on = reached[-1] if reached else None
+    tip = "Podle Wowheadu: " + ", ".join(f"{en} od {lvl}" for (_, en), lvl in zip(DIFFICULTY, steps)) + \
+        ". Zvýrazněné podle nejslabšího v partě."
+    parts = "".join(f'<span class="dl{" dl-on" if i == on else ""}" data-lvl="{lvl}">{name}</span>'
+                    f'<small>{lvl}</small>' for i, ((name, _), lvl) in enumerate(zip(DIFFICULTY, steps)))
+    return f'<span class="range diff" title="{e(tip)}">{parts}</span>'
+
+
 def ready_box(check, members, idx):
     by_slug = {m["slug"]: m for m in members}
     cols = [by_slug[s] for s in check["members"]]
@@ -1854,7 +1874,7 @@ def ready_box(check, members, idx):
     source = f'<span class="rc-source">{source}</span>' if source else ""
     hidden = "" if idx == 0 else " hidden"
     return f'''<article class="rc" id="rc-{idx}" role="tabpanel"{hidden}>
-  <header class="rc-head"><h3>{e(check["title"])}{best}</h3><span class="range">level {check["min"]}–{check["max"]}</span>{counts(check, " big")}{source}</header>
+  <header class="rc-head"><h3>{e(check["title"])}{best}</h3>{level_scale(check, [m["level"] for m in cols if m.get("level")])}{counts(check, " big")}{source}</header>
   {todo_cards(check, cols)}
   <div class="table-wrap"><table class="dungeons rc-table"><thead><tr><th>Quest</th>{head}</tr></thead>
   <tbody>{"".join(body)}</tbody></table></div>
@@ -2348,6 +2368,9 @@ table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520p
 .dungeons tr:last-child>*{border-bottom:0}
 .who-col{color:var(--cls)!important;text-align:center!important}
 .range{color:var(--gold);white-space:nowrap}
+.diff{display:inline-flex;flex-wrap:wrap;gap:2px 8px;align-items:baseline;white-space:normal;color:var(--muted);font-size:13px}
+.diff small{margin:0 0 0 -5px;font-size:11px}.diff .dl-on{color:var(--gold);font-weight:700}
+.diff .dl-on+small{color:var(--gold)}
 .st{text-align:center!important;font-weight:600;white-space:nowrap}
 .st-fit{color:var(--ok)}.st-share{color:var(--share);font-size:17px}.st-take{color:var(--warn)}.st-over{color:var(--muted)}.st-pre{color:#9fd3a3;font-size:12px}
 .legend .st-share{font-size:inherit}

@@ -55,6 +55,9 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Dungeony:** seznam a rozsahy levelů jsou podle
   [Wowhead pro Forever](https://www.wowhead.com/forever/guide/dungeons-overview-locations-details), opravíš je v `dungeons.json`.
   `new` označí nový dungeon z Forever, `alliance_side` dungeon na území Aliance, který se na stránce nezobrazuje.
+  `difficulty` je stupnice z Wowhead průvodce dungeonu (Hard / Medium / At Level / Easy, tabulka nad questy):
+  ready check ji ukáže místo rozpětí jako „na krev · dá se · akorát · procházka“ a zvýrazní stupeň podle
+  nejslabšího v partě. Dungeon bez ní (Wowhead ji nemá) ukáže rozpětí.
 - **Questy pro ready check:** `quests.json`, ručně přepsané (s Claudem), přidávají se, až se parta k dungeonu blíží.
   Dungeon, který v souboru není, ready check nemá. Zdroje mají pevné pořadí:
   1. **Wowhead** je hlavní zdroj: které questy dungeon má, ID, od jakého levelu, sdílení, start a předquesty.

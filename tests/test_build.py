@@ -1,6 +1,7 @@
 """Testy logiky titulů, výchozího stavu a karty postavy. Bez sítě a bez API klíčů:
 python3 -m unittest discover -s tests"""
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -291,6 +292,16 @@ class ReadyCheckLimits(unittest.TestCase):
         self.assertEqual(by_id[4]["limit"]["text"], "ne pro Undead")
         self.assertEqual(check["take"], 4)  # Q1 oba, Q2 jen paladin, Q4 jen orc
         self.assertEqual([q["id"] for q in check["quests"]][-2:], [2, 4])  # omezené až za společnými
+
+    def test_difficulty_scale(self):
+        """Stupnice z Wowheadu místo rozpětí; zvýrazněný stupeň podle nejslabšího v partě."""
+        steps = [22, 24, 26, 29]
+        on = lambda html: re.findall(r'class="dl dl-on"[^>]*>([^<]+)<', html)
+        self.assertEqual(on(build.level_scale({"min": 24, "max": 29, "difficulty": steps}, [23, 25])), ["na krev"])
+        self.assertEqual(on(build.level_scale({"min": 24, "max": 29, "difficulty": steps}, [26, 31])), ["akorát"])
+        self.assertEqual(on(build.level_scale({"min": 24, "max": 29, "difficulty": steps}, [30])), ["procházka"])
+        self.assertEqual(on(build.level_scale({"min": 24, "max": 29, "difficulty": steps}, [20, 30])), [])
+        self.assertIn("level 24–29", build.level_scale({"min": 24, "max": 29}, [25]))
 
     def test_render(self):
         check = self.run_check()
