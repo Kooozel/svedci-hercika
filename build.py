@@ -1727,7 +1727,7 @@ def squad(members, size, today):
             '<span class="pc-name">volné místo</span><span class="pc-sub">hledá se parťák</span></figcaption></figure>'] \
         * max(0, size - len(members))
     sheets = "".join(sheet(m, today) for m in members if m["ok"])
-    return (f'<section id="postavy"><div class="squad">{"".join(out)}</div>'
+    return (f'<section id="postavy"><div class="squad" style="--n:{len(out)}">{"".join(out)}</div>'
             f'<p class="sheet-hint">Klikni na postavu a uvidíš, v čem chodí.</p>{sheets}</section>')
 
 
@@ -2282,7 +2282,7 @@ h1{font-size:clamp(28px,6vw,44px);color:var(--gold)}
 .flags{display:flex;gap:8px;flex-wrap:wrap}
 .flag{padding:3px 12px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-weight:600;font-size:13px}
 .flag-ok{color:var(--ok);border-color:#2f5a32}.flag-bad{color:var(--bad);border-color:#6b2a24}
-.squad{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:18px 0 0}
+.squad{display:grid;grid-template-columns:repeat(var(--n,5),minmax(0,1fr));gap:10px;margin:18px 0 0}
 @media(max-width:760px){.squad{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .pc{margin:0;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative}
 .pc>a{display:block;position:relative;color:inherit}.pc>a:hover{text-decoration:none}
