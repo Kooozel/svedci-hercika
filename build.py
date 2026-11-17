@@ -1349,8 +1349,6 @@ def doll_slot(slot, worn, weakest, m):
     return f'<span class="sl sl-empty" title="{e(label)}: prázdné">{e(label)}</span>'
 
 
-# stupeň řemesla podle stropu skillu (Apprentice 75, Journeyman 150, Expert 225, Artisan 300)
-RANKS = [(75, "učeň"), (150, "tovaryš"), (225, "mistr"), (300, "velmistr")]
 CRAFTSMAN = {"Alchemy": "alchymista", "Blacksmithing": "kovář", "Enchanting": "enchanter", "Engineering": "inženýr",
              "Herbalism": "bylinkář", "Leatherworking": "koželuh", "Mining": "horník", "Skinning": "stahovač kůží",
              "Tailoring": "krejčí", "Cooking": "kuchař", "First Aid": "zdravotník", "Fishing": "rybář"}
@@ -1362,22 +1360,16 @@ CRAFT_VERB = {"Tailoring": "ušít", "Blacksmithing": "ukovat", "Leatherworking"
               "Engineering": "smontovat", "Alchemy": "uvařit"}
 
 
-def prof_rank(p):
-    """Stupeň řemesla: podle stropu, když ho API dá, jinak podle skillu."""
-    cap = p.get("max") or p["skill"]
-    return next((name for top, name in RANKS if cap <= top), RANKS[-1][1])
-
-
-def skill_rank(skill):
-    """Stupeň, na který skill stačí (přes 75 už musí mít tovaryše)."""
-    return next((name for top, name in RANKS if skill <= top), RANKS[-1][1])
+def prof_num(p):
+    """Skill řemesla číslem, se stropem, když ho API dá."""
+    return f'{p["skill"]}/{p["max"]}' if p.get("max") else str(p["skill"])
 
 
 def prof_bars(m):
     rows = []
     for p in sorted(m.get("professions") or [], key=lambda p: (not p["primary"], -p["skill"])):
-        rows.append(f'<li class="{"" if p["primary"] else "pb-sec"}" title="{p["skill"]} / {p["max"]}">'
-                    f'<span>{e(p["name"])}</span><b>{prof_rank(p)}</b></li>')
+        rows.append(f'<li class="{"" if p["primary"] else "pb-sec"}">'
+                    f'<span>{e(p["name"])}</span><b>{prof_num(p)}</b></li>')
     return f'<ul class="pbars">{"".join(rows)}</ul>' if rows else ""
 
 
@@ -1615,14 +1607,14 @@ def xp_news(ch):
 
 
 def prof_news(m, ch):
-    """Profese v novinkách: jen nové řemeslo a nový stupeň (tovaryš, mistr), body skillu ne."""
+    """Profese v novinkách: nové řemeslo a body skillu číslem."""
     out = []
     skills = {p["name"]: p["skill"] for p in m.get("professions") or []}
     for name, d in ch["profs"]:
         if d is None:
             out.append(f"🎒 Nové řemeslo: {ACTIVITY.get(name, name)}.")
-        elif skill_rank(skills[name] - d) != skill_rank(skills[name]):
-            out.append(f"🎓 Nově {skill_rank(skills[name])} {CRAFTSMAN.get(name, name)} ({skills[name]}).")
+        elif d:
+            out.append(f"🛠️ {ACTIVITY.get(name, name).capitalize()} +{d} ({skills[name]}).")
     if ch["learned"]:
         n = len(ch["learned"])
         name = ch["learned"][(Q.day + zlib.crc32(m["slug"].encode())) % n]  # každý den jiný příklad
@@ -1632,7 +1624,7 @@ def prof_news(m, ch):
 
 
 def news_box(members, base, today):
-    """Novinky po postavách: levely a XP, nové řemeslo nebo stupeň, recepty jednou větou a nové kusy výbavy."""
+    """Novinky po postavách: levely a XP, nové řemeslo a body skillu, recepty jednou větou a nové kusy výbavy."""
     rows, quiet = [], []
     for m in members:
         ch = changes(m, base)
@@ -2071,7 +2063,7 @@ def loot_section(lists, members):
 
 
 def professions_box(members):
-    """Přehled: profese × postavy, stupeň (učeň, tovaryš…) místo čísla; vedlejší profese u nuly s hláškou,
+    """Přehled: profese × postavy, skill číslem (skill/strop); vedlejší profese u nuly s hláškou,
     chybějící profese jednou větou."""
     names = [p["name"] for m in members for p in m.get("professions") or []]
     prim = [n for n in ALL_PRIMARIES if n in names]
@@ -2087,8 +2079,8 @@ def professions_box(members):
             if not p:
                 cells += '<span class="pg-cell pg-none"><b>–</b></span>'
                 continue
-            cells += (f'<span class="pg-cell" title="{p["skill"]} / {p["max"]}" style="--cls:{cls_color(m)}">'
-                      f'<b>{prof_rank(p)}</b></span>')
+            cells += (f'<span class="pg-cell" style="--cls:{cls_color(m)}">'
+                      f'<b>{prof_num(p)}</b></span>')
         return f'<span class="pg-name{cls}">{e(name)}</span>{cells}'
 
     grid = "".join(row(n) for n in prim) + "".join(row(n, " pg-sec") for n in sec)

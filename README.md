@@ -14,8 +14,8 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Nová postava bez něj dostane první pád.
 - **Novinky od včerejška:** porovná levely, XP, profese, výbavu a achievementy s posledním snímkem v `history/`
   před dneškem (ranní stav před včerejším večerem). Večerní push ho neposune. Místo čísel XP je hláška podle toho,
-  kolik kdo nahrál vůči svému levelu (drobek, kus, level, víc levelů), nikdy vůči ostatním. U profesí jen nové
-  řemeslo a nový stupeň (tovaryš od skillu 76…), recepty jednou větou. Bez historie se vezme `party.json`
+  kolik kdo nahrál vůči svému levelu (drobek, kus, level, víc levelů), nikdy vůči ostatním. U profesí nové
+  řemeslo a body skillu číslem, recepty jednou větou. Bez historie se vezme `party.json`
   z nasazené stránky (`site_url`).
 - **Tituly a počítadla:** ze statistik postav (smrti, jídlo, need rolly, lety…) dostane každý titul za včerejší večer,
   bez žebříčku a bez opakování stejné statistiky dva dny po sobě. Kdo nehrál, dostane hezký titul.
@@ -42,7 +42,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Řemesla:** „Dílna“ nabídne nejvýš tři kusy (`CRAFT_MAX`), které někdo z party umí vyrobit a jinému nebo sobě
   výrazně pomůžou (velký upgrade nebo prázdný slot, class je unese, level stačí), u nich kdo co přinese
   (kůže od skinnera, Copper Rod od kováře…), kdo umí třpytky (enchanty, bez jmen, komu chybí) a kdo je na stropu
-  skillu. Pod tím je přehled se stupni (učeň, tovaryš, mistr, velmistr podle stropu skillu, číslo v tooltipu),
+  skillu. Pod tím je přehled se skillem číslem (skill/strop),
   hlášky k vedlejším profesím skoro na nule a jedna věta o profesích, které nikdo nemá. Detaily receptů a předmětů se ukládají do `cache/static.json`, takže se
   z API stahuje jen to nové (ranní běh cache commitne). Smazáním souboru se stáhne znovu.
   Nové recepty se ukážou v novinkách.

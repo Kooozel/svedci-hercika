@@ -226,13 +226,14 @@ class Sheet(unittest.TestCase):
         self.assertEqual(build.xp_news(ch), "+11\xa0600 XP (50 % levelu)")  # level 20 chce 23 200
         self.assertEqual(build.xp_news({**ch, "to": 21}), "+11\xa0600 XP")  # level je vidět zvlášť
 
-    def test_prof_news_only_new_and_rank_up(self):
+    def test_prof_news_numbers(self):
         m = {"slug": "a", "professions": [{"name": "Tailoring", "skill": 80}, {"name": "Fishing", "skill": 1},
                                           {"name": "Mining", "skill": 40}]}
         ch = {"profs": [("Tailoring", 7), ("Fishing", None), ("Mining", 5)], "learned": ["A", "B", "C", "D"]}
         out = build.prof_news(m, ch)
-        self.assertEqual(len(out), 3)  # Mining +5 bez nového stupně se nepíše
-        self.assertTrue(any("tovaryš krejčí" in x for x in out))
+        self.assertEqual(len(out), 4)
+        self.assertIn("🛠️ Krejčovina +7 (80).", out)
+        self.assertIn("🛠️ Hornictví +5 (40).", out)
         self.assertTrue(any("rybaření" in x for x in out))
         self.assertTrue(any("4 nové recepty" in x for x in out))
 
@@ -625,10 +626,9 @@ class Quips(unittest.TestCase):
                          "Chodí s holým krkem, bez prstenů a jen s jednou cetkou.")
         self.assertEqual(build.bare_line([]), "")
 
-    def test_prof_rank(self):
-        self.assertEqual(build.prof_rank({"skill": 75, "max": 150}), "tovaryš")
-        self.assertEqual(build.prof_rank({"skill": 1, "max": 75}), "učeň")
-        self.assertEqual(build.skill_rank(76), "tovaryš")
+    def test_prof_num(self):
+        self.assertEqual(build.prof_num({"skill": 75, "max": 150}), "75/150")
+        self.assertEqual(build.prof_num({"skill": 12, "max": 0}), "12")
 
 
 if __name__ == "__main__":
