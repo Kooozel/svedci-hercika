@@ -210,6 +210,16 @@
 "req": 1,
 "sub": "Wand"
 },
+"249409": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/1021860.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 25,
+"name": "Cerulean Dye",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Other"
+},
 "249410": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/136240.jpg",
 "inv": "NON_EQUIP",
@@ -550,6 +560,16 @@
 "req": 0,
 "sub": "Other"
 },
+"279967": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/4777763.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 4,
+"name": "Fish Bowl",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
 "279968": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133681.jpg",
 "inv": "NON_EQUIP",
@@ -840,6 +860,16 @@
 "req": 0,
 "sub": "Bandages"
 },
+"3531": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133687.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 1,
+"name": "Heavy Wool Bandage",
+"quality": "COMMON",
+"req": 0,
+"sub": "Bandages"
+},
 "3576": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133219.jpg",
 "inv": "NON_EQUIP",
@@ -1030,6 +1060,26 @@
 "req": 0,
 "sub": "Other"
 },
+"4592": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133918.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Longjaw Mud Snapper",
+"quality": "COMMON",
+"req": 5,
+"sub": "Food & Drink"
+},
+"4593": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133916.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 25,
+"name": "Bristle Whisker Catfish",
+"quality": "COMMON",
+"req": 15,
+"sub": "Food & Drink"
+},
 "5498": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134122.jpg",
 "inv": "NON_EQUIP",
@@ -1129,6 +1179,16 @@
 "quality": "UNCOMMON",
 "req": 5,
 "sub": "Cloth"
+},
+"6290": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133893.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 10,
+"name": "Brilliant Smallfish",
+"quality": "COMMON",
+"req": 1,
+"sub": "Food & Drink"
 },
 "6338": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135138.jpg",
@@ -1620,6 +1680,16 @@
 [
 2592,
 1
+]
+]
+},
+"1841": {
+"item": 3531,
+"name": "Heavy Wool Bandage",
+"reagents": [
+[
+2592,
+2
 ]
 ]
 },
@@ -2324,6 +2394,36 @@
 ]
 ]
 },
+"4353": {
+"item": 6290,
+"name": "Brilliant Smallfish",
+"reagents": [
+[
+6291,
+1
+]
+]
+},
+"4355": {
+"item": 4592,
+"name": "Longjaw Mud Snapper",
+"reagents": [
+[
+6289,
+1
+]
+]
+},
+"4359": {
+"item": 4593,
+"name": "Bristle Whisker Catfish",
+"reagents": [
+[
+6308,
+1
+]
+]
+},
 "4360": {
 "item": null,
 "name": "Enchant Bracer - Minor Spirit",
@@ -2584,6 +2684,20 @@
 [
 2320,
 4
+]
+]
+},
+"52639": {
+"item": 279967,
+"name": "Fish Bowl",
+"reagents": [
+[
+6291,
+1
+],
+[
+3371,
+1
 ]
 ]
 },
