@@ -140,6 +140,16 @@
 "req": 1,
 "sub": "Permanent"
 },
+"2313": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133609.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Medium Armor Kit",
+"quality": "COMMON",
+"req": 5,
+"sub": "Permanent"
+},
 "2318": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134252.jpg",
 "inv": "NON_EQUIP",
@@ -219,6 +229,16 @@
 "quality": "UNCOMMON",
 "req": 0,
 "sub": "Leather"
+},
+"250079": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134024.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 10,
+"name": "Tasty Raptor Bites",
+"quality": "COMMON",
+"req": 1,
+"sub": "Food & Drink"
 },
 "250510": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132960.jpg",
@@ -430,6 +450,16 @@
 "req": 11,
 "sub": "Cloth"
 },
+"2605": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134743.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 15,
+"name": "Green Dye",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
 "2679": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133974.jpg",
 "inv": "NON_EQUIP",
@@ -470,12 +500,32 @@
 "req": 1,
 "sub": "Food & Drink"
 },
+"2683": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133950.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Crab Cake",
+"quality": "COMMON",
+"req": 5,
+"sub": "Food & Drink"
+},
 "2684": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134021.jpg",
 "inv": "NON_EQUIP",
 "kind": "Consumable",
 "level": 15,
 "name": "Coyote Steak",
+"quality": "COMMON",
+"req": 5,
+"sub": "Food & Drink"
+},
+"2687": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134004.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Dry Pork Ribs",
 "quality": "COMMON",
 "req": 5,
 "sub": "Food & Drink"
@@ -680,6 +730,16 @@
 "req": 20,
 "sub": "Mail"
 },
+"2871": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135250.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 25,
+"name": "Heavy Sharpening Stone",
+"quality": "COMMON",
+"req": 15,
+"sub": "Other"
+},
 "2996": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132890.jpg",
 "inv": "NON_EQUIP",
@@ -720,6 +780,16 @@
 "req": 5,
 "sub": "Other"
 },
+"3241": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135257.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 25,
+"name": "Heavy Weightstone",
+"quality": "COMMON",
+"req": 15,
+"sub": "Other"
+},
 "3470": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135243.jpg",
 "inv": "NON_EQUIP",
@@ -750,6 +820,16 @@
 "req": 17,
 "sub": "Mail"
 },
+"3486": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135245.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 25,
+"name": "Heavy Grinding Stone",
+"quality": "COMMON",
+"req": 0,
+"sub": "Metal & Stone"
+},
 "3530": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133684.jpg",
 "inv": "NON_EQUIP",
@@ -770,12 +850,42 @@
 "req": 0,
 "sub": "Metal & Stone"
 },
+"3726": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134003.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Big Bear Steak",
+"quality": "COMMON",
+"req": 5,
+"sub": "Food & Drink"
+},
+"3727": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133974.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 25,
+"name": "Hot Lion Chops",
+"quality": "COMMON",
+"req": 15,
+"sub": "Food & Drink"
+},
 "4231": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134366.jpg",
 "inv": "NON_EQUIP",
 "kind": "Trade Goods",
 "level": 10,
 "name": "Cured Light Hide",
+"quality": "COMMON",
+"req": 0,
+"sub": "Leather"
+},
+"4233": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134354.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 20,
+"name": "Cured Medium Hide",
 "quality": "COMMON",
 "req": 0,
 "sub": "Leather"
@@ -940,6 +1050,16 @@
 "req": 1,
 "sub": "Food & Drink"
 },
+"5527": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134431.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 25,
+"name": "Goblin Deviled Clams",
+"quality": "COMMON",
+"req": 15,
+"sub": "Food & Drink"
+},
 "5542": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133763.jpg",
 "inv": "CLOAK",
@@ -958,6 +1078,16 @@
 "name": "Handstitched Leather Vest",
 "quality": "UNCOMMON",
 "req": 3,
+"sub": "Leather"
+},
+"5961": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134589.jpg",
+"inv": "LEGS",
+"kind": "Armor",
+"level": 23,
+"name": "Dark Leather Pants",
+"quality": "UNCOMMON",
+"req": 18,
 "sub": "Leather"
 },
 "6214": {
@@ -1178,6 +1308,20 @@
 ]
 ]
 },
+"1367": {
+"item": 2313,
+"name": "Medium Armor Kit",
+"reagents": [
+[
+2319,
+4
+],
+[
+2320,
+1
+]
+]
+},
 "1535": {
 "item": 2679,
 "name": "Charred Wolf Meat",
@@ -1222,12 +1366,40 @@
 ]
 ]
 },
+"1543": {
+"item": 2683,
+"name": "Crab Cake",
+"reagents": [
+[
+2674,
+1
+],
+[
+2678,
+1
+]
+]
+},
 "1544": {
 "item": 2682,
 "name": "Cooked Crab Claw",
 "reagents": [
 [
 2675,
+1
+],
+[
+2678,
+1
+]
+]
+},
+"1545": {
+"item": 2687,
+"name": "Dry Pork Ribs",
+"reagents": [
+[
+2677,
 1
 ],
 [
@@ -1353,6 +1525,16 @@
 ]
 ]
 },
+"1644": {
+"item": 2871,
+"name": "Heavy Sharpening Stone",
+"reagents": [
+[
+2838,
+1
+]
+]
+},
 "1649": {
 "item": 2848,
 "name": "Bronze Mace",
@@ -1387,6 +1569,16 @@
 "reagents": [
 [
 2835,
+1
+]
+]
+},
+"1799": {
+"item": 3241,
+"name": "Heavy Weightstone",
+"reagents": [
+[
+2838,
 1
 ]
 ]
@@ -1479,6 +1671,44 @@
 ]
 ]
 },
+"1868": {
+"item": 3486,
+"name": "Heavy Grinding Stone",
+"reagents": [
+[
+2838,
+3
+]
+]
+},
+"1901": {
+"item": 3726,
+"name": "Big Bear Steak",
+"reagents": [
+[
+3730,
+1
+],
+[
+2692,
+1
+]
+]
+},
+"1902": {
+"item": 3727,
+"name": "Hot Lion Chops",
+"reagents": [
+[
+3731,
+1
+],
+[
+2692,
+1
+]
+]
+},
 "2170": {
 "item": 4243,
 "name": "Fine Leather Tunic",
@@ -1517,6 +1747,20 @@
 "reagents": [
 [
 783,
+1
+],
+[
+4289,
+1
+]
+]
+},
+"2196": {
+"item": 4233,
+"name": "Cured Medium Hide",
+"reagents": [
+[
+4232,
 1
 ],
 [
@@ -1835,6 +2079,20 @@
 ]
 ]
 },
+"3963": {
+"item": 5527,
+"name": "Goblin Deviled Clams",
+"reagents": [
+[
+5504,
+1
+],
+[
+2692,
+1
+]
+]
+},
 "3964": {
 "item": 5525,
 "name": "Boiled Clams",
@@ -1905,6 +2163,24 @@
 ],
 [
 2320,
+1
+]
+]
+},
+"4159": {
+"item": 5961,
+"name": "Dark Leather Pants",
+"reagents": [
+[
+2319,
+12
+],
+[
+4340,
+1
+],
+[
+2321,
 1
 ]
 ]
@@ -2482,6 +2758,20 @@
 [
 247786,
 1
+]
+]
+},
+"54504": {
+"item": 250079,
+"name": "Tasty Raptor Bites",
+"reagents": [
+[
+3685,
+1
+],
+[
+2678,
+4
 ]
 ]
 },
@@ -4277,6 +4567,13 @@
 "values": {
 "AGILITY": 1,
 "ARMOR": 55
+}
+},
+"5961": {
+"v": 1,
+"values": {
+"AGILITY": 8,
+"ARMOR": 72
 }
 },
 "5970": {
