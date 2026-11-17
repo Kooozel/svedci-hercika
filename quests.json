@@ -1,6 +1,31 @@
 {
  "_info": "Hordské dungeonové questy. Hlavní zdroj je Wowhead (source: průvodce dungeonu, souhrn https://www.wowhead.com/forever/guide/dungeons/every-dungeon-quest-location): které questy, ID, req, sharable, start, pre. Warcraft Tavern (tavern) jen na note, co a kde se dělá uvnitř. Blizzard API rozhoduje spory: ID musí existovat a mít typ Dungeon, ne Raid (Season of Discovery). Pole questu: id, req (od levelu), sharable, start (kde quest začíná, \"dungeon\" = až uvnitř, předmětem nebo od postavy), pre (předquesty mimo dungeon: name + ids v pořadí, poslední musí být hotový), note, volitelně classes / races (jinak se berou z API). Dungeon bez záznamu ready check nemá.",
  "dungeons": {
+  "Ragefire Chasm": {
+   "source": "https://www.wowhead.com/forever/guide/ragefire-chasm-dungeon-overview-location-rewards",
+   "tavern": "https://www.warcrafttavern.com/forever/guides/ragefire-chasm-quests/",
+   "checked": "2026-11-17",
+   "quests": [
+    {"id": 5723, "name": "Testing an Enemy's Strength", "req": 9, "sharable": true,
+     "start": "Rahauro (Elder Rise, Thunder Bluff)",
+     "note": "8 Ragefire Trogg a 8 Ragefire Shaman v první části"},
+    {"id": 5722, "name": "Searching for the Lost Satchel", "req": 9, "sharable": true,
+     "start": "Rahauro (Elder Rise, Thunder Bluff)",
+     "note": "mrtvola Maur Grimtotem v místnosti s Oggleflintem, cesta brzy doprava"},
+    {"id": 5724, "name": "Returning the Lost Satchel", "req": 9, "sharable": false, "start": "dungeon",
+     "note": "vezme se od mrtvoly Maur Grimtotem po odevzdání Searching for the Lost Satchel, odevzdá se v Thunder Bluff"},
+    {"id": 5761, "name": "Slaying the Beast", "req": 9, "sharable": true,
+     "start": "Neeru Fireblade (Cleft of Shadow, Orgrimmar, hned u vchodu)",
+     "note": "srdce z Taragaman the Hungerer"},
+    {"id": 5725, "name": "The Power to Destroy...", "req": 9, "sharable": true,
+     "start": "Varimathras (Royal Quarter, Undercity)",
+     "note": "obě knihy padají ze Searing Blade Cultist a Warlock, do konce dungeonu je skoro jistě máte"},
+    {"id": 5728, "name": "Hidden Enemies", "req": 9, "sharable": false,
+     "start": "Thrall (Valley of Wisdom, Orgrimmar)",
+     "pre": {"name": "Hidden Enemies (2 díly: Lieutenant's Insignia ze Skull Rock, pak Neeru Fireblade)", "ids": [5726, 5727]},
+     "note": "zabít Bazzalan a Jergosh the Invoker"}
+   ]
+  },
   "Ruins of Lordaeron": {
    "source": "https://www.wowhead.com/forever/guide/ruins-of-lordaeron-dungeon-overview-location-rewards",
    "tavern": "https://www.warcrafttavern.com/forever/guides/the-ruins-of-lordaeron-quests/",

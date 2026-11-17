@@ -433,7 +433,9 @@ def plan_dungeons(members, dungeons):
         fit = sum(1 for s, _ in status.values() if s == "fit")
         # odehraný dungeon zůstává jen v seznamu všech, z plánu, ready checku a lootu zmizí
         near = d["max"] >= lo and d["min"] <= hi + 5 and not d.get("done")
-        rows.append({**d, "status": status, "fit": fit, "near": near})
+        # odehraný dungeon, do kterého se ještě někdo levelem vejde (alt), ukáže ready check jako minulý
+        past = bool(d.get("done")) and d["max"] >= lo
+        rows.append({**d, "status": status, "fit": fit, "near": near, "past": past})
     # Víc lidí v rozsahu > vyšší dungeon > užší rozsah
     best = max((r for r in rows if not r.get("done")), key=lambda r: (r["fit"], r["min"], -r["max"]), default=None)
     return rows, best
@@ -464,7 +466,8 @@ def ready_check(token, region, rows, best, members, catalog):
         return details[qid]
 
     checks, seen = [], set()
-    for r in sorted((r for r in rows if r["near"]), key=lambda r: r is not best):
+    # nejdřív příští výprava, pak dungeony v dosahu, nakonec už odehrané (podívat se, co zbylo altům)
+    for r in sorted((r for r in rows if r["near"] or r.get("past")), key=lambda r: (r.get("past", False), r is not best)):
         # křídla jako "Scarlet Monastery: Library" sdílí jeden seznam questů
         title = r["name"] if r["name"] in catalog else r["name"].split(":")[0]
         if title not in catalog or title in seen:
@@ -527,9 +530,10 @@ def ready_check(token, region, rows, best, members, catalog):
         # ✋ = musí si někam dojít: pro quest, dokončit rozjetý řetěz nebo udělat předquesty
         take = sum(1 for q in quests for st in q["status"].values() if st in ("missing", "pre", "chain"))
         share = sum(1 for q in quests for st in q["status"].values() if st == "share")
-        if quests and (r is best or any(not q["unclaimed"] for q in quests)):
+        past = r.get("past", False)
+        if quests and (r is best or past or any(not q["unclaimed"] for q in quests)):
             checks.append({"title": title, "min": r["min"], "max": r["max"], "difficulty": r.get("difficulty"),
-                           "best": r is best,
+                           "best": r is best, "past": past, "done": r.get("done") if past else None,
                            "quests": quests, "members": list(active), "take": take, "share": share,
                            "source": catalog[title].get("source"), "tavern": catalog[title].get("tavern")})
     return checks
@@ -1824,6 +1828,15 @@ def level_scale(check, levels):
     return f'<span class="range diff" title="{e(tip)}">{parts}</span>'
 
 
+def done_chip(done):
+    """Štítek odehraného dungeonu, s datem, když ho víme (v dungeons.json může být jen true)."""
+    when = ""
+    if isinstance(done, str):
+        _, mo, d = (int(x) for x in done.split("-"))
+        when = f" {d}. {mo}."
+    return f'<span class="chip chip-done">✓ odehráno{when}</span>'
+
+
 def ready_box(check, members, idx):
     by_slug = {m["slug"]: m for m in members}
     cols = [by_slug[s] for s in check["members"]]
@@ -1842,6 +1855,8 @@ def ready_box(check, members, idx):
                     f'target="_blank" rel="noopener">{e(q["name"])}</a>{share_label(q)}</div>'
                     f'<small>{quest_meta(q)}</small></th>{cells}</tr>')
     best = '<span class="chip chip-new">příští výprava</span>' if check["best"] else ""
+    if check.get("past"):
+        best = done_chip(check["done"])
     links = [(check.get("source"), "Wowhead", "questy, levely a sdílení podle Wowheadu"),
              (check.get("tavern"), "Warcraft Tavern", "podrobný postup uvnitř dungeonu")]
     source = "".join(f'<a href="{e(url)}" target="_blank" rel="noopener" title="{tip}">{name} ↗</a>'
@@ -1859,10 +1874,23 @@ def ready_box(check, members, idx):
 def ready_section(checks, members):
     if not checks:
         return ""
+    # dungeony v dosahu jako čipy, odehrané (může jich být hodně) v jednom výběru seřazené podle levelu
     tabs = "".join(
         f'<button type="button" role="tab" data-rc="{i}" data-title="{e(c["title"])}" '
         f'aria-selected="{"true" if i == 0 else "false"}">{e(c["title"])}{counts(c)}</button>'
-        for i, c in enumerate(checks))
+        for i, c in enumerate(checks) if not c.get("past"))
+    past = sorted(((i, c) for i, c in enumerate(checks) if c.get("past")), key=lambda x: (x[1]["min"], x[1]["max"]))
+    if past:
+        def plain(c):
+            bits = [f"↗{c['share']}" if c["share"] else "", f"✋{c['take']}" if c["take"] else ""]
+            return " ".join(b for b in bits if b) or "✓"
+        # data-fit: kdo se do dungeonu levelem vejde, „Já jsem“ podle toho dá jeho dungeony nahoru
+        opts = "".join(
+            f'<option value="{i}" data-title="{e(c["title"])}" data-fit="{e(" ".join(m["slug"] for m in members if c["min"] <= m.get("level", 0) <= c["max"]))}">'
+            f'{e(c["title"])} · {c["min"]}–{c["max"]} · {plain(c)}</option>' for i, c in past)
+        tabs += (f'<label class="rc-past" title="dungeony, které parta už má za sebou, třeba pro alty">'
+                 f'<select aria-label="Už odehrané dungeony"><option value="">už odehrané ({len(past)})</option>'
+                 f'{opts}</select></label>')
     me = "".join(f'<button type="button" data-me="{e(m["slug"])}" style="--cls:{cls_color(m)}">{e(first(m))}</button>'
                  for m in members)
     return (f'<section id="ready"><div class="sec-row"><h2 class="sec">Ready check</h2>'
@@ -2090,11 +2118,7 @@ def dungeon_table(rows, best, members):
     for r in rows:
         chips = '<span class="chip chip-new">nový</span>' if r.get("new") else ""
         if r.get("done"):  # datum, nebo jen true, když si ho nikdo nepamatuje
-            when = ""
-            if isinstance(r["done"], str):
-                _, mo, d = (int(x) for x in r["done"].split("-"))
-                when = f" {d}. {mo}."
-            chips += f'<span class="chip chip-done">✓ odehráno{when}</span>'
+            chips += done_chip(r["done"])
         place = e(r["zone"]) + (f' · {e(r["note"])}' if r.get("note") else "")
         cells = "".join(status_cell(r["status"][m["slug"]]) for m in members)
         body.append(f'<tr{" class=best" if r is best else " class=done" if r.get("done") else ""}><th scope="row">{e(r["name"])}{chips}<small>{place}</small></th>'
@@ -2329,6 +2353,10 @@ border-radius:999px;padding:3px 10px;cursor:pointer}
 .rc-picker button{font:600 14px Inter,system-ui,sans-serif;color:var(--text);background:var(--panel);border:1px solid var(--line);
 border-radius:999px;padding:6px 8px 6px 14px;cursor:pointer;display:flex;align-items:center;gap:6px}
 .rc-picker button[aria-selected=true]{border-color:var(--gold);background:#2c2014;color:var(--gold)}
+.rc-past select{font:600 14px Inter,system-ui,sans-serif;color:var(--muted);background:var(--panel);border:1px dashed var(--line);
+border-radius:999px;padding:6px 12px;cursor:pointer;max-width:100%}
+.rc-past select.on{border:1px solid var(--gold);background:#2c2014;color:var(--gold)}
+.rc-past option{color:var(--text);background:var(--panel)}
 .todos{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:14px}
 .todo{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--cls);border-radius:0 10px 10px 0;padding:10px 12px}
 .todo h4{margin:0 0 6px;color:var(--cls);font-size:14px}
@@ -2527,18 +2555,31 @@ background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:
 JS = """
 const tabs=[...document.querySelectorAll('.rc-picker button')];
 const meBtns=[...document.querySelectorAll('.me-pick button')];
-function me(slug){meBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));
+const pastSel=document.querySelector('.rc-past select');
+function pastOrder(slug){if(!pastSel)return;const opts=[...pastSel.options].slice(1);
+  // dungeony, do kterých se vybraný levelem vejde, nahoru s tečkou; jinak podle levelu
+  opts.forEach(o=>{o.dataset.base??=o.textContent;const fit=!!slug&&o.dataset.fit.split(' ').includes(slug);
+    o.dataset.on=fit?1:0;o.textContent=(fit?'● ':'')+o.dataset.base});
+  opts.sort((a,b)=>b.dataset.on-a.dataset.on||a.dataset.idx-b.dataset.idx).forEach(o=>pastSel.add(o))}
+if(pastSel)[...pastSel.options].slice(1).forEach((o,k)=>o.dataset.idx=k);
+function me(slug){meBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));pastOrder(slug);
   document.querySelectorAll('.todo').forEach(t=>t.classList.toggle('dim',!!slug&&t.dataset.slug!==slug));
   document.querySelectorAll('.rc-table [data-slug]').forEach(c=>c.classList.toggle('me-col',!!slug&&c.dataset.slug===slug));
   document.querySelectorAll('.lt-who').forEach(c=>c.classList.toggle('dim',!!slug&&c.dataset.slug!==slug));
   try{localStorage.setItem('me',slug)}catch(e){}}
 meBtns.forEach(b=>b.addEventListener('click',()=>me(b.dataset.me)));
 try{const m=localStorage.getItem('me');if(m&&meBtns.some(b=>b.dataset.me===m))me(m)}catch(e){}
+const pastOpts=()=>pastSel?[...pastSel.options].slice(1):[];
 function pick(i){tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.rc==i));
   document.querySelectorAll('.rc').forEach(a=>a.hidden=a.id!=='rc-'+i);
-  try{localStorage.setItem('rc-pick',tabs[i].dataset.title)}catch(e){}}
+  const p=pastOpts().find(o=>o.value==i);
+  if(pastSel){pastSel.value=p?String(i):'';pastSel.classList.toggle('on',!!p)}
+  const t=tabs.find(b=>b.dataset.rc==i)||p;
+  try{if(t)localStorage.setItem('rc-pick',t.dataset.title)}catch(e){}}
 tabs.forEach(b=>b.addEventListener('click',()=>pick(+b.dataset.rc)));
-try{const saved=localStorage.getItem('rc-pick');const t=tabs.find(b=>b.dataset.title===saved);if(t)pick(+t.dataset.rc)}catch(e){}
+if(pastSel)pastSel.addEventListener('change',()=>{if(pastSel.value!=='')pick(+pastSel.value)});
+try{const saved=localStorage.getItem('rc-pick');const t=tabs.find(b=>b.dataset.title===saved);
+  const o=pastOpts().find(o=>o.dataset.title===saved);if(t)pick(+t.dataset.rc);else if(o)pick(+o.value)}catch(e){}
 const pcs=[...document.querySelectorAll('.pc[data-slug]')];
 function openSheet(slug,scroll){
   document.querySelectorAll('.sheet').forEach(x=>x.hidden=x.dataset.slug!==slug);

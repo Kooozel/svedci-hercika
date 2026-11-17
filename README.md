@@ -28,7 +28,8 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Příští výprava:** dungeon jako pásmo na stupnici levelů, postavy jako tečky (vybledlé = mimo rozsah),
   pod tím další dva dungeony a souhrn ready checku. Vybírá se podle levelů, domluvený dungeon se dá napsat
   do `party.json` jako `"next": "Wailing Caverns"`. Odehraný dungeon dostane v `dungeons.json` `"done": "RRRR-MM-DD"` (nebo `true`, když datum
-  nevíme) a zmizí z plánu, ready checku i lootu. V seznamu všech dungeonů zůstane se štítkem odehráno.
+  nevíme) a zmizí z plánu a lootu. V seznamu všech dungeonů zůstane se štítkem odehráno. Dokud se do něj
+  někdo levelem vejde (alt), je v ready checku ve výběru „už odehrané“.
 - **Postavy:** klik na postavu ve skupinovce otevře pod ní její kartu: render uprostřed, kolem výbava jako okno
   postavy ve hře (rámeček barvy kvality, 🩴 hadr = nejslabší kus podle item levelu, prázdné sloty čárkovaně), vedle
   hláška, jak je oblečený (průměrný item level proti levelu), co mu chybí („chodí bez čepice“), pár řádků „Jak na tom je“
@@ -36,7 +37,8 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   ne, ta jsou na Armory. Kdo se odhlásil s Resurrection
   Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu, jinak se otevře ta
   z „Já jsem“ v ready checku.
-- **Ready check:** „Já jsem“ schová úkoly ostatních, pamatuje si to prohlížeč.
+- **Ready check:** „Já jsem“ schová úkoly ostatních, pamatuje si to prohlížeč. Za dungeony v dosahu jsou
+  odehrané, do kterých se ještě někdo vejde (třeba alt na RFC), v jednom výběru podle levelu; s „Já jsem“ jsou nahoře s tečkou ty, kam se dotyčný vejde.
 - **Řemesla:** „Dílna“ nabídne nejvýš tři kusy (`CRAFT_MAX`), které někdo z party umí vyrobit a jinému nebo sobě
   výrazně pomůžou (velký upgrade nebo prázdný slot, class je unese, level stačí), u nich kdo co přinese
   (kůže od skinnera, Copper Rod od kováře…), kdo umí třpytky (enchanty, bez jmen, komu chybí) a kdo je na stropu

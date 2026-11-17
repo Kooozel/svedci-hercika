@@ -135,6 +135,34 @@ class Dungeons(unittest.TestCase):
         rows[0]["done"] = True
         self.assertIn("✓ odehráno<", build.dungeon_table(rows, best, [member("a", level=20)]))
 
+    def test_done_dungeon_past_while_someone_fits(self):
+        ds = [{"name": "RFC", "zone": "z", "min": 13, "max": 18, "done": "2026-11-07"}]
+        rows, _ = build.plan_dungeons([member("a", level=25), member("alt", level=14)], ds)
+        self.assertTrue(rows[0]["past"])  # alt se do něj ještě vejde
+        rows, _ = build.plan_dungeons([member("a", level=25)], ds)
+        self.assertFalse(rows[0]["past"])
+
+    def test_past_dungeon_in_ready_check_after_upcoming(self):
+        party = [{"slug": "a", "class": "Mage", "race": "Orc", "level": 25, "quests_active": [], "quests_done": [1]},
+                 {"slug": "alt", "class": "Mage", "race": "Orc", "level": 14, "quests_active": [], "quests_done": []}]
+        catalog = {"Old": {"quests": [{"id": 1, "name": "Q1", "sharable": True}]},
+                   "New": {"quests": [{"id": 2, "name": "Q2", "sharable": True}]}}
+        old = {"name": "Old", "min": 13, "max": 18, "near": False, "past": True, "done": "2026-11-07"}
+        new = {"name": "New", "min": 20, "max": 30, "near": True}
+        orig = build.api_get
+        build.api_get = lambda *a: {}
+        try:
+            checks = build.ready_check("t", "eu", [old, new], new, party, catalog)
+        finally:
+            build.api_get = orig
+        self.assertEqual([c["title"] for c in checks], ["New", "Old"])
+        self.assertEqual(checks[1]["quests"][0]["status"], {"a": "done", "alt": "missing"})  # i když ho nikdo nemá
+        html = build.ready_section(checks, [member("a", level=25), member("alt", level=14)])
+        self.assertIn("už odehrané (1)", html)
+        self.assertIn('data-fit="alt"', html)  # do RFC se vejde jen alt
+        self.assertNotIn('data-rc="1"', html)  # odehraný není čip
+        self.assertIn("odehráno 7. 11.", build.ready_box(checks[1], [member("a"), member("alt")], 1))
+
 
 class Baseline(unittest.TestCase):
     def test_uses_last_history_before_today(self):
