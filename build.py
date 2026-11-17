@@ -1609,12 +1609,12 @@ def xp_news(ch):
 def prof_news(m, ch):
     """Profese v novinkách: nové řemeslo a body skillu číslem."""
     out = []
-    skills = {p["name"]: p["skill"] for p in m.get("professions") or []}
-    for name, d in ch["profs"]:
-        if d is None:
-            out.append(f"🎒 Nové řemeslo: {ACTIVITY.get(name, name)}.")
-        elif d:
-            out.append(f"🛠️ {ACTIVITY.get(name, name).capitalize()} +{d} ({skills[name]}).")
+    new = [name for name, d in ch["profs"] if d is None]
+    ups = [f"{name} +{d}" for name, d in ch["profs"] if d]
+    if new:
+        out.append(f"🎒 Nové řemeslo: {', '.join(new)}.")
+    if ups:
+        out.append(f"🛠️ {' · '.join(ups)}")
     if ch["learned"]:
         n = len(ch["learned"])
         name = ch["learned"][(Q.day + zlib.crc32(m["slug"].encode())) % n]  # každý den jiný příklad
@@ -2063,7 +2063,7 @@ def loot_section(lists, members):
 
 
 def professions_box(members):
-    """Přehled: profese × postavy, skill číslem (skill/strop); vedlejší profese u nuly s hláškou,
+    """Přehled: profese × postavy, skill číslem (strop v tooltipu); vedlejší profese u nuly s hláškou,
     chybějící profese jednou větou."""
     names = [p["name"] for m in members for p in m.get("professions") or []]
     prim = [n for n in ALL_PRIMARIES if n in names]
@@ -2079,8 +2079,8 @@ def professions_box(members):
             if not p:
                 cells += '<span class="pg-cell pg-none"><b>–</b></span>'
                 continue
-            cells += (f'<span class="pg-cell" style="--cls:{cls_color(m)}">'
-                      f'<b>{prof_num(p)}</b></span>')
+            cells += (f'<span class="pg-cell" title="{prof_num(p)}" style="--cls:{cls_color(m)}">'
+                      f'<b>{p["skill"]}</b></span>')
         return f'<span class="pg-name{cls}">{e(name)}</span>{cells}'
 
     grid = "".join(row(n) for n in prim) + "".join(row(n, " pg-sec") for n in sec)

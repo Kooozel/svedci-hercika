@@ -231,10 +231,7 @@ class Sheet(unittest.TestCase):
                                           {"name": "Mining", "skill": 40}]}
         ch = {"profs": [("Tailoring", 7), ("Fishing", None), ("Mining", 5)], "learned": ["A", "B", "C", "D"]}
         out = build.prof_news(m, ch)
-        self.assertEqual(len(out), 4)
-        self.assertIn("🛠️ Krejčovina +7 (80).", out)
-        self.assertIn("🛠️ Hornictví +5 (40).", out)
-        self.assertTrue(any("rybaření" in x for x in out))
+        self.assertEqual(out[:2], ["🎒 Nové řemeslo: Fishing.", "🛠️ Tailoring +7 · Mining +5"])
         self.assertTrue(any("4 nové recepty" in x for x in out))
 
     def test_genitive_falls_back_to_first_name(self):
