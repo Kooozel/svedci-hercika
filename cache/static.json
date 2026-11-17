@@ -1080,6 +1080,16 @@
 "req": 15,
 "sub": "Food & Drink"
 },
+"5095": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133913.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Rainbow Fin Albacore",
+"quality": "COMMON",
+"req": 5,
+"sub": "Food & Drink"
+},
 "5498": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134122.jpg",
 "inv": "NON_EQUIP",
@@ -2547,6 +2557,16 @@
 [
 3470,
 2
+]
+]
+},
+"4391": {
+"item": 5095,
+"name": "Rainbow Fin Albacore",
+"reagents": [
+[
+6361,
+1
 ]
 ]
 },
