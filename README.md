@@ -9,7 +9,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Přidat postavu:** do `players` v `party.json` připiš konec jejího odkazu na Armory, tedy `jmeno-prijmeni`
   (malými písmeny, diakritika zůstává, třeba `horaes-velký`). `size` je počet míst v partě (prázdná se ukážou jako volná).
 - **Alt:** připiš ho hráči do `chars` za hlavní postavu. Hlavní postava (první) drží místo v partě a počítá se z ní plán výpravy,
-  tituly, loot a řemesla. Alt má ready check, kartu postavy a novinky. Alt pod levelem 10 API nevrací, na stránce se objeví sám, až ho přeleze.
+  tituly, loot a řemesla. Alt má ready check, kartu postavy a novinky, ve skupinové fotce se přepíná na místě svého hráče. Alt pod levelem 10 API nevrací, na stránce se objeví sám, až ho přeleze.
 - **Role:** odhadují se podle specu. Když někdo hraje jinak (Johnie tankuje s body v Holy), přepiš to v `party.json`
   v `roles`, třeba `"johnie-rotking": "tank"` (tank / heal / dps).
 - **Druhý pád jména:** v `genitive` (třeba `"zrza-jegod": "Zrzy"`), aby stránka psala „od Zrzy“.
@@ -41,11 +41,11 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   ne, ta jsou na Armory. Kdo se odhlásil s Resurrection
   Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu, jinak se otevře ta
   z „Hraju za“ v ready checku.
-- **Ready check:** „Hraju za“ ukáže úkoly vybrané postavy (co si dojít, co dostane u vchodu a od koho, co nasdílí), ostatní jsou jen souhrn
-  a celá tabulka je sbalená. Volbu si pamatuje prohlížeč. „Kdo jde“ určuje sestavu: výchozí je od každého hráče první postava, která se do dungeonu
-  levelem vejde, a jde ji přepsat na jakýkoli mix hlavních postav a altů. Ruční sestava je jen v adrese stránky (`?sestava=`), takže se dá poslat odkazem.
-  Nasdílet může jen postava jiného hráče, která je v sestavě. Za dungeony v dosahu jsou odehrané, do kterých se ještě někdo vejde
-  (třeba alt na RFC), v jednom výběru podle levelu; nahoře s tečkou jsou ty, kam se vybraná postava vejde.
+- **Ready check:** postupuje se shora dolů. „Hraju za“ vybere hráče (a když má alta, i postavu), „Dungeon“ nabídne nahoře dungeony, kam se postava
+  levelem vejde. Pod tím jsou její úkoly: co si dojít, co dostane u vchodu a od koho, co nasdílí. Volbu si pamatuje prohlížeč.
+  „Kdo jde s tebou“ ukazuje zbytek sestavy, výchozí je od každého hráče první postava, která se do dungeonu levelem vejde. Přes „změnit“ jde složit
+  jakýkoli mix hlavních postav a altů. Ruční sestava je jen v adrese stránky (`?sestava=`), takže se dá poslat odkazem.
+  Nasdílet může jen postava jiného hráče, která je v sestavě. Celá tabulka questů je sbalená pod tím.
 - **Řemesla:** „Dílna“ nabídne nejvýš tři kusy (`CRAFT_MAX`), které někdo z party umí vyrobit a jinému nebo sobě
   výrazně pomůžou (velký upgrade nebo prázdný slot, class je unese, level stačí), u nich kdo co přinese
   (kůže od skinnera, Copper Rod od kováře…), kdo umí třpytky (enchanty, bez jmen, komu chybí) a kdo je na stropu
