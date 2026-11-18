@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Stáhne postavy party z Blizzard API (záloha: Armory) a vygeneruje statickou stránku do site/."""
+from collections import Counter
 import base64
 import html
 import json
@@ -406,15 +407,13 @@ def add_nicks(party, members):
 
 
 def short_names(members):
-    """Postava se stejným křestním jménem jako předchozí (alt) se na stránce jmenuje příjmením."""
-    seen = set()
-    for m in members:
-        if not m["ok"]:
-            continue
+    """Postavy se stejným křestním jménem (Kozel Mourningale, Kozel Bezrohý) se na stránce jmenují příjmením."""
+    loaded = [m for m in members if m["ok"]]
+    counts = Counter(m["name"].split()[0] for m in loaded)
+    for m in loaded:
         parts = m["name"].split()
-        if parts[0] in seen and len(parts) > 1:
-            m["short"] = parts[-1]
-        seen.add(parts[0])
+        if counts[parts[0]] > 1 and len(parts) > 1:
+            m["short"] = " ".join(parts[1:])
 
 
 def load_party(party, token):
@@ -1353,6 +1352,12 @@ def nick(m):
     return m.get("nick") or first(m)
 
 
+def other_name(m):
+    """Druhá část jména k first(m): příjmení, nebo křestní jméno, když se postava jmenuje příjmením."""
+    name, _, surname = m["name"].partition(" ")
+    return name if m.get("short") else surname
+
+
 def char_label(m):
     """Postava i s hráčem, když se jmenuje jinak než on: Cildac (Johnie)."""
     return first(m) if nick(m) == first(m) else f"{first(m)} ({nick(m)})"
@@ -1807,15 +1812,16 @@ def pc_figure(m, group, shown):
     if len(group) > 1:
         switch = f'<div class="pc-sw" role="group" aria-label="Postavy hráče {e(nick(m))}">' + "".join(
             f'<button type="button" data-show="{e(c["slug"])}" aria-pressed="{"true" if c is m else "false"}" style="--cls:{cls_color(c)}" '
-            f'title="{e(c["name"])} · {c["level"]} · {e(c["class"])}"><b>{e(c["name"].partition(" ")[0])}</b>'
+            f'title="{e(c["name"])} · {c["level"]} · {e(c["class"])}"><b>{e(first(c))}</b>'
             f'<i>{c["level"]}</i><span>{e(c["class"])}</span></button>'
             for c in group) + "</div>"
     hidden = "" if m is shown else " hidden"
-    surname = m["name"].partition(" ")[2]
+    last = other_name(m)
+    last = f'<span class="pc-last">{e(last)}</span>' if last and last != nick(m) else ""
     return (f'<figure class="pc" data-slug="{e(m["slug"])}" data-player="{e(m.get("player", m["slug"]))}" style="--cls:{cls_color(m)}"{hidden}>'
             f'<a href="#char-{e(m["slug"])}" aria-label="Karta postavy {e(m["name"])}" aria-expanded="false">'
             f'{img}</a><figcaption><span class="pc-nick">{e(nick(m))}</span>'
-            f'<span class="pc-name">{e(m["name"].partition(" ")[0])} <b>{m["level"]}</b></span><span class="pc-last">{e(surname)}</span>{xp_bar(m)}'
+            f'<span class="pc-name">{e(first(m))} <b>{m["level"]}</b></span>{last}{xp_bar(m)}'
             f'<span class="pc-sub">{e(m["class"])} · {e(role)}</span>{switch}</figcaption></figure>')
 
 
@@ -1960,12 +1966,11 @@ def ready_box(check, members, idx):
 
 def char_card(m, attr, title=None, line=None, small=None, level=True):
     """Karta ve výběru: portrét, jméno, level a classa. Výběr hráče do ní dá přezdívku a počet postav."""
-    name, _, surname = m["name"].partition(" ")
     art = (f'<span class="ch-art" style="background-image:url(\'{e(m["render"])}\')"></span>' if m.get("render")
            else f'<span class="ch-art ch-noart">{avatar(m, "ch-av")}</span>')
     lvl = f'<span class="ch-lvl">{m.get("level", "")}</span>' if level else ""
     return (f'<button type="button" class="ch" {attr} style="--cls:{cls_color(m)}">{art}{lvl}'
-            f'<span class="ch-txt"><b>{e(title or name)}</b><span>{e(line if line is not None else surname)}</span>'
+            f'<span class="ch-txt"><b>{e(title or first(m))}</b><span>{e(line if line is not None else other_name(m))}</span>'
             f'<small>{e(small or m.get("class", ""))}</small></span></button>')
 
 
@@ -2409,7 +2414,7 @@ section[id],div[id]{scroll-margin-top:56px}
 .me-swap{font:600 13px Inter,system-ui,sans-serif;color:var(--gold);background:none;border:0;padding:0;cursor:pointer}
 .me-strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 8px;scrollbar-width:thin}
 .me-strip[hidden]{display:none}
-.ch{position:relative;flex:0 0 128px;scroll-snap-align:start;padding:0;text-align:left;color:var(--text);background:var(--panel);
+.ch{position:relative;flex:0 0 140px;scroll-snap-align:start;padding:0;text-align:left;color:var(--text);background:var(--panel);
 border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;font-family:Inter,system-ui,sans-serif;transition:border-color .15s,transform .15s}
 .ch:hover{border-color:var(--cls);transform:translateY(-2px)}
 .ch-art{display:block;height:104px;background-color:color-mix(in srgb,var(--cls) 16%,var(--panel2));background-repeat:no-repeat;background-size:300%;background-position:50% 33%;
@@ -2418,7 +2423,7 @@ border-bottom:2px solid color-mix(in srgb,var(--cls) 45%,transparent);filter:sat
 .ch-noart{display:flex;align-items:center;justify-content:center}.ch-av{width:64px;height:64px;border-radius:50%}
 .ch-lvl{position:absolute;top:6px;right:6px;min-width:30px;text-align:center;font:700 16px Cinzel,serif;color:var(--gold);background:color-mix(in srgb,var(--bg) 82%,transparent);border-radius:8px;padding:1px 6px}
 .ch-txt{display:grid;padding:7px 10px 9px;line-height:1.25}
-.ch-txt b{font:700 15px Cinzel,serif;color:var(--cls);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-txt b{font:700 14px Cinzel,serif;color:var(--cls);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ch-txt span{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ch-txt small{font-size:11px;color:var(--muted);margin-top:2px}
 .ch[aria-pressed=true]{border-color:var(--cls);box-shadow:0 0 0 1px var(--cls),0 4px 16px color-mix(in srgb,var(--cls) 28%,transparent)}

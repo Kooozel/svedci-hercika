@@ -426,7 +426,9 @@ class Alts(unittest.TestCase):
     def test_same_first_name_uses_surname(self):
         chars = [{"ok": True, "name": "Johnie Rotking"}, {"ok": True, "name": "Johnie Tusklord"}, {"ok": True, "name": "Zrza Jegod"}]
         build.short_names(chars)
-        self.assertEqual([build.first(m) for m in chars], ["Johnie", "Tusklord", "Zrza"])
+        self.assertEqual([build.first(m) for m in chars], ["Rotking", "Tusklord", "Zrza"])  # i hlavní postava
+        self.assertEqual(build.other_name(chars[0]), "Johnie")
+        self.assertEqual(build.other_name(chars[2]), "Jegod")
 
     def test_nick_from_party_or_main_character(self):
         chars = [{"ok": True, "slug": "a", "name": "Johnie Rotking", "player": "a"},
@@ -451,6 +453,15 @@ class Alts(unittest.TestCase):
         self.assertIn('<span class="pc-last">Velky</span>', html)
         self.assertIn('<b>Johnie</b><i>17</i><span>Paladin</span>', html)
         self.assertIn(' hidden>', build.pc_figure(other, [m, other], m))
+
+    def test_rows_of_same_named_characters_differ(self):
+        chars = [{**member(s), "ok": True, "name": n, "nick": "Kozel", "class": "Mage", "roles": [], "player": "k"}
+                 for s, n in (("a", "Kozel Mourningale"), ("b", "Kozel Bezrohý"))]
+        build.short_names(chars)
+        html = build.pc_figure(chars[0], chars, chars[0])
+        self.assertIn("<b>Mourningale</b>", html)
+        self.assertIn("<b>Bezrohý</b>", html)
+        self.assertNotIn('class="pc-last"', html)  # křestní jméno je stejné jako přezdívka
 
     def test_own_alt_never_shares(self):
         check = self.check([self.char("a", 25), self.char("a2", 25, "a", [1])])
