@@ -401,6 +401,90 @@ class ReadyCheckLimits(unittest.TestCase):
         self.assertIn('class="st st-na"', html)
 
 
+class Alts(unittest.TestCase):
+    """Víc postav na hráče: kdo komu může nasdílet a kdo patří do výchozí sestavy."""
+
+    @staticmethod
+    def char(slug, level, player=None, active=()):
+        return {"slug": slug, "class": "Mage", "race": "Orc", "level": level, "player": player or slug,
+                "quests_active": [{"id": i} for i in active], "quests_done": []}
+
+    def check(self, party, low=24, high=32):
+        catalog = {"D": {"quests": [{"id": 1, "name": "Q", "sharable": True}]}}
+        row = {"name": "D", "min": low, "max": high, "near": True}
+        orig = build.api_get
+        build.api_get = lambda *a: {}
+        try:
+            return build.ready_check("t", "eu", [row], row, party, catalog)[0]
+        finally:
+            build.api_get = orig
+
+    def test_roster(self):
+        self.assertEqual(build.roster({"characters": ["a", "b"]}), [["a"], ["b"]])
+        self.assertEqual(build.roster({"players": [{"chars": ["a", "a2"]}, {"chars": ["b"]}]}), [["a", "a2"], ["b"]])
+
+    def test_same_first_name_uses_surname(self):
+        chars = [{"ok": True, "name": "Johnie Rotking"}, {"ok": True, "name": "Johnie Tusklord"}, {"ok": True, "name": "Zrza Jegod"}]
+        build.short_names(chars)
+        self.assertEqual([build.first(m) for m in chars], ["Johnie", "Tusklord", "Zrza"])
+
+    def test_own_alt_never_shares(self):
+        check = self.check([self.char("a", 25), self.char("a2", 25, "a", [1])])
+        self.assertEqual(check["quests"][0]["status"]["a"], "missing")
+        self.assertEqual(check["quests"][0]["holders"], {})
+
+    def test_holder_outside_lineup_does_not_count_until_picked(self):
+        check = self.check([self.char("a", 25), self.char("b", 26), self.char("b2", 12, "b", [1])])
+        self.assertEqual(check["lineup"], ["a", "b"])  # b2 se levelem nevejde
+        q = check["quests"][0]
+        self.assertEqual(q["status"]["a"], "missing")
+        self.assertEqual(q["holders"]["a"], ["b2"])  # stránka ho započte, až ho někdo vybere v „Kdo jde“
+        self.assertEqual((check["take"], check["share"]), (2, 0))
+
+    def test_other_player_in_lineup_shares(self):
+        check = self.check([self.char("a", 25), self.char("b", 26, active=[1])])
+        self.assertEqual(check["quests"][0]["status"]["a"], "share")
+        self.assertEqual((check["take"], check["share"]), (0, 1))
+
+    def test_lineup_takes_first_fitting_char_of_each_player(self):
+        party = [self.char("a", 40), self.char("a2", 25, "a"), self.char("b", 25), self.char("b2", 26, "b"), self.char("c", 14)]
+        self.assertEqual(build.default_lineup({"min": 24, "max": 32}, party), ["a2", "b"])
+        self.assertEqual(build.default_lineup({"min": 50, "max": 60}, party), ["a", "b", "c"])  # nikdo: hlavní postavy
+
+    def test_alt_keeps_done_dungeon_on_offer_but_not_the_plan(self):
+        ds = [{"name": "RFC", "zone": "z", "min": 13, "max": 18, "done": "2026-11-07"},
+              {"name": "BFD", "zone": "z", "min": 24, "max": 32}]
+        mains, chars = [member("a", level=25)], [member("a", level=25), member("a2", level=14)]
+        rows, best = build.plan_dungeons(mains, ds, chars)
+        self.assertTrue(rows[0]["past"])
+        self.assertEqual(best["name"], "BFD")
+        self.assertEqual(set(rows[1]["status"]), {"a"})
+
+    def test_unavailable_alt_is_skipped_but_main_is_reported(self):
+        def fail(*a):
+            raise RuntimeError("500")
+        saved = build.fetch_armory, build.time.sleep
+        build.fetch_armory, build.time.sleep = fail, lambda s: None
+        try:
+            out = build.load_party({"region": "eu", "players": [{"chars": ["a", "a2"]}]}, None)
+        finally:
+            build.fetch_armory, build.time.sleep = saved
+        self.assertEqual([m["slug"] for m in out], ["a"])
+        self.assertFalse(out[0]["ok"])
+
+    def test_render_has_picker_and_personal_card(self):
+        party = [self.char("a", 25), self.char("a2", 25, "a"), self.char("b", 26, active=[1])]
+        check = self.check(party)
+        chars = [{**m, "ok": True, "name": m["slug"].title(), "class_slug": "mage"} for m in party]
+        chars[1]["alt"] = True
+        html = build.ready_section([check], chars)
+        self.assertIn('<div class="wg" data-player="a"><button type="button" data-go="a"', html)
+        self.assertIn('data-go="a2"', html)
+        self.assertIn('class=alt', html)
+        self.assertIn('class="mine" data-slug="a2"', html)
+        self.assertIn('data-way="get" data-from="b"', html)
+
+
 def stat(t, v, bonus=False):
     return {"type": {"type": t, "name": t.title()}, "value": v, **({"is_equip_bonus": True} if bonus else {})}
 
