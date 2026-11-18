@@ -406,16 +406,6 @@ def add_nicks(party, members):
             m["nick"] = names.get(m["player"]) or mains.get(m["player"], m)["name"].split()[0]
 
 
-def short_names(members):
-    """Postavy se stejným křestním jménem (Kozel Mourningale, Kozel Bezrohý) se na stránce jmenují příjmením."""
-    loaded = [m for m in members if m["ok"]]
-    counts = Counter(m["name"].split()[0] for m in loaded)
-    for m in loaded:
-        parts = m["name"].split()
-        if counts[parts[0]] > 1 and len(parts) > 1:
-            m["short"] = " ".join(parts[1:])
-
-
 def load_party(party, token):
     region = party["region"]
     members = []
@@ -439,7 +429,6 @@ def load_party(party, token):
                 continue
             url = ARMORY.format(region=region, slug=urllib.parse.quote(slug))
             members.append({"ok": False, "slug": slug, "url": url, "error": str(exc), "player": owner, "alt": False})
-    short_names(members)
     add_nicks(party, members)
     # ruční role z party.json přebijí odhad podle specu (Johnie tankuje, i když má body v Holy)
     for m in members:
@@ -1309,7 +1298,7 @@ def evening_titles(members, base, today, catalog):
                     .replace("{zone}", info[s]["zone"] or "Azerothu"))
         out[s] = {"key": stat, "emoji": rule["emoji"], "title": t["name"], "detail": line}
         if hero := (info[s].get("top") or {}).get(stat.removeprefix("_first:")):
-            out[s]["char"] = first(hero)
+            out[s]["char"] = hero["name"]
         used |= {stat, group}
     for s in people:
         if s in out:
@@ -1372,22 +1361,16 @@ def num(n):
 
 
 def first(m):
-    return m.get("short") or m["name"].split()[0]
+    return m["name"].split()[0]
 
 
 def nick(m):
     return m.get("nick") or first(m)
 
 
-def other_name(m):
-    """Druhá část jména k first(m): příjmení, nebo křestní jméno, když se postava jmenuje příjmením."""
-    name, _, surname = m["name"].partition(" ")
-    return name if m.get("short") else surname
-
-
 def char_label(m):
-    """Postava i s hráčem, když se jmenuje jinak než on: Cildac (Johnie)."""
-    return first(m) if nick(m) == first(m) else f"{first(m)} ({nick(m)})"
+    """Celé jméno postavy, s hráčem, když se jmenuje jinak než on: Cildac Velky (Fanda)."""
+    return m["name"] if nick(m) == first(m) else f'{m["name"]} ({nick(m)})'
 
 
 def shown_char(group):
@@ -1750,11 +1733,10 @@ def since_label(base, today):
 WEEKDAY_FROM = ["pondělního", "úterního", "středečního", "čtvrtečního", "pátečního", "sobotního", "nedělního"]
 
 
-def xp_news(ch):
-    """XP od včerejška a kolik to je z levelu, na kterém včera začínal."""
+def level_share(ch):
+    """Kolik procent levelu postava nahrála; při level upu se neukazuje."""
     need = XP_TO_NEXT[ch["from"] - 1] if 0 < ch["from"] <= len(XP_TO_NEXT) else 0
-    pct = f" ({round(100 * ch['xp'] / need)} % levelu)" if need and ch["to"] == ch["from"] else ""
-    return f"+{num(ch['xp'])} XP{pct}"
+    return f"{round(100 * ch['xp'] / need)} %" if need and ch["xp"] and ch["to"] == ch["from"] else ""
 
 
 def prof_news(m, ch):
@@ -1774,12 +1756,13 @@ def prof_news(m, ch):
     return out
 
 
-def news_bits(ch, brief=False):
-    """Level a XP postavy jedním dechem; brief bez podílu na levelu, když je postav pod sebou víc."""
-    lvl = f'<span class="nw-lvl">{ch["from"]} → {ch["to"]}</span>' if ch["to"] > ch["from"] else ""
-    text = f'+{num(ch["xp"])} XP' if brief else xp_news(ch)
-    xp = f'<span class="nw-xp">{e(text)}</span>' if ch["xp"] else ""
-    return lvl + xp
+def news_row(m, ch):
+    """Řádek postavy ve sloupcích: celé jméno, level nebo podíl levelu, XP."""
+    step = (f'<span class="nw-lvl">{ch["from"]} → {ch["to"]}</span>' if ch["to"] > ch["from"]
+            else f'<span class="nw-pct" title="z levelu">{level_share(ch)}</span>')
+    xp = f'+{num(ch["xp"])} XP' if ch["xp"] else ""
+    return (f'<div class="nw-line" style="--cls:{cls_color(m)}"><span class="nw-char">{e(m["name"])}</span>{step}'
+            f'<span class="nw-xp">{xp}</span></div>')
 
 
 def news_extra(m, ch):
@@ -1794,19 +1777,15 @@ def news_person(chars, log, fresh):
     """Řádek jednoho člověka: jedna aktivní postava rovnou, víc postav pod sebou a podrobnosti k rozbalení."""
     active = sorted(log, key=lambda x: -x[1]["xp"])
     lead = active[0][0] if active else chars[0]
-    body = ""
+    body = f'<p class="nw-head"><b class="who-n">{e(nick(lead))}</b></p>'
+    if active:
+        body += f'<div class="nw-lines">{"".join(news_row(m, ch) for m, ch in active)}</div>'
     if len(active) == 1:
-        m, ch = active[0]
-        name = f'<span class="nw-char" style="--cls:{cls_color(m)}">{e(first(m))}</span>' if len(chars) > 1 else ""
-        body = f'<p class="nw-head"><b class="who-n">{e(nick(m))}</b>{name}{news_bits(ch)}</p>{news_extra(m, ch)}'
+        body += news_extra(*active[0])
     else:
-        body = f'<p class="nw-head"><b class="who-n">{e(nick(lead))}</b></p>'
-        if active:
-            body += "".join(f'<p class="nw-head nw-line"><span class="nw-char" style="--cls:{cls_color(m)}">{e(first(m))}</span>{news_bits(ch, True)}</p>'
-                            for m, ch in active)
-            more = "".join(f'<div class="nw-det" style="--cls:{cls_color(m)}"><b>{e(first(m))}</b>{x}</div>'
-                           for m, ch in active if (x := news_extra(m, ch)))
-            body += f'<details class="nw-more"><summary>Podrobnosti</summary>{more}</details>' if more else ""
+        more = "".join(f'<div class="nw-det" style="--cls:{cls_color(m)}"><b>{e(m["name"])}</b>{x}</div>'
+                       for m, ch in active if (x := news_extra(m, ch)))
+        body += f'<details class="nw-more"><summary>Podrobnosti</summary>{more}</details>' if more else ""
     body += "".join(f'<p class="nw-profs">🆕 Nová postava: {e(m["name"])}, level {m["level"]}</p>' for m in fresh)
     return f'<li style="--cls:{cls_color(lead)}">{avatar(lead, "nw-av")}<div class="nw-main">{body}</div></li>'
 
@@ -1879,16 +1858,14 @@ def pc_figure(m, group, shown):
     if len(group) > 1:
         switch = f'<div class="pc-sw" role="group" aria-label="Postavy hráče {e(nick(m))}">' + "".join(
             f'<button type="button" data-show="{e(c["slug"])}" aria-pressed="{"true" if c is m else "false"}" style="--cls:{cls_color(c)}" '
-            f'title="{e(c["name"])} · {c["level"]} · {e(c["class"])}"><b>{e(first(c))}</b>'
+            f'title="{e(c["name"])} · {c["level"]} · {e(c["class"])}"><b>{e(c["name"])}</b>'
             f'<i>{c["level"]}</i><span>{e(c["class"])}</span></button>'
             for c in group) + "</div>"
     hidden = "" if m is shown else " hidden"
-    last = other_name(m)
-    last = f'<span class="pc-last">{e(last)}</span>' if last and last != nick(m) else ""
     return (f'<figure class="pc" data-slug="{e(m["slug"])}" data-player="{e(m.get("player", m["slug"]))}" style="--cls:{cls_color(m)}"{hidden}>'
             f'<a href="#char-{e(m["slug"])}" aria-label="Karta postavy {e(m["name"])}" aria-expanded="false">'
             f'{img}</a><figcaption><span class="pc-nick">{e(nick(m))}</span>'
-            f'<span class="pc-name">{e(first(m))} <b>{m["level"]}</b></span>{last}{xp_bar(m)}'
+            f'<span class="pc-name"><span>{e(m["name"])}</span><b>{m["level"]}</b></span>{xp_bar(m)}'
             f'<span class="pc-sub">{e(m["class"])} · {e(role)}</span>{switch}</figcaption></figure>')
 
 
@@ -2037,7 +2014,7 @@ def char_card(m, attr, title=None, line=None, small=None, level=True):
            else f'<span class="ch-art ch-noart">{avatar(m, "ch-av")}</span>')
     lvl = f'<span class="ch-lvl">{m.get("level", "")}</span>' if level else ""
     return (f'<button type="button" class="ch" {attr} style="--cls:{cls_color(m)}">{art}{lvl}'
-            f'<span class="ch-txt"><b>{e(title or first(m))}</b><span>{e(line if line is not None else other_name(m))}</span>'
+            f'<span class="ch-txt"><b>{e(title or first(m))}</b><span>{e(line if line is not None else m["name"].partition(" ")[2])}</span>'
             f'<small>{e(small or m.get("class", ""))}</small></span></button>')
 
 
@@ -2491,7 +2468,7 @@ border-bottom:2px solid color-mix(in srgb,var(--cls) 45%,transparent);filter:sat
 .ch-lvl{position:absolute;top:6px;right:6px;min-width:30px;text-align:center;font:700 16px Cinzel,serif;color:var(--gold);background:color-mix(in srgb,var(--bg) 82%,transparent);border-radius:8px;padding:1px 6px}
 .ch-txt{display:grid;padding:7px 10px 9px;line-height:1.25}
 .ch-txt b{font:700 14px Cinzel,serif;color:var(--cls);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ch-txt span{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-txt span{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ch-txt small{font-size:11px;color:var(--muted);margin-top:2px}
 .ch[aria-pressed=true]{border-color:var(--cls);box-shadow:0 0 0 1px var(--cls),0 4px 16px color-mix(in srgb,var(--cls) 28%,transparent)}
 .ch[aria-pressed=true] .ch-art{border-bottom-color:var(--cls)}
@@ -2542,17 +2519,15 @@ summary.ot-row{cursor:pointer;list-style:none}summary.ot-row::-webkit-details-ma
 .ot-none{margin:0;color:var(--muted);font-size:13px}
 .pc[hidden]{display:none}
 .pc-nick{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.pc-last{font-size:12px;color:var(--text);margin-top:-3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc[data-player] .pc-name{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:start;min-height:2.7em;line-height:1.35}
 .pc-sw{display:grid;gap:1px;margin:6px -6px 0;padding-top:5px;border-top:1px solid var(--line)}
-.pc-sw button{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,auto);gap:6px;align-items:baseline;width:100%;padding:3px 6px;text-align:left;
+.pc-sw button{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:6px;align-items:baseline;width:100%;padding:4px 6px;text-align:left;
 font:12px/1.3 Inter,system-ui,sans-serif;color:var(--muted);background:none;border:0;border-radius:6px;cursor:pointer}
 .pc-sw button:hover{background:var(--panel2)}
 .pc-sw button[aria-pressed=true]{background:color-mix(in srgb,var(--cls) 16%,transparent)}
-.pc-sw b{color:var(--cls);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-sw b{color:var(--cls);font-weight:600}
 .pc-sw i{font-style:normal;font-weight:600;color:var(--gold)}
-.pc-sw span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pc[data-player]{container-type:inline-size}
-@container (max-width:150px){.pc-sw button{grid-template-columns:minmax(0,1fr) auto;row-gap:0}.pc-sw span{grid-column:1/-1;font-size:11px}}
+.pc-sw span{grid-column:1/-1;font-size:11px}
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
 .dungeons th,.dungeons td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
@@ -2679,7 +2654,9 @@ background:#0003;border:1px solid #ffffff10;border-radius:10px;padding:8px 12px}
 .nw-xp{margin-left:auto;color:#c9b2ff;font-size:13px;font-weight:600}
 .nw-profs{font-size:13px;color:var(--muted)}.nw-profs b{color:var(--text);font-weight:600}
 .nw-ach{font-size:13px;color:var(--gold)}
-.nw-char{color:var(--cls);font-size:13px;font-weight:600}.nw-line{font-size:13px;gap:8px}
+.nw-lines{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:3px 10px;align-items:baseline;font-size:13px}
+.nw-line{display:contents}.nw-char{color:var(--cls);font-weight:600}.nw-pct{color:var(--muted);font-size:12px;text-align:right}
+.nw-lines .nw-lvl{text-align:right;white-space:nowrap}.nw-lines .nw-xp{margin:0;text-align:right;white-space:nowrap}
 .nw-more summary{cursor:pointer;color:var(--muted);font-size:12px}.nw-det{display:grid;gap:3px;margin-top:6px}.nw-det>b{color:var(--cls);font-size:13px;font-weight:600}
 .nw-gear{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
 .nw-gear .item-ic img{width:28px;height:28px}
