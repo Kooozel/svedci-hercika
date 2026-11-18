@@ -7,15 +7,16 @@
     {"name": "Kozel", "chars": ["kozel-mourningale"]},
     {"name": "Zrza", "chars": ["zrza-jegod"]},
     {"name": "Johnie", "chars": ["johnie-rotking", "johnie-tusklord"]},
-    {"name": "Horaes", "chars": ["horaes-velký"]},
-    {"name": "Cilda", "chars": ["cildac-velky"]}
+    {"name": "Hora", "chars": ["horaes-velký"]},
+    {"name": "Cilda", "chars": ["cildac-velky"]},
+    {"name": "Susak", "chars": []}
   ],
   "genitive": {
     "kozel-mourningale": "Kozla",
     "zrza-jegod": "Zrzy",
     "johnie-rotking": "Johnieho",
-    "johnie-tusklord": "Tusklorda",
-    "horaes-velký": "Horaese",
+    "johnie-tusklord": "Johnieho",
+    "horaes-velký": "Hory",
     "cildac-velky": "Cildy"
   },
   "roles": {

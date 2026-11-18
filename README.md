@@ -8,7 +8,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 
 - **Přidat postavu:** do `players` v `party.json` připiš konec jejího odkazu na Armory, tedy `jmeno-prijmeni`
   (malými písmeny, diakritika zůstává, třeba `horaes-velký`). `size` je počet míst v partě (prázdná se ukážou jako volná).
-- **Přezdívka hráče:** `name` u hráče v `players`, ukazuje se nad jménem postavy. Bez ní se vezme křestní jméno hlavní postavy.
+- **Přezdívka hráče:** `name` u hráče v `players`, ukazuje se nad jménem postavy. Bez ní se vezme křestní jméno hlavní postavy. Hráč s prázdným `chars` se ukáže na volném místě.
 - **Alt:** připiš ho hráči do `chars` za hlavní postavu. Hlavní postava (první) drží místo v partě a počítá se z ní plán výpravy,
   tituly, loot a řemesla. Alt má ready check, kartu postavy a novinky, ve skupinové fotce se přepíná řádky (jméno, level, classa) na místě svého hráče (výchozí je naposledy hraná postava). Alt pod levelem 10 API nevrací, na stránce se objeví sám, až ho přeleze.
 - **Role:** odhadují se podle specu. Když někdo hraje jinak (Johnie tankuje s body v Holy), přepiš to v `party.json`

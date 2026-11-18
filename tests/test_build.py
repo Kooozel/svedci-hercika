@@ -449,6 +449,14 @@ class Alts(unittest.TestCase):
         html = build.pc_figure(chars[0], chars, chars[0])
         self.assertIn("<b>Kozel Mourningale</b>", html)
         self.assertIn("<b>Kozel Bezrohý</b>", html)
+    def test_player_without_character_waits_on_free_slot(self):
+        party = {"players": [{"name": "Kozel", "chars": ["a"]}, {"name": "Susak", "chars": []}]}
+        self.assertEqual(build.roster(party), [["a"]])
+        self.assertEqual(build.waiting_players(party), ["Susak"])
+        html = build.squad([], 2, TODAY, waiting=["Susak"])
+        self.assertIn('<span class="pc-name">Susak</span><span class="pc-sub">bez postavy</span>', html)
+        self.assertIn('<span class="pc-name">volné místo</span>', html)
+
     def test_own_alt_never_shares(self):
         check = self.check([self.char("a", 25), self.char("a2", 25, "a", [1])])
         self.assertEqual(check["quests"][0]["status"]["a"], "missing")
