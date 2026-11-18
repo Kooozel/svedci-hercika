@@ -91,6 +91,8 @@ def item_stats(i):
     Náhodný suffix je u nošeného kusu už ve stats."""
     out = {}
     for s in i.get("stats") or []:
+        if "type" not in s:  # jen text („+2 to All Resistances“), odolnosti API posílá zvlášť
+            continue
         t = s["type"]["type"]
         out[t] = out.get(t, 0) + s["value"]
     if a := (i.get("armor") or {}).get("value"):

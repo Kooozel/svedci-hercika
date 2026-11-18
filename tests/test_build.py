@@ -367,6 +367,13 @@ class ItemStats(unittest.TestCase):
         self.assertEqual(build.item_stats(scepter),
                          {"SPIRIT": 4, "SPELL_HEALING_DONE": 33, "SPELL_DAMAGE_DONE": 11, "DPS": 8.1})
 
+    def test_display_only_stat_is_skipped(self):
+        # „+2 to All Resistances“ (Rugged Spaulders) je jen text, odolnosti API posílá zvlášť
+        spaulders = {"stats": [{"display": {"display_string": "+2 to All Resistances"}},
+                               {"type": {"type": "FIRE_RESISTANCE"}, "value": 2, "is_hidden": True},
+                               {"type": {"type": "FROST_RESISTANCE"}, "value": 2, "is_hidden": True}]}
+        self.assertEqual(build.item_stats(spaulders), {"FIRE_RESISTANCE": 2, "FROST_RESISTANCE": 2})
+
     def test_empty_item(self):
         self.assertEqual(build.item_stats({"item": {"id": 1}}), {})
 
