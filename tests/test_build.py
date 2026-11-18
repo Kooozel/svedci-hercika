@@ -160,7 +160,7 @@ class Dungeons(unittest.TestCase):
         html = build.ready_section(checks, [member("a", level=25), member("alt", level=14)])
         self.assertIn('data-past=1', html)
         self.assertIn('data-fit="alt"', html)  # do RFC se vejde jen alt
-        self.assertIn("parta odehrála 7. 11.", build.ready_box(checks[1], [member("a"), member("alt")], 1))
+        self.assertNotIn("odehrál", build.ready_box(checks[1], [member("a"), member("alt")], 1))  # alt o tom nic neví
 
 
 class Baseline(unittest.TestCase):
@@ -334,11 +334,12 @@ class ReadyCheckLimits(unittest.TestCase):
 
     def test_render(self):
         check = self.run_check()
-        members = [{"slug": "j", "name": "Johnie", "class_slug": "paladin"}, {"slug": "h", "name": "Horaes", "class_slug": "mage"}]
+        members = [{"slug": "j", "name": "Johnie", "class_slug": "paladin", "level": 25},
+                   {"slug": "h", "name": "Horaes", "class_slug": "mage", "level": 25}]
         html = build.ready_box(check, members, 0)
-        self.assertIn('class="share share-cls"', html)
-        self.assertIn('q-cls" style="--cls:#F48CBA"', html)
-        self.assertIn('class="st st-na"', html)
+        self.assertIn('class="mine" data-slug="j"', html)
+        self.assertIn('class="ot" data-slug="h"', html)
+        self.assertIn("✋ Musíš dojít", html)
 
 
 class Alts(unittest.TestCase):
@@ -373,12 +374,11 @@ class Alts(unittest.TestCase):
         self.assertEqual(check["quests"][0]["status"]["a"], "missing")
         self.assertEqual(check["quests"][0]["holders"], {})
 
-    def test_holder_outside_lineup_does_not_count_until_picked(self):
+    def test_holder_who_does_not_fit_dungeon_cannot_share(self):
         check = self.check([self.char("a", 25), self.char("b", 26), self.char("b2", 12, "b", [1])])
-        self.assertEqual(check["lineup"], ["a", "b"])  # b2 se levelem nevejde
         q = check["quests"][0]
         self.assertEqual(q["status"]["a"], "missing")
-        self.assertEqual(q["holders"]["a"], ["b2"])  # stránka ho započte, až ho někdo vybere v „Kdo jde“
+        self.assertEqual(q["holders"], {})
         self.assertEqual((check["take"], check["share"]), (2, 0))
 
     def test_other_player_in_lineup_shares(self):
@@ -412,17 +412,17 @@ class Alts(unittest.TestCase):
         self.assertEqual([m["slug"] for m in out], ["a"])
         self.assertFalse(out[0]["ok"])
 
-    def test_render_has_picker_and_personal_card(self):
+    def test_render_has_cards_with_full_name_and_personal_tasks(self):
         party = [self.char("a", 25), self.char("a2", 25, "a"), self.char("b", 26, active=[1])]
         check = self.check(party)
-        chars = [{**m, "ok": True, "name": m["slug"].title(), "class_slug": "mage"} for m in party]
+        chars = [{**m, "ok": True, "name": m["slug"].title() + " Velký", "class_slug": "mage"} for m in party]
         chars[1]["alt"] = True
         html = build.ready_section([check], chars)
-        self.assertIn('<div class="me-chars" data-player="a" hidden>', html)  # alt je volba u hráče, ne další hráč
-        self.assertNotIn('class="me-chars" data-player="b"', html)
-        self.assertEqual(html.count('data-player="a" style'), 1)
-        self.assertIn('class="mine" data-slug="a2"', html)
-        self.assertIn('data-way="get" data-from="b"', html)
+        self.assertEqual(html.count('data-who="'), 2)  # hráči, ne postavy
+        self.assertIn('<div class="me-strip me-chars" data-player="a" hidden>', html)
+        self.assertIn("<b>A2</b><span>Velký</span>", html)
+        self.assertIn("může nasdílet B", html)
+        self.assertNotIn("Kdo jde", html)
 
 
 def stat(t, v, bonus=False):
