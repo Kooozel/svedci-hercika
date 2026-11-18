@@ -41,11 +41,9 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   ne, ta jsou na Armory. Kdo se odhlásil s Resurrection
   Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu, jinak se otevře ta
   z „Hraju za“ v ready checku.
-- **Ready check:** postupuje se shora dolů. „Hraju za“ vybere hráče (a když má alta, i postavu), „Dungeon“ nabídne nahoře dungeony, kam se postava
-  levelem vejde. Pod tím jsou její úkoly: co si dojít, co dostane u vchodu a od koho, co nasdílí. Volbu si pamatuje prohlížeč.
-  „Kdo jde s tebou“ ukazuje zbytek sestavy, výchozí je od každého hráče první postava, která se do dungeonu levelem vejde. Přes „změnit“ jde složit
-  jakýkoli mix hlavních postav a altů. Ruční sestava je jen v adrese stránky (`?sestava=`), takže se dá poslat odkazem.
-  Nasdílet může jen postava jiného hráče, která je v sestavě. Celá tabulka questů je sbalená pod tím.
+- **Ready check:** stránka se jednou zeptá, kdo jsi, a ukáže karty tvých postav. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
+  co si má dojít, co jí může někdo nasdílet a co začíná uvnitř. Nasdílet může postava jiného hráče, která se do dungeonu levelem vejde.
+  Pod úkoly je seznam dalších postav, které se do dungeonu vejdou, a jak jsou připravené. Volbu si pamatuje prohlížeč.
 - **Řemesla:** „Dílna“ nabídne nejvýš tři kusy (`CRAFT_MAX`), které někdo z party umí vyrobit a jinému nebo sobě
   výrazně pomůžou (velký upgrade nebo prázdný slot, class je unese, level stačí), u nich kdo co přinese
   (kůže od skinnera, Copper Rod od kováře…), kdo umí třpytky (enchanty, bez jmen, komu chybí) a kdo je na stropu

@@ -469,8 +469,8 @@ def plan_dungeons(members, dungeons, chars=None):
 
 
 def default_lineup(r, members):
-    """Výchozí sestava na dungeon: od každého hráče první postava, která se do něj levelem vejde.
-    Když se nevejde nikdo, jdou hlavní postavy. Stránka ji umí přepsat („Kdo jde“)."""
+    """Odhad sestavy pro souhrn příští výpravy: od každého hráče první postava, která se do dungeonu levelem vejde.
+    Když se nevejde nikdo, počítají se hlavní postavy."""
     owner = lambda m: m.get("player", m["slug"])
     picked = {}
     for m in members:
@@ -484,7 +484,7 @@ def default_lineup(r, members):
 
 def ready_check(token, region, rows, best, members, catalog):
     """Dungeonové questy z dungeonů v dosahu a stav každé postavy včetně altů.
-    `status` a souhrny platí pro výchozí sestavu, `holders` říká, od koho se quest dá dostat při jiné sestavě."""
+    `holders` říká, kdo může quest nasdílet: postava jiného hráče, která se do dungeonu levelem vejde a má ho v logu."""
     with_quests = [m for m in members if "quests_active" in m]
     if not token or not with_quests:
         return []
@@ -518,6 +518,7 @@ def ready_check(token, region, rows, best, members, catalog):
         seen.add(title)
         quests = []
         lineup = default_lineup(r, with_quests)
+        fits = {s for s in active if r["min"] <= levels[s] <= r["max"]}
         for q in catalog[title]["quests"]:
             qid, pre = q["id"], q.get("pre")
             # předquesty se nezobrazují, jen se podle nich pozná, kdo už quest může vzít
@@ -564,11 +565,10 @@ def ready_check(token, region, rows, best, members, catalog):
             # nasdílet může jen postava jiného hráče (dvě své postavy naráz online nemá)
             holders = {}
             if q.get("sharable") and not pre:
-                holders = {s: [o for o, other in status.items() if other == "active" and owner[o] != owner[s]]
+                holders = {s: [o for o, other in status.items() if other == "active" and o in fits and owner[o] != owner[s]]
                            for s, st in status.items() if st == "missing"}
                 holders = {s: h for s, h in holders.items() if h}
-            # kdo quest nemá, dostane ho u vchodu od toho, kdo jde s ním a má ho v logu
-            status = {s: "share" if set(holders.get(s, ())) & set(lineup) else st for s, st in status.items()}
+            status = {s: "share" if holders.get(s) else st for s, st in status.items()}
             quests.append({
                 "id": qid, "name": q["name"], "xp": det["xp"], "req": q.get("req"), "limit": limit,
                 "sharable": q.get("sharable"), "start": q.get("start"), "note": q.get("note"),
@@ -1813,100 +1813,72 @@ def squad(members, size, today, alts=()):
 
 # ---------- ready check ----------
 
-def quest_cell(q, st, holders):
-    if st == "na":
-        return f'<td class="st st-na" title="nemůže vzít: {e(q["limit"]["why"])}">—</td>'
-    if st == "active":
-        return '<td class="st st-fit" title="má v logu">✓</td>'
-    if st == "share":
-        return f'<td class="st st-share" title="dostane nasdílením od: {e(holders)}">↗</td>'
-    if st == "missing":
-        start = f': {q["start"]}' if q["start"] else ""
-        return f'<td class="st st-take" title="musí si dojít{e(start)}">dojít</td>'
-    if st == "done":
-        return '<td class="st st-over" title="už odevzdal">hotovo</td>'
-    if st == "level":
-        return f'<td class="st st-over" title="quest jde vzít od levelu {q["req"]}">lvl {q["req"]}</td>'
-    if st == "inside":
-        return '<td class="st st-over" title="quest začíná až v dungeonu (předmět nebo postava uvnitř)">uvnitř</td>'
-    if st == "pre":
-        return '<td class="st st-pre" title="má v logu předquest, musí dokončit řetěz">⛓ ✓</td>'
-    return f'<td class="st st-over" title="nejdřív: {e(q["prev"])}">⛓</td>'
-
-
-def quest_meta(q):
-    bits = [f'od lvl {q["req"]}' if q["req"] else None,
-            f'start: {e(q["start"])}' if q["start"] and q["start"] != "dungeon" else None,
-            f'nejdřív: {e(q["prev"])}' if q["prev"] else None,
-            e(q["note"]) if q.get("note") else None]
-    return " · ".join(b for b in bits if b)
-
-
-def share_label(q):
-    tags = []
-    lim = q.get("limit")
-    if lim and lim["cls"]:
-        tags.append(f'<span class="share share-cls" style="--cls:{CLASS_COLOR.get(lim["cls"], "var(--muted)")}" '
-                    f'title="{e(lim["why"])}, ostatní ho nevidí">{e(lim["text"])}</span>')
-    elif lim:
-        tags.append(f'<span class="share share-race" title="{e(lim["why"])}">{e(lim["text"])}</span>')
-    if q["start"] == "dungeon":
-        tags.append('<span class="share share-in" title="začíná až v dungeonu: předmětem, který tam padne, nebo od postavy uvnitř">začíná uvnitř</span>')
-    if q["prev"]:
-        tags.append(f'<span class="share share-no" title="navazuje na {e(q["prev"])}, každý si ho musí vzít sám">✋ každý sám · řetěz</span>')
-    elif q["sharable"]:
-        whom = f'jen dalším, kdo ho můžou vzít ({lim["text"][4:] if lim["cls"] else lim["why"]})' if lim else "ostatním v partě"
-        tags.append(f'<span class="share share-yes" title="kdo ho má, nasdílí ho {e(whom)}">↗ sdílitelný</span>')
-    elif q["sharable"] is False and q["start"] != "dungeon":
-        tags.append('<span class="share share-no" title="nejde nasdílet, každý si ho musí vzít sám">✋ každý sám</span>')
-    return "".join(tags)
-
-
 def quest_link(q):
     return f'<a href="https://www.wowhead.com/forever/quest={q["id"]}" target="_blank" rel="noopener">{e(q["name"])}</a>'
+
+
+def or_list(names):
+    return names[0] if len(names) < 2 else f'{", ".join(names[:-1])} nebo {names[-1]}'
 
 
 def mine_group(cls, title, items):
     if not items:
         return ""
-    return f'<div class="m-g {cls}"><h4>{title} <span class="m-n"></span></h4><ul>{"".join(items)}</ul></div>'
+    return f'<div class="m-g {cls}"><h4>{title} <span class="m-n">({len(items)})</span></h4><ul>{"".join(items)}</ul></div>'
 
 
-def mine_card(check, m):
-    """Co má udělat vybraná postava. Řádky s data-from a data-to přepíná sestava v „Kdo jde“."""
+def mine_card(check, m, by_slug, fit):
+    """Co má udělat vybraná postava, aby byla na dungeon připravená."""
     s = m["slug"]
     take, get, give, inside, low, log = [], [], [], [], [], []
+    line = lambda q, detail: f'<li><b>{quest_link(q)}</b>{"".join(f"<small>{e(d)}</small>" for d in detail if d)}</li>'
     for q in check["quests"]:
         st = q["status"][s]
-        givers = q.get("holders", {}).get(s, [])
-        if st in ("missing", "share"):
-            attr = f' data-from="{e(" ".join(givers))}"' if givers else ""
-            take.append(f'<li data-way="take"{attr}><b>{quest_link(q)}</b><small>{e(q["start"] or "")}</small></li>')
-            if givers:
-                get.append(f'<li data-way="get"{attr}><b>{quest_link(q)}</b><small class="m-who"></small></li>')
+        if st == "missing":
+            take.append(line(q, [q["start"], q.get("note")]))
+        elif st == "share":
+            names = or_list([first(by_slug[h]) for h in q["holders"][s]])
+            get.append(line(q, [f"může nasdílet {names}", f'jinak {q["start"]}' if q["start"] else None]))
         elif st == "pre":
-            take.append(f'<li><b>{quest_link(q)}</b><small>dokončit řetěz, nejdřív {e(q["prev"])}</small></li>')
+            take.append(line(q, [f'dokončit řetěz, nejdřív {q["prev"]}']))
         elif st == "chain":
-            take.append(f'<li><b>{quest_link(q)}</b><small>nejdřív {e(q["prev"])}</small></li>')
+            take.append(line(q, [f'nejdřív {q["prev"]}']))
         elif st == "active":
             log.append(q)
-            takers = [o for o, h in q.get("holders", {}).items() if s in h]
+            takers = [first(by_slug[o]) for o, h in q.get("holders", {}).items() if s in h and o in fit]
             if takers:
-                give.append(f'<li data-to="{e(" ".join(takers))}"><b>{quest_link(q)}</b><small class="m-who"></small></li>')
+                give.append(line(q, ["potřebuje: " + ", ".join(takers)]))
         elif st == "inside":
             inside.append(q)
         elif st == "level":
             low.append(q)
     off = ""
-    if m.get("level") and not check["min"] <= m["level"] <= check["max"]:
+    if m.get("level") and s not in fit:
         off = f'<p class="m-off">Level {m["level"]}, dungeon je pro {check["min"]}–{check["max"]}.</p>'
-    plain = [("Máš v logu", log, lambda q: q["name"]), ("Začne až uvnitř", inside, lambda q: q["name"]),
+    ready = "" if take else '<p class="m-ok">✓ Nemusíš nikam chodit.</p>'
+    plain = [("V logu", log, lambda q: q["name"]), ("Začne až uvnitř", inside, lambda q: q["name"]),
              ("Až s levelem", low, lambda q: f'{q["name"]} ({q["req"]})')]
     lines = "".join(f'<p class="m-line"><b>{title}:</b> {e(", ".join(fmt(q) for q in qs))}</p>' for title, qs, fmt in plain if qs)
-    return (f'<div class="mine" data-slug="{e(s)}" style="--cls:{cls_color(m)}" hidden>{off}'
-            f'<p class="m-ok" hidden>✓ Nemusíš nikam chodit.</p>'
-            f'{mine_group("m-take", "✋ Musíš dojít", take)}{mine_group("m-get", "↗ Dostaneš u vchodu", get)}'
-            f'{mine_group("m-give", "↗ Nasdílíš", give)}{lines}</div>')
+    return (f'<div class="mine" data-slug="{e(s)}" style="--cls:{cls_color(m)}" hidden>{off}{ready}'
+            f'{mine_group("m-take", "✋ Musíš dojít", take)}{mine_group("m-get", "↗ Můžou ti nasdílet", get)}'
+            f'{mine_group("m-give", "↗ Můžeš nasdílet", give)}{lines}</div>')
+
+
+def other_row(check, m):
+    """Jak je na dungeon připravená další postava; co jí chybí, se dá rozbalit."""
+    s = m["slug"]
+    go = [q for q in check["quests"] if q["status"][s] in ("missing", "pre", "chain")]
+    get = [q for q in check["quests"] if q["status"][s] == "share"]
+    bits = [f"✋ {len(go)}× dojít" if go else "", f"↗ {len(get)}× nasdílet" if get else ""]
+    state = " · ".join(b for b in bits if b) or "✓ připraveno"
+    cls = "ot-ok" if not go and not get else "ot-todo"
+    head = (f'{avatar(m, "ot-av")}<span class="ot-name"><b>{e(m["name"])}</b><small>{m.get("level", "")} · {e(m.get("class", ""))}</small></span>'
+            f'<span class="ot-st {cls}">{e(state)}</span>')
+    attrs = f'class="ot" data-slug="{e(s)}" style="--cls:{cls_color(m)}"'
+    if not go and not get:
+        return f'<li {attrs}><div class="ot-row">{head}</div></li>'
+    items = "".join(f'<li>✋ {quest_link(q)}</li>' for q in go) + "".join(f'<li>↗ {quest_link(q)}</li>' for q in get)
+    return f'<li {attrs}><details><summary class="ot-row">{head}</summary><ul class="ot-more">{items}</ul></details></li>'
 
 
 DIFFICULTY = [("na krev", "Hard"), ("dá se", "Medium"), ("akorát", "At Level"), ("procházka", "Easy")]
@@ -1941,46 +1913,30 @@ def ready_box(check, members, idx):
     by_slug = {m["slug"]: m for m in members}
     cols = [by_slug[s] for s in check["members"]]
     crew = check.get("lineup") or check["members"]
-    head = "".join(f'<th class="who-col" data-slug="{e(m["slug"])}" style="--cls:{cls_color(m)}">{e(first(m))}</th>'
-                   for m in cols)
-    body = []
-
-    def cell(q, m):
-        s, st = m["slug"], q["status"][m["slug"]]
-        givers = q.get("holders", {}).get(s, [])
-        names = ", ".join(first(by_slug[h]) for h in givers if h in crew)
-        attrs = f'data-slug="{e(s)}" data-st="{"missing" if st == "share" else st}"'
-        attrs += f' data-from="{e(" ".join(givers))}"' if givers else ""
-        return quest_cell(q, st, names).replace("<td ", f"<td {attrs} ", 1)
-
-    for q in check["quests"]:
-        cells = "".join(cell(q, m) for m in cols)
-        classes = (["q-none"] if q["unclaimed"] else []) + (["q-cls"] if q["limit"] and q["limit"]["cls"] else [])
-        cls = f' class="{" ".join(classes)}"' if classes else ""
-        if q["limit"] and q["limit"]["cls"]:
-            cls += f' style="--cls:{CLASS_COLOR.get(q["limit"]["cls"], "var(--muted)")}"'
-        body.append(f'<tr{cls}><th scope="row"><div class="q-name"><a href="https://www.wowhead.com/forever/quest={q["id"]}" '
-                    f'target="_blank" rel="noopener">{e(q["name"])}</a>{share_label(q)}</div>'
-                    f'<small>{quest_meta(q)}</small></th>{cells}</tr>')
     best = '<span class="chip chip-new">příští výprava</span>' if check["best"] else ""
-    if check.get("past"):
-        best = done_chip(check["done"]).replace("odehráno", "parta odehrála")
     links = [(check.get("source"), "Wowhead", "questy, levely a sdílení podle Wowheadu"),
              (check.get("tavern"), "Warcraft Tavern", "podrobný postup uvnitř dungeonu")]
     source = "".join(f'<a href="{e(url)}" target="_blank" rel="noopener" title="{tip}">{name} ↗</a>'
                      for url, name, tip in links if url)
     source = f'<span class="rc-source">{source}</span>' if source else ""
     hidden = "" if idx == 0 else " hidden"
-    fit = " ".join(m["slug"] for m in cols if m.get("level") and check["min"] <= m["level"] <= check["max"])
+    fit = [m["slug"] for m in cols if m.get("level") and check["min"] <= m["level"] <= check["max"]]
     levels = [by_slug[s]["level"] for s in crew if by_slug[s].get("level")]
-    return f'''<article class="rc" id="rc-{idx}" role="tabpanel" data-lineup="{e(" ".join(crew))}" data-fit="{e(fit)}"{hidden}>
+    others = "".join(other_row(check, by_slug[s]) for s in fit)
+    return f'''<article class="rc" id="rc-{idx}" role="tabpanel" data-fit="{e(" ".join(fit))}"{hidden}>
   <header class="rc-head">{best}{level_scale(check, levels)}{source}</header>
-  {"".join(mine_card(check, m) for m in cols)}
-  <div class="rc-party"></div>
-  <details class="rc-full" open><summary>Celá tabulka questů</summary>
-  <div class="table-wrap"><table class="dungeons rc-table"><thead><tr><th>Quest</th>{head}</tr></thead>
-  <tbody>{"".join(body)}</tbody></table></div></details>
+  {"".join(mine_card(check, m, by_slug, fit) for m in cols)}
+  <div class="others"><h4>Další postavy pro tenhle dungeon</h4><ul>{others}</ul><p class="ot-none" hidden>Nikdo další se sem levelem nevejde.</p></div>
 </article>'''
+
+
+def char_card(m, attr):
+    """Karta postavy ve výběru: portrét, celé jméno, level a classa."""
+    name, _, surname = m["name"].partition(" ")
+    art = (f'<span class="ch-art" style="background-image:url(\'{e(m["render"])}\')"></span>' if m.get("render")
+           else f'<span class="ch-art ch-noart">{avatar(m, "ch-av")}</span>')
+    return (f'<button type="button" class="ch" {attr} style="--cls:{cls_color(m)}">{art}<span class="ch-lvl">{m.get("level", "")}</span>'
+            f'<span class="ch-txt"><b>{e(name)}</b><span>{e(surname)}</span><small>{e(m.get("class", ""))}</small></span></button>')
 
 
 def ready_section(checks, members):
@@ -1995,25 +1951,18 @@ def ready_section(checks, members):
     players = {}
     for m in members:
         players.setdefault(m.get("player", m["slug"]), []).append(m)
-    chips = "".join(f'<button type="button" data-me="{e(chars[0]["slug"])}" data-player="{e(p)}" style="--cls:{cls_color(chars[0])}">'
-                    f'{e(first(chars[0]))}</button>' for p, chars in players.items())
-    subs = "".join(
-        f'<div class="me-chars" data-player="{e(p)}" hidden><span>Postava</span>' + "".join(
-            f'<button type="button" data-me="{e(m["slug"])}" style="--cls:{cls_color(m)}">{e(first(m))} <b>{m.get("level", "")}</b></button>'
-            for m in chars) + "</div>" for p, chars in players.items() if len(chars) > 1)
-    data = json.dumps([{"slug": m["slug"], "player": m.get("player", m["slug"]), "name": first(m), "gen": first_gen(m),
-                        "level": m.get("level"), "cls": cls_color(m)} for m in members], ensure_ascii=False).replace("<", "\\u003c")
+    who = "".join(char_card(chars[0], f'data-who="{e(p)}"') for p, chars in players.items())
+    strips = "".join(f'<div class="me-strip me-chars" data-player="{e(p)}" hidden>'
+                     + "".join(char_card(m, f'data-me="{e(m["slug"])}" aria-pressed="false"') for m in chars) + "</div>"
+                     for p, chars in players.items())
+    data = json.dumps({m["slug"]: m.get("player", m["slug"]) for m in members}, ensure_ascii=False).replace("<", "\\u003c")
     return (f'<section id="ready"><h2 class="sec">Ready check</h2>'
             f'<script type="application/json" id="rc-chars">{data}</script>'
-            f'<div class="rc-pick"><div class="rc-line me-pick" role="group" aria-label="Za koho hraju"><span>Hraju za</span>'
-            f'<button type="button" data-me="" aria-pressed="true">všichni</button>{chips}</div>{subs}'
-            f'<label class="rc-line rc-sel"><span>Dungeon</span><select>{opts}</select></label></div>'
-            f'{"".join(ready_box(c, members, i) for i, c in enumerate(checks))}'
-            f'<p class="note legend"><span class="st-fit">✓</span> má v logu · <span class="st-share">↗</span> dostane nasdílením u vchodu · '
-            f'<span class="st-take">dojít</span> musí si pro quest dojít · ⛓ ✓ rozjetý řetěz · ⛓ nejdřív předchozí quest · '
-            f'lvl N zatím nízký level · — nemůže vzít (jiná classa nebo rasa) · uvnitř = začne až v dungeonu (předmět nebo postava uvnitř). Šedé questy nemá nikdo z vás. '
-            f'<span class="src-note" title="Questy podle Wowheadu, postup uvnitř podle Warcraft Tavern, ID a omezení na classu ověřená v Blizzard API. '
-            f'Classové questy vidí jen ta classa.">ⓘ odkud to víme</span></p></section>')
+            f'<div class="me-box"><div class="me-top"><span class="me-title">Kdo jsi?</span>'
+            f'<button type="button" class="me-swap" hidden>změnit hráče</button></div>'
+            f'<div class="me-strip me-who">{who}</div>{strips}</div>'
+            f'<label class="rc-sel"><span>Připravit na dungeon</span><select>{opts}</select></label>'
+            f'{"".join(ready_box(c, members, i) for i, c in enumerate(checks))}</section>')
 
 
 # ---------- profese a dungeony ----------
@@ -2418,17 +2367,29 @@ background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px
 .nav a:hover{color:var(--gold);background:var(--panel2);text-decoration:none}
 section[id],div[id]{scroll-margin-top:56px}
 .sec-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap}
-.rc-pick{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:0 0 16px}
-.rc-sel{flex-wrap:nowrap}
-.rc-line,.me-chars{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
-.rc-line>span,.me-chars>span{width:64px;flex:none}
-.rc-line button,.me-chars button{font:600 13px Inter,system-ui,sans-serif;color:var(--cls,var(--text));background:var(--panel);border:1px solid var(--line);
-border-radius:999px;padding:4px 12px;cursor:pointer}
-.rc-line button[aria-pressed=true],.me-chars button[aria-pressed=true]{border-color:var(--cls,var(--gold));background:var(--panel2);box-shadow:inset 0 0 0 1px var(--cls,var(--gold))}
-.me-chars[hidden]{display:none}.me-chars b{color:var(--gold);font-weight:600}
-.rc-sel select{flex:1 1 0;width:0;min-width:0;max-width:420px;font:600 16px Inter,system-ui,sans-serif;color:var(--gold);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer}
+.me-box{margin:0 0 14px}
+.me-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.me-title{font-size:13px;color:var(--muted)}
+.me-swap{font:600 13px Inter,system-ui,sans-serif;color:var(--gold);background:none;border:0;padding:0;cursor:pointer}
+.me-strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 8px;scrollbar-width:thin}
+.me-strip[hidden]{display:none}
+.ch{position:relative;flex:0 0 128px;scroll-snap-align:start;padding:0;text-align:left;color:var(--text);background:var(--panel);
+border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;font-family:Inter,system-ui,sans-serif;transition:border-color .15s,transform .15s}
+.ch:hover{border-color:var(--cls);transform:translateY(-2px)}
+.ch-art{display:block;height:104px;background-color:color-mix(in srgb,var(--cls) 16%,var(--panel2));background-repeat:no-repeat;background-size:300%;background-position:50% 33%;
+border-bottom:2px solid color-mix(in srgb,var(--cls) 45%,transparent);filter:saturate(.75) brightness(.8);transition:filter .15s}
+.ch:hover .ch-art,.ch[aria-pressed=true] .ch-art,.me-who .ch-art{filter:none}
+.ch-noart{display:flex;align-items:center;justify-content:center}.ch-av{width:64px;height:64px;border-radius:50%}
+.ch-lvl{position:absolute;top:6px;right:6px;min-width:30px;text-align:center;font:700 16px Cinzel,serif;color:var(--gold);background:color-mix(in srgb,var(--bg) 82%,transparent);border-radius:8px;padding:1px 6px}
+.ch-txt{display:grid;padding:7px 10px 9px;line-height:1.25}
+.ch-txt b{font:700 15px Cinzel,serif;color:var(--cls);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-txt span{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-txt small{font-size:11px;color:var(--muted);margin-top:2px}
+.ch[aria-pressed=true]{border-color:var(--cls);box-shadow:0 0 0 1px var(--cls),0 4px 16px color-mix(in srgb,var(--cls) 28%,transparent)}
+.ch[aria-pressed=true] .ch-art{border-bottom-color:var(--cls)}
+.rc-sel{display:grid;gap:5px;margin:0 0 12px;font-size:13px;color:var(--muted)}
+.rc-sel select{width:100%;max-width:460px;font:600 16px Inter,system-ui,sans-serif;color:var(--gold);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer}
 .rc-sel option,.rc-sel optgroup{color:var(--text);background:var(--panel)}
-.rc-table .me-col{background:color-mix(in srgb,var(--gold) 9%,transparent)}
 .item-ic img{width:26px;height:26px;border-radius:5px;border:2px solid var(--line);vertical-align:middle}
 .hero{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px;margin-bottom:8px}
 @media(max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}}
@@ -2454,15 +2415,6 @@ border-radius:999px;padding:4px 12px;cursor:pointer}
 .updated{margin:auto 0 0;color:var(--muted);font-size:12px}
 .rc{margin-bottom:12px}.rc-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .rc-head h3{font-size:18px}.rc-source{margin-left:auto;font-size:13px;display:flex;gap:12px}
-.rc-table tbody th a{color:var(--text)}.rc-table tr.q-none th a{color:var(--muted)}
-.rc-table tbody th small{display:block;color:var(--muted);font-weight:400;font-size:12px}
-.q-name{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-.share{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap}
-.share-cls{background:color-mix(in srgb,var(--cls) 18%,transparent);color:var(--cls);border:1px solid color-mix(in srgb,var(--cls) 45%,transparent)}
-.share-race{background:#3a2626;color:#e0a0a0}
-.rc-table tr.q-cls>th:first-child{box-shadow:inset 3px 0 0 var(--cls)}
-.st-na{color:var(--muted);opacity:.45}
-.share-yes{background:#16324d;color:var(--share)}.share-in{background:#3b2a5c;color:#c9b2ff}.share-no{background:#4a3a14;color:var(--warn)}
 .mine{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--cls);border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:12px;display:grid;gap:10px}
 .mine[hidden],.mine [hidden]{display:none}
 .m-g h4{margin:0 0 4px;font-size:13px}.m-n{font-weight:400}
@@ -2471,18 +2423,15 @@ border-radius:999px;padding:4px 12px;cursor:pointer}
 .m-g b{font-weight:600}.m-g b a{color:var(--text)}.m-g small{display:block;color:var(--muted);font-size:12px}
 .m-ok{margin:0;color:var(--ok);font-size:14px}.m-off{margin:0;color:var(--warn);font-size:13px}
 .m-line{margin:0;color:var(--muted);font-size:13px}.m-line b{font-weight:600}
-.rc-party{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0 0 12px;font-size:14px}
-.rp-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}.rp-head h4{margin:0;font-size:13px;color:var(--text);margin-right:auto}
-.rp-head button{font:600 13px Inter,system-ui,sans-serif;color:var(--gold);background:none;border:0;padding:0;cursor:pointer}
-.rc-party ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
-.rc-party li{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;color:var(--muted);font-size:13px}.rc-party li b{color:var(--cls);font-weight:600;font-size:14px}
-.rp-out{margin:8px 0 0;color:var(--muted);font-size:13px}
-.seg{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.seg button{font:600 12px Inter,system-ui,sans-serif;color:var(--muted);background:none;border:0;padding:5px 10px;cursor:pointer}
-.seg button[aria-pressed=true]{color:var(--text);background:var(--panel2)}
-#ready:has(.rc:not([hidden]) .rc-full:not([open])) .legend{display:none}
-.rc-full summary{cursor:pointer;color:var(--gold);font-size:13px;font-weight:600;margin-bottom:10px}
-.rc-table .off{display:none}
+.others{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0 0 12px}
+.others h4{margin:0 0 8px;font-size:13px}.others>ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.ot[hidden]{display:none}.ot-row{display:flex;align-items:center;gap:10px;padding:5px 0;cursor:default}
+summary.ot-row{cursor:pointer;list-style:none}summary.ot-row::-webkit-details-marker{display:none}
+.ot-av{width:32px;height:32px;border-radius:50%;border:2px solid var(--cls);background:var(--panel2);flex:none}
+.ot-name{min-width:0;flex:1;display:grid;line-height:1.25}.ot-name b{color:var(--cls);font-size:14px;font-weight:600}.ot-name small{color:var(--muted);font-size:12px}
+.ot-st{font-size:13px;white-space:nowrap}.ot-ok{color:var(--ok)}.ot-todo{color:var(--warn)}
+.ot-more{list-style:none;margin:2px 0 8px 42px;padding:0;display:grid;gap:3px;font-size:13px}.ot-more a{color:var(--text)}
+.ot-none{margin:0;color:var(--muted);font-size:13px}
 .pc[hidden]{display:none}
 .pc-sw{display:flex;margin-top:6px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .pc-sw button{flex:1;min-width:0;font:600 12px Inter,system-ui,sans-serif;color:var(--muted);background:none;border:0;padding:3px 4px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2500,7 +2449,6 @@ table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520p
 .diff .dl-on+small{color:var(--gold)}
 .st{text-align:center!important;font-weight:600;white-space:nowrap}
 .st-fit{color:var(--ok)}.st-share{color:var(--share);font-size:17px}.st-take{color:var(--warn)}.st-over{color:var(--muted)}.st-pre{color:#9fd3a3;font-size:12px}
-.legend .st-share{font-size:inherit}
 tr.best{background:#2c1611}tr.best th:first-child{box-shadow:inset 3px 0 var(--red)}
 .note{color:var(--muted);font-size:13px}
 .chip-done{background:#1f4224;color:#8fe39a;margin-left:8px;vertical-align:middle}.dungeons tr.done td{opacity:.45}
@@ -2678,103 +2626,48 @@ background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:
 """
 
 JS = """
-const CH=JSON.parse(document.getElementById('rc-chars')?.textContent||'[]');
-const BY=Object.fromEntries(CH.map(c=>[c.slug,c]));
-const PLAYERS=[...new Set(CH.map(c=>c.player))];
-const charsOf=p=>CH.filter(c=>c.player===p);
-const meBtns=[...document.querySelectorAll('#ready [data-me]')];
+const OWNER=JSON.parse(document.getElementById('rc-chars')?.textContent||'{}');
 const panels=[...document.querySelectorAll('.rc')];
 const sel=document.querySelector('.rc-sel select');
 const selOpts=sel?[...sel.options]:[];
-let viewer='',editing=false;
-// ruční sestava jen v adrese stránky: slug = hráč jde na téhle postavě, -hlavní = hráč nejde
-const over={};
-for(const t of (new URLSearchParams(location.search).get('sestava')||'').split(',')){
-  if(t[0]==='-'&&PLAYERS.includes(t.slice(1)))over[t.slice(1)]='';
-  else if(BY[t])over[BY[t].player]=t}
+const whoStrip=document.querySelector('.me-who');
+const swap=document.querySelector('.me-swap');
+let viewer='';
 const words=s=>(s||'').split(' ').filter(Boolean);
-const orList=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' nebo '+a[a.length-1];
-function crew(rc){const m=new Map(words(rc.dataset.lineup).map(s=>[BY[s].player,s]));
-  for(const [p,s] of Object.entries(over))s?m.set(p,s):m.delete(p);
-  if(viewer)m.set(BY[viewer].player,viewer);
-  return [...m.values()]}
-function partyHtml(team,by){const rows=[],out=[],custom=Object.keys(over).length>0;
-  for(const p of PLAYERS){if(viewer&&BY[viewer].player===p)continue;
-    const s=team.find(x=>BY[x].player===p),main=charsOf(p)[0];
-    if(editing){rows.push(`<li><b style="--cls:${main.cls}">${main.name}</b><span class="seg">`+
-      charsOf(p).map(c=>`<button type="button" data-set="${c.slug}" aria-pressed="${c.slug===s}">${c.name} ${c.level}</button>`).join('')+
-      `<button type="button" data-unset="${p}" aria-pressed="${!s}">nejde</button></span></li>`);continue}
-    if(!s){out.push(main.name);continue}
-    const b=by[s],bits=[];if(b.take)bits.push('✋ '+b.take+'× musí dojít');if(b.share)bits.push('↗ '+b.share+'× dostane u vchodu');
-    rows.push(`<li><b style="--cls:${BY[s].cls}">${BY[s].name}</b><span>${bits.join(' · ')||'✓ nic nechybí'}</span></li>`)}
-  return `<div class="rp-head"><h4>${viewer?'Kdo jde s tebou':'Kdo jde'}</h4>`+
-    (custom?'<button type="button" class="rp-copy">zkopírovat odkaz</button><button type="button" class="rp-reset">zpět na výchozí</button>':'')+
-    `<button type="button" class="rp-edit">${editing?'hotovo':'změnit'}</button></div>`+
-    (rows.length?`<ul>${rows.join('')}</ul>`:'<p class="rp-out">Zatím nikdo další.</p>')+
-    (out.length&&!editing?`<p class="rp-out">Nejdou: ${out.join(', ')}</p>`:'')}
-function refreshPanel(rc){const team=crew(rc),on=new Set(team),by={};team.forEach(s=>by[s]={take:0,share:0});
-  const given=el=>words(el.dataset.from).filter(s=>on.has(s));
-  rc.querySelectorAll('td[data-slug]').forEach(td=>{const s=td.dataset.slug,st=td.dataset.st;
-    td.classList.toggle('off',!on.has(s));
-    if(st==='missing'&&td.dataset.from!==undefined){const h=given(td);
-      td.classList.toggle('st-share',h.length>0);td.classList.toggle('st-take',!h.length);td.textContent=h.length?'↗':'dojít';
-      td.title=h.length?'dostane nasdílením od: '+h.map(x=>BY[x].name).join(', '):'musí si dojít'}
-    if(!on.has(s))return;
-    if(st==='missing'&&td.classList.contains('st-share'))by[s].share++;
-    else if(['missing','pre','chain'].includes(st))by[s].take++});
-  rc.querySelectorAll('th.who-col').forEach(th=>th.classList.toggle('off',!on.has(th.dataset.slug)));
-  rc.querySelectorAll('.rc-table tbody tr').forEach(tr=>{tr.hidden=![...tr.querySelectorAll('td[data-slug]')]
-    .some(td=>on.has(td.dataset.slug)&&!['done','na'].includes(td.dataset.st))});
-  rc.querySelectorAll('.mine').forEach(card=>{card.hidden=card.dataset.slug!==viewer;if(card.hidden)return;
-    card.querySelectorAll('li[data-way]').forEach(li=>{const h=given(li);
-      li.hidden=li.dataset.way==='get'?!h.length:h.length>0;
-      if(li.dataset.way==='get')li.querySelector('.m-who').textContent='od '+orList(h.map(x=>BY[x].gen))});
-    card.querySelectorAll('li[data-to]').forEach(li=>{const t=words(li.dataset.to).filter(s=>on.has(s));
-      li.hidden=!t.length;li.querySelector('.m-who').textContent='potřebuje: '+t.map(x=>BY[x].name).join(', ')});
-    card.querySelectorAll('.m-g').forEach(g=>{const n=[...g.querySelectorAll('li')].filter(l=>!l.hidden).length;
-      g.hidden=!n;g.querySelector('.m-n').textContent='('+n+')'});
-    const t=card.querySelector('.m-take');card.querySelector('.m-ok').hidden=!!t&&!t.hidden});
-  rc.querySelector('.rc-party').innerHTML=partyHtml(team,by)}
-function refresh(){panels.forEach(refreshPanel);
-  const u=new URL(location.href),q=Object.entries(over).map(([p,s])=>s||'-'+p).join(',');
-  if(q)u.searchParams.set('sestava',q);else u.searchParams.delete('sestava');
-  history.replaceState(null,'',u)}
-document.getElementById('ready')?.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;
-  if(b.dataset.set){over[BY[b.dataset.set].player]=b.dataset.set;refresh()}
-  else if(b.dataset.unset){over[b.dataset.unset]='';refresh()}
-  else if(b.classList.contains('rp-edit')){editing=!editing;refresh()}
-  else if(b.classList.contains('rp-reset')){Object.keys(over).forEach(k=>delete over[k]);refresh()}
-  else if(b.classList.contains('rp-copy'))navigator.clipboard?.writeText(location.href).then(()=>b.textContent='zkopírováno')});
 function orderSel(){if(!sel)return;const cur=sel.value;sel.textContent='';
   const grp=(label,list)=>{if(!list.length)return;const g=document.createElement('optgroup');g.label=label;g.append(...list);sel.append(g)};
   if(viewer){const fit=o=>words(o.dataset.fit).includes(viewer);grp('Sedí ti levelem',selOpts.filter(fit));grp('Ostatní',selOpts.filter(o=>!fit(o)))}
   else{grp('Před námi',selOpts.filter(o=>!o.dataset.past));grp('Parta už odehrála',selOpts.filter(o=>o.dataset.past))}
   sel.value=cur}
+function pick(i){panels.forEach(a=>a.hidden=a.id!=='rc-'+i);if(sel)sel.value=String(i);
+  const t=selOpts.find(o=>o.value==i);
+  try{if(t)localStorage.setItem('rc-pick',t.dataset.title)}catch(e){}}
 function fitJump(slug){const rc=panels.find(a=>!a.hidden);if(!slug||(rc&&words(rc.dataset.fit).includes(slug)))return;
   const to=panels.find(a=>words(a.dataset.fit).includes(slug));if(to)pick(+to.id.slice(3))}
 function showFig(slug){const f=document.querySelector(`.pc[data-slug="${CSS.escape(slug)}"]`);if(!f||!f.hidden)return;
   document.querySelectorAll(`.pc[data-player="${CSS.escape(f.dataset.player)}"]`).forEach(x=>x.hidden=x!==f)}
-function me(slug){viewer=slug;const p=slug?BY[slug].player:'';
-  meBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.player!==undefined?b.dataset.player===p:b.dataset.me===slug));
-  document.querySelectorAll('.me-chars').forEach(d=>d.hidden=d.dataset.player!==p);
-  orderSel();if(slug)showFig(slug);
-  document.querySelectorAll('.rc-table [data-slug]').forEach(c=>c.classList.toggle('me-col',!!slug&&c.dataset.slug===slug));
-  document.querySelectorAll('.rc-full').forEach(d=>d.open=!slug);
+function choosing(on){if(!whoStrip)return;const p=OWNER[viewer];whoStrip.hidden=!on;
+  document.querySelectorAll('.me-chars').forEach(d=>d.hidden=on||d.dataset.player!==p);
+  document.querySelector('.me-title').textContent=on?'Kdo jsi?':'Moje postavy';swap.hidden=on}
+function me(slug){viewer=slug;
+  document.querySelectorAll('.ch[data-me]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));
+  panels.forEach(rc=>{rc.querySelectorAll('.mine').forEach(c=>c.hidden=c.dataset.slug!==slug);
+    const rows=[...rc.querySelectorAll('.ot')];rows.forEach(r=>r.hidden=r.dataset.slug===slug);
+    rc.querySelector('.ot-none').hidden=rows.some(r=>!r.hidden)});
+  orderSel();if(slug)showFig(slug);choosing(!slug);
+  const on=document.querySelector('.me-chars:not([hidden]) .ch[aria-pressed=true]');
+  if(on)on.parentElement.scrollLeft=on.offsetLeft-on.parentElement.offsetLeft-2;
   const who=[...document.querySelectorAll('.lt-who')],has=who.some(c=>c.dataset.slug===slug);
   who.forEach(c=>c.classList.toggle('dim',has&&c.dataset.slug!==slug));
   try{localStorage.setItem('me',slug)}catch(e){}}
-meBtns.forEach(b=>b.addEventListener('click',()=>{
-  if(b.dataset.player!==undefined&&viewer&&BY[viewer].player===b.dataset.player)return;
-  me(b.dataset.me);fitJump(b.dataset.me);refresh()}));
-function pick(i){panels.forEach(a=>a.hidden=a.id!=='rc-'+i);if(sel)sel.value=String(i);
-  const t=selOpts.find(o=>o.value==i);
-  try{if(t)localStorage.setItem('rc-pick',t.dataset.title)}catch(e){}
-  refresh()}
+document.querySelectorAll('.ch[data-me]').forEach(b=>b.addEventListener('click',()=>{me(b.dataset.me);fitJump(b.dataset.me)}));
+document.querySelectorAll('.ch[data-who]').forEach(b=>b.addEventListener('click',()=>{const p=b.dataset.who;
+  if(OWNER[viewer]===p){choosing(false);return}
+  const slug=Object.keys(OWNER).find(s=>OWNER[s]===p);me(slug);fitJump(slug)}));
+swap?.addEventListener('click',()=>choosing(true));
 if(sel)sel.addEventListener('change',()=>pick(+sel.value));
-try{const m=localStorage.getItem('me');if(m&&BY[m])me(m);else orderSel()}catch(e){orderSel()}
-{let saved=null;try{saved=localStorage.getItem('rc-pick')}catch(e){}
-  const o=selOpts.find(o=>o.dataset.title===saved);if(o)pick(+o.value);else fitJump(viewer)}
-refresh();
+{let m='',saved=null;try{m=localStorage.getItem('me')||'';saved=localStorage.getItem('rc-pick')}catch(e){}
+  me(OWNER[m]?m:'');const o=selOpts.find(o=>o.dataset.title===saved);if(o)pick(+o.value);fitJump(viewer)}
 const pcs=[...document.querySelectorAll('.pc[data-slug]')];
 const hasSheet=s=>[...document.querySelectorAll('.sheet')].some(x=>x.dataset.slug===s);
 let openNow='';
