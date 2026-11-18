@@ -170,7 +170,7 @@ class People(unittest.TestCase):
         now = [self.char("a", "a", xp=500), self.char("a2", "a", xp=300), self.char("b", "b", xp=100)]
         html = self.news(now, olds)
         self.assertEqual(html.count('class="who-n"'), 1)
-        self.assertEqual(html.count('nw-line'), 2)
+        self.assertEqual(html.count('class="nw-line"'), 2)
         self.assertIn("B: nic nového", html)
 
     def test_news_announces_new_alt(self):
@@ -277,8 +277,8 @@ class Sheet(unittest.TestCase):
 
     def test_news_xp_numbers(self):
         ch = {"from": 20, "to": 20, "xp": 11600}
-        self.assertEqual(build.xp_news(ch), "+11\xa0600 XP (50 % levelu)")  # level 20 chce 23 200
-        self.assertEqual(build.xp_news({**ch, "to": 21}), "+11\xa0600 XP")  # level je vidět zvlášť
+        self.assertEqual(build.level_share(ch), "50 %")  # level 20 chce 23 200
+        self.assertEqual(build.level_share({**ch, "to": 21}), "")  # level je vidět zvlášť
 
     def test_prof_news_numbers(self):
         m = {"slug": "a", "professions": [{"name": "Tailoring", "skill": 80}, {"name": "Fishing", "skill": 1},
@@ -419,21 +419,14 @@ class Alts(unittest.TestCase):
         self.assertEqual(build.roster({"characters": ["a", "b"]}), [["a"], ["b"]])
         self.assertEqual(build.roster({"players": [{"chars": ["a", "a2"]}, {"chars": ["b"]}]}), [["a", "a2"], ["b"]])
 
-    def test_same_first_name_uses_surname(self):
-        chars = [{"ok": True, "name": "Johnie Rotking"}, {"ok": True, "name": "Johnie Tusklord"}, {"ok": True, "name": "Zrza Jegod"}]
-        build.short_names(chars)
-        self.assertEqual([build.first(m) for m in chars], ["Rotking", "Tusklord", "Zrza"])  # i hlavní postava
-        self.assertEqual(build.other_name(chars[0]), "Johnie")
-        self.assertEqual(build.other_name(chars[2]), "Jegod")
-
     def test_nick_from_party_or_main_character(self):
         chars = [{"ok": True, "slug": "a", "name": "Johnie Rotking", "player": "a"},
                  {"ok": True, "slug": "a2", "name": "Cildac Velky", "player": "a", "alt": True},
                  {"ok": True, "slug": "b", "name": "Zrza Jegod", "player": "b"}]
         build.add_nicks({"players": [{"name": "Fanda", "chars": ["a", "a2"]}, {"chars": ["b"]}]}, chars)
         self.assertEqual([m["nick"] for m in chars], ["Fanda", "Fanda", "Zrza"])
-        self.assertEqual(build.char_label(chars[1]), "Cildac (Fanda)")
-        self.assertEqual(build.char_label(chars[2]), "Zrza")
+        self.assertEqual(build.char_label(chars[1]), "Cildac Velky (Fanda)")
+        self.assertEqual(build.char_label(chars[2]), "Zrza Jegod")
 
     def test_photo_shows_last_played_and_tie_goes_to_main(self):
         main, alt = {"updated": "2026-11-16"}, {"updated": "2026-11-17"}
@@ -446,19 +439,16 @@ class Alts(unittest.TestCase):
         other = {**member("b", level=17), "name": "Johnie Rotking", "nick": "Fanda", "class": "Paladin", "roles": ["tank"], "player": "a"}
         html = build.pc_figure(m, [m, other], m)
         self.assertIn('<span class="pc-nick">Fanda</span>', html)
-        self.assertIn('<span class="pc-last">Velky</span>', html)
-        self.assertIn('<b>Johnie</b><i>17</i><span>Paladin</span>', html)
+        self.assertIn('<span class="pc-name"><span>Cildac Velky</span><b>27</b></span>', html)
+        self.assertIn('<b>Johnie Rotking</b><i>17</i><span>Paladin</span>', html)
         self.assertIn(' hidden>', build.pc_figure(other, [m, other], m))
 
     def test_rows_of_same_named_characters_differ(self):
         chars = [{**member(s), "ok": True, "name": n, "nick": "Kozel", "class": "Mage", "roles": [], "player": "k"}
                  for s, n in (("a", "Kozel Mourningale"), ("b", "Kozel Bezrohý"))]
-        build.short_names(chars)
         html = build.pc_figure(chars[0], chars, chars[0])
-        self.assertIn("<b>Mourningale</b>", html)
-        self.assertIn("<b>Bezrohý</b>", html)
-        self.assertNotIn('class="pc-last"', html)  # křestní jméno je stejné jako přezdívka
-
+        self.assertIn("<b>Kozel Mourningale</b>", html)
+        self.assertIn("<b>Kozel Bezrohý</b>", html)
     def test_own_alt_never_shares(self):
         check = self.check([self.char("a", 25), self.char("a2", 25, "a", [1])])
         self.assertEqual(check["quests"][0]["status"]["a"], "missing")
