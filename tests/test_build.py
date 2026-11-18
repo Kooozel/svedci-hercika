@@ -369,6 +369,30 @@ class Alts(unittest.TestCase):
         build.short_names(chars)
         self.assertEqual([build.first(m) for m in chars], ["Johnie", "Tusklord", "Zrza"])
 
+    def test_nick_from_party_or_main_character(self):
+        chars = [{"ok": True, "slug": "a", "name": "Johnie Rotking", "player": "a"},
+                 {"ok": True, "slug": "a2", "name": "Cildac Velky", "player": "a", "alt": True},
+                 {"ok": True, "slug": "b", "name": "Zrza Jegod", "player": "b"}]
+        build.add_nicks({"players": [{"name": "Fanda", "chars": ["a", "a2"]}, {"chars": ["b"]}]}, chars)
+        self.assertEqual([m["nick"] for m in chars], ["Fanda", "Fanda", "Zrza"])
+        self.assertEqual(build.char_label(chars[1]), "Cildac (Fanda)")
+        self.assertEqual(build.char_label(chars[2]), "Zrza")
+
+    def test_photo_shows_last_played_and_tie_goes_to_main(self):
+        main, alt = {"updated": "2026-11-16"}, {"updated": "2026-11-17"}
+        self.assertIs(build.shown_char([main, alt]), alt)
+        alt["updated"] = "2026-11-16"
+        self.assertIs(build.shown_char([main, alt]), main)
+
+    def test_photo_slot_names_player_and_character(self):
+        m = {**member("a", level=27), "name": "Cildac Velky", "nick": "Fanda", "class": "Warlock", "roles": ["dps"], "player": "a"}
+        other = {**member("b", level=17), "name": "Johnie Rotking", "nick": "Fanda", "class": "Paladin", "roles": ["tank"], "player": "a"}
+        html = build.pc_figure(m, [m, other], m)
+        self.assertIn('<span class="pc-nick">Fanda</span>', html)
+        self.assertIn('<span class="pc-last">Velky</span>', html)
+        self.assertIn('<b>Johnie</b><i>17</i><span>Paladin</span>', html)
+        self.assertIn(' hidden>', build.pc_figure(other, [m, other], m))
+
     def test_own_alt_never_shares(self):
         check = self.check([self.char("a", 25), self.char("a2", 25, "a", [1])])
         self.assertEqual(check["quests"][0]["status"]["a"], "missing")
