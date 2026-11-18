@@ -396,6 +396,15 @@ def roster(party):
     return [[slug] for slug in party["characters"]]
 
 
+def add_nicks(party, members):
+    """Přezdívka člověka za postavou (`name` v players), bez ní křestní jméno jeho hlavní postavy."""
+    names = {p["chars"][0]: p["name"] for p in party.get("players") or [] if p.get("name")}
+    mains = {m["player"]: m for m in members if m["ok"] and not m.get("alt")}
+    for m in members:
+        if m["ok"]:
+            m["nick"] = names.get(m["player"]) or mains.get(m["player"], m)["name"].split()[0]
+
+
 def short_names(members):
     """Postava se stejným křestním jménem jako předchozí (alt) se na stránce jmenuje příjmením."""
     seen = set()
@@ -432,6 +441,7 @@ def load_party(party, token):
             url = ARMORY.format(region=region, slug=urllib.parse.quote(slug))
             members.append({"ok": False, "slug": slug, "url": url, "error": str(exc), "player": owner, "alt": False})
     short_names(members)
+    add_nicks(party, members)
     # ruční role z party.json přebijí odhad podle specu (Johnie tankuje, i když má body v Holy)
     for m in members:
         role = (party.get("roles") or {}).get(m["slug"])
@@ -1339,6 +1349,20 @@ def first(m):
     return m.get("short") or m["name"].split()[0]
 
 
+def nick(m):
+    return m.get("nick") or first(m)
+
+
+def char_label(m):
+    """Postava i s hráčem, když se jmenuje jinak než on: Cildac (Johnie)."""
+    return first(m) if nick(m) == first(m) else f"{first(m)} ({nick(m)})"
+
+
+def shown_char(group):
+    """Koho ukázat za hráče: naposledy hranou postavu, při shodě hlavní."""
+    return max(group, key=lambda c: c.get("updated") or "")
+
+
 def first_gen(m):
     """Druhý pád křestního jména (od Zrzy), z party.json; bez něj první pád."""
     return m.get("gen") or first(m)
@@ -1774,20 +1798,24 @@ def evening_box(members, base, titles, counters):
             f'<p class="note" title="Počítá se ze statistik Blizzard API, které se aktualizují, když se postava odhlásí.">{e(note)}</p></section>')
 
 
-def pc_figure(m, group):
-    """Postava ve skupinovce. Hráč s altem má pod jménem přepínač, alt čeká schovaný na stejném místě."""
+def pc_figure(m, group, shown):
+    """Místo hráče ve skupinovce: přezdívka, postava a řádky všech jeho postav (jméno, level, classa)."""
     img = (f'<div class="pc-img" style="background-image:url(\'{e(m["render"])}\')"></div>' if m.get("render")
            else f'<div class="pc-img pc-noimg">{avatar(m, "pc-avatar")}</div>')
     role = "/".join(ROLE_LABEL[r] for r in m["roles"]) or "bez specu"
     switch = ""
     if len(group) > 1:
-        switch = '<div class="pc-sw" role="group" aria-label="Postava hráče">' + "".join(
-            f'<button type="button" data-show="{e(c["slug"])}" aria-pressed="{"true" if c is m else "false"}">{e(first(c))}</button>'
+        switch = f'<div class="pc-sw" role="group" aria-label="Postavy hráče {e(nick(m))}">' + "".join(
+            f'<button type="button" data-show="{e(c["slug"])}" aria-pressed="{"true" if c is m else "false"}" style="--cls:{cls_color(c)}" '
+            f'title="{e(c["name"])} · {c["level"]} · {e(c["class"])}"><b>{e(c["name"].partition(" ")[0])}</b>'
+            f'<i>{c["level"]}</i><span>{e(c["class"])}</span></button>'
             for c in group) + "</div>"
-    hidden = " hidden" if m.get("alt") else ""
+    hidden = "" if m is shown else " hidden"
+    surname = m["name"].partition(" ")[2]
     return (f'<figure class="pc" data-slug="{e(m["slug"])}" data-player="{e(m.get("player", m["slug"]))}" style="--cls:{cls_color(m)}"{hidden}>'
             f'<a href="#char-{e(m["slug"])}" aria-label="Karta postavy {e(m["name"])}" aria-expanded="false">'
-            f'{img}</a><figcaption><span class="pc-name">{e(first(m))} <b>{m["level"]}</b></span>{xp_bar(m)}'
+            f'{img}</a><figcaption><span class="pc-nick">{e(nick(m))}</span>'
+            f'<span class="pc-name">{e(m["name"].partition(" ")[0])} <b>{m["level"]}</b></span><span class="pc-last">{e(surname)}</span>{xp_bar(m)}'
             f'<span class="pc-sub">{e(m["class"])} · {e(role)}</span>{switch}</figcaption></figure>')
 
 
@@ -1802,7 +1830,7 @@ def squad(members, size, today, alts=()):
                        f'<span class="pc-name">{e(m["slug"])}</span><span class="pc-sub">nenačteno</span></figcaption></figure>')
             continue
         group = [m, *(a for a in alts if a.get("player") == m["slug"])]
-        out += [pc_figure(c, group) for c in group]
+        out += [pc_figure(c, group, shown_char(group)) for c in group]
     free = max(0, size - slots)
     out += ['<figure class="pc pc-empty"><div class="pc-img"><span>?</span></div><figcaption>'
             '<span class="pc-name">volné místo</span><span class="pc-sub">hledá se parťák</span></figcaption></figure>'] * free
@@ -1837,7 +1865,7 @@ def mine_card(check, m, by_slug, fit):
         if st == "missing":
             take.append(line(q, [q["start"], q.get("note")]))
         elif st == "share":
-            names = or_list([first(by_slug[h]) for h in q["holders"][s]])
+            names = or_list([char_label(by_slug[h]) for h in q["holders"][s]])
             get.append(line(q, [f"může nasdílet {names}", f'jinak {q["start"]}' if q["start"] else None]))
         elif st == "pre":
             take.append(line(q, [f'dokončit řetěz, nejdřív {q["prev"]}']))
@@ -1845,7 +1873,7 @@ def mine_card(check, m, by_slug, fit):
             take.append(line(q, [f'nejdřív {q["prev"]}']))
         elif st == "active":
             log.append(q)
-            takers = [first(by_slug[o]) for o, h in q.get("holders", {}).items() if s in h and o in fit]
+            takers = [char_label(by_slug[o]) for o, h in q.get("holders", {}).items() if s in h and o in fit]
             if takers:
                 give.append(line(q, ["potřebuje: " + ", ".join(takers)]))
         elif st == "inside":
@@ -1872,7 +1900,7 @@ def other_row(check, m):
     bits = [f"✋ {len(go)}× dojít" if go else "", f"↗ {len(get)}× nasdílet" if get else ""]
     state = " · ".join(b for b in bits if b) or "✓ připraveno"
     cls = "ot-ok" if not go and not get else "ot-todo"
-    head = (f'{avatar(m, "ot-av")}<span class="ot-name"><b>{e(m["name"])}</b><small>{m.get("level", "")} · {e(m.get("class", ""))}</small></span>'
+    head = (f'{avatar(m, "ot-av")}<span class="ot-name"><b>{e(m["name"])}</b><small>{m.get("level", "")} · {e(m.get("class", ""))} · hraje {e(nick(m))}</small></span>'
             f'<span class="ot-st {cls}">{e(state)}</span>')
     attrs = f'class="ot" data-slug="{e(s)}" style="--cls:{cls_color(m)}"'
     if not go and not get:
@@ -1930,13 +1958,21 @@ def ready_box(check, members, idx):
 </article>'''
 
 
-def char_card(m, attr):
-    """Karta postavy ve výběru: portrét, celé jméno, level a classa."""
+def char_card(m, attr, title=None, line=None, small=None, level=True):
+    """Karta ve výběru: portrét, jméno, level a classa. Výběr hráče do ní dá přezdívku a počet postav."""
     name, _, surname = m["name"].partition(" ")
     art = (f'<span class="ch-art" style="background-image:url(\'{e(m["render"])}\')"></span>' if m.get("render")
            else f'<span class="ch-art ch-noart">{avatar(m, "ch-av")}</span>')
-    return (f'<button type="button" class="ch" {attr} style="--cls:{cls_color(m)}">{art}<span class="ch-lvl">{m.get("level", "")}</span>'
-            f'<span class="ch-txt"><b>{e(name)}</b><span>{e(surname)}</span><small>{e(m.get("class", ""))}</small></span></button>')
+    lvl = f'<span class="ch-lvl">{m.get("level", "")}</span>' if level else ""
+    return (f'<button type="button" class="ch" {attr} style="--cls:{cls_color(m)}">{art}{lvl}'
+            f'<span class="ch-txt"><b>{e(title or name)}</b><span>{e(line if line is not None else surname)}</span>'
+            f'<small>{e(small or m.get("class", ""))}</small></span></button>')
+
+
+def player_card(player, chars):
+    m = shown_char(chars)
+    return char_card(m, f'data-who="{e(player)}"', nick(m), m["name"],
+                     pl(len(chars), ("{n} postava", "{n} postavy", "{n} postav")), level=False)
 
 
 def ready_section(checks, members):
@@ -1951,7 +1987,7 @@ def ready_section(checks, members):
     players = {}
     for m in members:
         players.setdefault(m.get("player", m["slug"]), []).append(m)
-    who = "".join(char_card(chars[0], f'data-who="{e(p)}"') for p, chars in players.items())
+    who = "".join(player_card(p, chars) for p, chars in players.items())
     strips = "".join(f'<div class="me-strip me-chars" data-player="{e(p)}" hidden>'
                      + "".join(char_card(m, f'data-me="{e(m["slug"])}" aria-pressed="false"') for m in chars) + "</div>"
                      for p, chars in players.items())
@@ -2433,9 +2469,18 @@ summary.ot-row{cursor:pointer;list-style:none}summary.ot-row::-webkit-details-ma
 .ot-more{list-style:none;margin:2px 0 8px 42px;padding:0;display:grid;gap:3px;font-size:13px}.ot-more a{color:var(--text)}
 .ot-none{margin:0;color:var(--muted);font-size:13px}
 .pc[hidden]{display:none}
-.pc-sw{display:flex;margin-top:6px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.pc-sw button{flex:1;min-width:0;font:600 12px Inter,system-ui,sans-serif;color:var(--muted);background:none;border:0;padding:3px 4px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pc-sw button[aria-pressed=true]{color:var(--cls);background:var(--panel2)}
+.pc-nick{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.pc-last{font-size:12px;color:var(--text);margin-top:-3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-sw{display:grid;gap:1px;margin:6px -6px 0;padding-top:5px;border-top:1px solid var(--line)}
+.pc-sw button{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,auto);gap:6px;align-items:baseline;width:100%;padding:3px 6px;text-align:left;
+font:12px/1.3 Inter,system-ui,sans-serif;color:var(--muted);background:none;border:0;border-radius:6px;cursor:pointer}
+.pc-sw button:hover{background:var(--panel2)}
+.pc-sw button[aria-pressed=true]{background:color-mix(in srgb,var(--cls) 16%,transparent)}
+.pc-sw b{color:var(--cls);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-sw i{font-style:normal;font-weight:600;color:var(--gold)}
+.pc-sw span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc[data-player]{container-type:inline-size}
+@container (max-width:150px){.pc-sw button{grid-template-columns:minmax(0,1fr) auto;row-gap:0}.pc-sw span{grid-column:1/-1;font-size:11px}}
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
 .dungeons th,.dungeons td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
