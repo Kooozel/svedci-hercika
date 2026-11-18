@@ -1729,29 +1729,40 @@ def evening_box(members, base, titles, counters):
             f'<p class="note" title="Počítá se ze statistik Blizzard API, které se aktualizují, když se postava odhlásí.">{e(note)}</p></section>')
 
 
+def pc_figure(m, group):
+    """Postava ve skupinovce. Hráč s altem má pod jménem přepínač, alt čeká schovaný na stejném místě."""
+    img = (f'<div class="pc-img" style="background-image:url(\'{e(m["render"])}\')"></div>' if m.get("render")
+           else f'<div class="pc-img pc-noimg">{avatar(m, "pc-avatar")}</div>')
+    role = "/".join(ROLE_LABEL[r] for r in m["roles"]) or "bez specu"
+    switch = ""
+    if len(group) > 1:
+        switch = '<div class="pc-sw" role="group" aria-label="Postava hráče">' + "".join(
+            f'<button type="button" data-show="{e(c["slug"])}" aria-pressed="{"true" if c is m else "false"}">{e(first(c))}</button>'
+            for c in group) + "</div>"
+    hidden = " hidden" if m.get("alt") else ""
+    return (f'<figure class="pc" data-slug="{e(m["slug"])}" data-player="{e(m.get("player", m["slug"]))}" style="--cls:{cls_color(m)}"{hidden}>'
+            f'<a href="#char-{e(m["slug"])}" aria-label="Karta postavy {e(m["name"])}" aria-expanded="false">'
+            f'{img}</a><figcaption><span class="pc-name">{e(first(m))} <b>{m["level"]}</b></span>{xp_bar(m)}'
+            f'<span class="pc-sub">{e(m["class"])} · {e(role)}</span>{switch}</figcaption></figure>')
+
+
 def squad(members, size, today, alts=()):
     """Skupinová fotka: celotělové rendery vedle sebe a jmenovky. Klik na postavu otevře pod ní její kartu.
-    Alt nemá vlastní místo, jen odkaz na kartu pod hlavní postavou svého hráče."""
-    out = []
+    Alt nemá vlastní místo, přepíná se na místě svého hráče."""
+    out, slots = [], 0
     for m in members:
+        slots += 1
         if not m["ok"]:
             out.append(f'<figure class="pc pc-err"><div class="pc-img"></div><figcaption>'
                        f'<span class="pc-name">{e(m["slug"])}</span><span class="pc-sub">nenačteno</span></figcaption></figure>')
             continue
-        img = (f'<div class="pc-img" style="background-image:url(\'{e(m["render"])}\')"></div>' if m.get("render")
-               else f'<div class="pc-img pc-noimg">{avatar(m, "pc-avatar")}</div>')
-        role = "/".join(ROLE_LABEL[r] for r in m["roles"]) or "bez specu"
-        links = "".join(f'<a class="pc-alt" href="#char-{e(a["slug"])}" data-sheet="{e(a["slug"])}" style="--cls:{cls_color(a)}">'
-                        f'alt: {e(first(a))} {a["level"]}</a>' for a in alts if a.get("player") == m["slug"])
-        out.append(f'<figure class="pc" data-slug="{e(m["slug"])}" style="--cls:{cls_color(m)}">'
-                   f'<a href="#char-{e(m["slug"])}" aria-label="Karta postavy {e(m["name"])}" aria-expanded="false">'
-                   f'{img}</a><figcaption><span class="pc-name">{e(first(m))} <b>{m["level"]}</b></span>{xp_bar(m)}'
-                   f'<span class="pc-sub">{e(m["class"])} · {e(role)}</span>{links}</figcaption></figure>')
+        group = [m, *(a for a in alts if a.get("player") == m["slug"])]
+        out += [pc_figure(c, group) for c in group]
+    free = max(0, size - slots)
     out += ['<figure class="pc pc-empty"><div class="pc-img"><span>?</span></div><figcaption>'
-            '<span class="pc-name">volné místo</span><span class="pc-sub">hledá se parťák</span></figcaption></figure>'] \
-        * max(0, size - len(members))
+            '<span class="pc-name">volné místo</span><span class="pc-sub">hledá se parťák</span></figcaption></figure>'] * free
     sheets = "".join(sheet(m, today) for m in [*members, *alts] if m["ok"])
-    return (f'<section id="postavy"><div class="squad" style="--n:{len(out)}">{"".join(out)}</div>'
+    return (f'<section id="postavy"><div class="squad" style="--n:{slots + free}">{"".join(out)}</div>'
             f'<p class="sheet-hint">Klikni na postavu a uvidíš, v čem chodí.</p>{sheets}</section>')
 
 
@@ -1804,17 +1815,6 @@ def share_label(q):
     elif q["sharable"] is False and q["start"] != "dungeon":
         tags.append('<span class="share share-no" title="nejde nasdílet, každý si ho musí vzít sám">✋ každý sám</span>')
     return "".join(tags)
-
-
-def counts(check, cls=""):
-    if not check["take"] and not check["share"]:
-        return f'<span class="cnt cnt-ok{cls}" title="nikdo nemusí nic shánět">✓ připraveno</span>'
-    out = ""
-    if check["share"]:
-        out += f'<span class="cnt cnt-share{cls}" title="questy, které se nasdílí u vchodu">↗ {check["share"]}</span>'
-    if check["take"]:
-        out += f'<span class="cnt cnt-take{cls}" title="questy, pro které si musí někdo dojít">✋ {check["take"]}</span>'
-    return out
 
 
 def quest_link(q):
@@ -1919,7 +1919,7 @@ def ready_box(check, members, idx):
                     f'<small>{quest_meta(q)}</small></th>{cells}</tr>')
     best = '<span class="chip chip-new">příští výprava</span>' if check["best"] else ""
     if check.get("past"):
-        best = done_chip(check["done"])
+        best = done_chip(check["done"]).replace("odehráno", "parta odehrála")
     links = [(check.get("source"), "Wowhead", "questy, levely a sdílení podle Wowheadu"),
              (check.get("tavern"), "Warcraft Tavern", "podrobný postup uvnitř dungeonu")]
     source = "".join(f'<a href="{e(url)}" target="_blank" rel="noopener" title="{tip}">{name} ↗</a>'
@@ -1929,9 +1929,9 @@ def ready_box(check, members, idx):
     fit = " ".join(m["slug"] for m in cols if m.get("level") and check["min"] <= m["level"] <= check["max"])
     levels = [by_slug[s]["level"] for s in crew if by_slug[s].get("level")]
     return f'''<article class="rc" id="rc-{idx}" role="tabpanel" data-lineup="{e(" ".join(crew))}" data-fit="{e(fit)}"{hidden}>
-  <header class="rc-head"><h3>{e(check["title"])}{best}</h3>{level_scale(check, levels)}<span class="rc-cnt" data-cnt="{idx}" data-big="1">{counts(check, " big")}</span>{source}</header>
+  <header class="rc-head">{best}{level_scale(check, levels)}{source}</header>
   {"".join(mine_card(check, m) for m in cols)}
-  <ul class="rc-party"></ul>
+  <div class="rc-party"></div>
   <details class="rc-full" open><summary>Celá tabulka questů</summary>
   <div class="table-wrap"><table class="dungeons rc-table"><thead><tr><th>Quest</th>{head}</tr></thead>
   <tbody>{"".join(body)}</tbody></table></div></details>
@@ -1941,35 +1941,28 @@ def ready_box(check, members, idx):
 def ready_section(checks, members):
     if not checks:
         return ""
-    # dungeony v dosahu jako čipy, odehrané (může jich být hodně) v jednom výběru seřazené podle levelu
-    tabs = "".join(
-        f'<button type="button" role="tab" data-rc="{i}" data-title="{e(c["title"])}" '
-        f'aria-selected="{"true" if i == 0 else "false"}">{e(c["title"])}<span class="rc-cnt" data-cnt="{i}">{counts(c)}</span></button>'
-        for i, c in enumerate(checks) if not c.get("past"))
-    past = sorted(((i, c) for i, c in enumerate(checks) if c.get("past")), key=lambda x: (x[1]["min"], x[1]["max"]))
-    if past:
-        # data-fit: kdo se do dungeonu levelem vejde, „Já jsem“ podle toho dá jeho dungeony nahoru
-        opts = "".join(
-            f'<option value="{i}" data-title="{e(c["title"])}" data-fit="{e(" ".join(m["slug"] for m in members if c["min"] <= m.get("level", 0) <= c["max"]))}">'
-            f'{e(c["title"])} · {c["min"]}–{c["max"]}</option>' for i, c in past)
-        tabs += (f'<label class="rc-past" title="dungeony, které parta už má za sebou, třeba pro alty">'
-                 f'<select aria-label="Už odehrané dungeony"><option value="">už odehrané ({len(past)})</option>'
-                 f'{opts}</select></label>')
-    me = "".join(f'<button type="button" data-me="{e(m["slug"])}" data-gen="{e(first_gen(m))}"{" class=alt" if m.get("alt") else ""} '
-                 f'style="--cls:{cls_color(m)}">{e(first(m))}</button>' for m in members)
+    # jeden výběr dungeonu, skupiny podle vybrané postavy skládá stránka; odehrané až za těmi před námi, podle levelu
+    order = sorted(enumerate(checks), key=lambda x: (bool(x[1].get("past")), x[1]["min"] if x[1].get("past") else 0))
+    opts = "".join(
+        f'<option value="{i}" data-title="{e(c["title"])}"{" data-past=1" if c.get("past") else ""} '
+        f'data-fit="{e(" ".join(m["slug"] for m in members if c["min"] <= m.get("level", 0) <= c["max"]))}">'
+        f'{e(c["title"])} · {c["min"]}–{c["max"]}</option>' for i, c in order)
     players = {}
     for m in members:
         players.setdefault(m.get("player", m["slug"]), []).append(m)
-    go = "".join(f'<div class="wg" data-player="{e(p)}">' + "".join(
-        f'<button type="button" data-go="{e(m["slug"])}" style="--cls:{cls_color(m)}">{e(first(m))}</button>' for m in chars) + "</div>"
-        for p, chars in players.items())
-    return (f'<section id="ready"><div class="sec-row"><h2 class="sec">Ready check</h2>'
-            f'<div class="me-pick" aria-label="Za koho hraju"><span>Hraju za</span>'
-            f'<button type="button" data-me="" aria-pressed="true">všichni</button>{me}</div></div>'
-            f'<div class="rc-picker" role="tablist">{tabs}</div>'
-            f'<div class="who-go" aria-label="Kdo jde do dungeonu"><span>Kdo jde</span>{go}'
-            f'<button type="button" class="wg-act wg-copy" hidden>zkopírovat odkaz</button>'
-            f'<button type="button" class="wg-act wg-reset" hidden>zpět na výchozí</button></div>'
+    chips = "".join(f'<button type="button" data-me="{e(chars[0]["slug"])}" data-player="{e(p)}" style="--cls:{cls_color(chars[0])}">'
+                    f'{e(first(chars[0]))}</button>' for p, chars in players.items())
+    subs = "".join(
+        f'<div class="me-chars" data-player="{e(p)}" hidden><span>Postava</span>' + "".join(
+            f'<button type="button" data-me="{e(m["slug"])}" style="--cls:{cls_color(m)}">{e(first(m))} <b>{m.get("level", "")}</b></button>'
+            for m in chars) + "</div>" for p, chars in players.items() if len(chars) > 1)
+    data = json.dumps([{"slug": m["slug"], "player": m.get("player", m["slug"]), "name": first(m), "gen": first_gen(m),
+                        "level": m.get("level"), "cls": cls_color(m)} for m in members], ensure_ascii=False).replace("<", "\\u003c")
+    return (f'<section id="ready"><h2 class="sec">Ready check</h2>'
+            f'<script type="application/json" id="rc-chars">{data}</script>'
+            f'<div class="rc-pick"><div class="rc-line me-pick" role="group" aria-label="Za koho hraju"><span>Hraju za</span>'
+            f'<button type="button" data-me="" aria-pressed="true">všichni</button>{chips}</div>{subs}'
+            f'<label class="rc-line rc-sel"><span>Dungeon</span><select>{opts}</select></label></div>'
             f'{"".join(ready_box(c, members, i) for i, c in enumerate(checks))}'
             f'<p class="note legend"><span class="st-fit">✓</span> má v logu · <span class="st-share">↗</span> dostane nasdílením u vchodu · '
             f'<span class="st-take">dojít</span> musí si pro quest dojít · ⛓ ✓ rozjetý řetěz · ⛓ nejdřív předchozí quest · '
@@ -2380,13 +2373,16 @@ background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px
 .nav a:hover{color:var(--gold);background:var(--panel2);text-decoration:none}
 section[id],div[id]{scroll-margin-top:56px}
 .sec-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap}
-.me-pick{display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted)}
-.me-pick span{margin-right:4px}
-.me-pick button{font:600 12px Inter,system-ui,sans-serif;color:var(--cls,var(--text));background:var(--panel);border:1px solid var(--line);
-border-radius:999px;padding:3px 10px;cursor:pointer}
-.me-pick button[aria-pressed=true]{border-color:var(--cls,var(--gold));background:var(--panel2);box-shadow:inset 0 0 0 1px var(--cls,var(--gold))}
-.me-pick button.alt{border-style:dashed}
-#ready .sec-row{margin-bottom:12px}
+.rc-pick{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:0 0 16px}
+.rc-sel{flex-wrap:nowrap}
+.rc-line,.me-chars{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.rc-line>span,.me-chars>span{width:64px;flex:none}
+.rc-line button,.me-chars button{font:600 13px Inter,system-ui,sans-serif;color:var(--cls,var(--text));background:var(--panel);border:1px solid var(--line);
+border-radius:999px;padding:4px 12px;cursor:pointer}
+.rc-line button[aria-pressed=true],.me-chars button[aria-pressed=true]{border-color:var(--cls,var(--gold));background:var(--panel2);box-shadow:inset 0 0 0 1px var(--cls,var(--gold))}
+.me-chars[hidden]{display:none}.me-chars b{color:var(--gold);font-weight:600}
+.rc-sel select{flex:1 1 0;width:0;min-width:0;max-width:420px;font:600 16px Inter,system-ui,sans-serif;color:var(--gold);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer}
+.rc-sel option,.rc-sel optgroup{color:var(--text);background:var(--panel)}
 .rc-table .me-col{background:color-mix(in srgb,var(--gold) 9%,transparent)}
 .item-ic img{width:26px;height:26px;border-radius:5px;border:2px solid var(--line);vertical-align:middle}
 .hero{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px;margin-bottom:8px}
@@ -2422,23 +2418,6 @@ border-radius:999px;padding:3px 10px;cursor:pointer}
 .rc-table tr.q-cls>th:first-child{box-shadow:inset 3px 0 0 var(--cls)}
 .st-na{color:var(--muted);opacity:.45}
 .share-yes{background:#16324d;color:var(--share)}.share-in{background:#3b2a5c;color:#c9b2ff}.share-no{background:#4a3a14;color:var(--warn)}
-.cnt{font-size:12px;font-weight:600;border-radius:999px;padding:1px 8px;white-space:nowrap}
-.cnt.big{font-size:13px;padding:3px 10px}
-.cnt-share{background:#16324d;color:var(--share)}.cnt-take{background:#4a3a14;color:var(--warn)}.cnt-ok{background:#1f4224;color:#8fe39a}
-.rc-picker{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
-.rc-picker button{font:600 14px Inter,system-ui,sans-serif;color:var(--text);background:var(--panel);border:1px solid var(--line);
-border-radius:999px;padding:6px 8px 6px 14px;cursor:pointer;display:flex;align-items:center;gap:6px}
-.rc-picker button[aria-selected=true]{border-color:var(--gold);background:#2c2014;color:var(--gold)}
-.rc-past select{font:600 14px Inter,system-ui,sans-serif;color:var(--muted);background:var(--panel);border:1px dashed var(--line);
-border-radius:999px;padding:6px 12px;cursor:pointer;max-width:100%}
-.rc-past select.on{border:1px solid var(--gold);background:#2c2014;color:var(--gold)}
-.rc-past option{color:var(--text);background:var(--panel)}
-.who-go{display:flex;gap:6px 8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:0 0 16px}
-.wg{display:flex;gap:2px;border:1px solid var(--line);border-radius:999px;padding:2px}
-.wg button{font:600 12px Inter,system-ui,sans-serif;color:var(--muted);background:none;border:0;border-radius:999px;padding:2px 9px;cursor:pointer;text-decoration:line-through}
-.wg button[aria-pressed=true]{color:var(--cls);background:var(--panel2);text-decoration:none}
-.wg button:disabled{cursor:default}
-.wg-act{font:600 12px Inter,system-ui,sans-serif;color:var(--gold);background:none;border:0;cursor:pointer;padding:2px 4px}
 .mine{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--cls);border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:12px;display:grid;gap:10px}
 .mine[hidden],.mine [hidden]{display:none}
 .m-g h4{margin:0 0 4px;font-size:13px}.m-n{font-weight:400}
@@ -2447,11 +2426,22 @@ border-radius:999px;padding:6px 12px;cursor:pointer;max-width:100%}
 .m-g b{font-weight:600}.m-g b a{color:var(--text)}.m-g small{display:block;color:var(--muted);font-size:12px}
 .m-ok{margin:0;color:var(--ok);font-size:14px}.m-off{margin:0;color:var(--warn);font-size:13px}
 .m-line{margin:0;color:var(--muted);font-size:13px}.m-line b{font-weight:600}
-.rc-party{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:4px;font-size:13px;color:var(--muted)}
-.rc-party li{display:flex;justify-content:space-between;gap:12px}.rc-party b{color:var(--cls);font-weight:600}
+.rc-party{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0 0 12px;font-size:14px}
+.rp-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}.rp-head h4{margin:0;font-size:13px;color:var(--text);margin-right:auto}
+.rp-head button{font:600 13px Inter,system-ui,sans-serif;color:var(--gold);background:none;border:0;padding:0;cursor:pointer}
+.rc-party ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.rc-party li{display:flex;justify-content:space-between;align-items:center;gap:6px 12px;flex-wrap:wrap;color:var(--muted);font-size:13px}.rc-party li b{color:var(--cls);font-weight:600;font-size:14px}
+.rp-out{margin:8px 0 0;color:var(--muted);font-size:13px}
+.seg{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:600 12px Inter,system-ui,sans-serif;color:var(--muted);background:none;border:0;padding:5px 10px;cursor:pointer}
+.seg button[aria-pressed=true]{color:var(--text);background:var(--panel2)}
+#ready:has(.rc:not([hidden]) .rc-full:not([open])) .legend{display:none}
 .rc-full summary{cursor:pointer;color:var(--gold);font-size:13px;font-weight:600;margin-bottom:10px}
 .rc-table .off{display:none}
-.pc-alt{display:block;font-size:12px;font-weight:600;color:var(--cls);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc[hidden]{display:none}
+.pc-sw{display:flex;margin-top:6px;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.pc-sw button{flex:1;min-width:0;font:600 12px Inter,system-ui,sans-serif;color:var(--muted);background:none;border:0;padding:3px 4px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-sw button[aria-pressed=true]{color:var(--cls);background:var(--panel2)}
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
 .dungeons th,.dungeons td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
@@ -2642,107 +2632,109 @@ background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:
 """
 
 JS = """
-const tabs=[...document.querySelectorAll('.rc-picker button')];
-const meBtns=[...document.querySelectorAll('.me-pick button')];
-const goBtns=[...document.querySelectorAll('.wg button')];
+const CH=JSON.parse(document.getElementById('rc-chars')?.textContent||'[]');
+const BY=Object.fromEntries(CH.map(c=>[c.slug,c]));
+const PLAYERS=[...new Set(CH.map(c=>c.player))];
+const charsOf=p=>CH.filter(c=>c.player===p);
+const meBtns=[...document.querySelectorAll('#ready [data-me]')];
 const panels=[...document.querySelectorAll('.rc')];
-const pastSel=document.querySelector('.rc-past select');
-const OWNER=Object.fromEntries(goBtns.map(b=>[b.dataset.go,b.closest('.wg').dataset.player]));
-const NAME=Object.fromEntries(goBtns.map(b=>[b.dataset.go,b.textContent]));
-const GEN=Object.fromEntries(meBtns.filter(b=>b.dataset.me).map(b=>[b.dataset.me,b.dataset.gen]));
-let viewer='';
+const sel=document.querySelector('.rc-sel select');
+const selOpts=sel?[...sel.options]:[];
+let viewer='',editing=false;
 // ruční sestava jen v adrese stránky: slug = hráč jde na téhle postavě, -hlavní = hráč nejde
 const over={};
 for(const t of (new URLSearchParams(location.search).get('sestava')||'').split(',')){
-  if(t[0]==='-'&&Object.values(OWNER).includes(t.slice(1)))over[t.slice(1)]='';
-  else if(OWNER[t])over[OWNER[t]]=t}
+  if(t[0]==='-'&&PLAYERS.includes(t.slice(1)))over[t.slice(1)]='';
+  else if(BY[t])over[BY[t].player]=t}
 const words=s=>(s||'').split(' ').filter(Boolean);
 const orList=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' nebo '+a[a.length-1];
-function crew(rc){const m=new Map(words(rc.dataset.lineup).map(s=>[OWNER[s],s]));
+function crew(rc){const m=new Map(words(rc.dataset.lineup).map(s=>[BY[s].player,s]));
   for(const [p,s] of Object.entries(over))s?m.set(p,s):m.delete(p);
-  if(viewer)m.set(OWNER[viewer],viewer);
+  if(viewer)m.set(BY[viewer].player,viewer);
   return [...m.values()]}
-function cntHtml(take,share,big){const c=big?' big':'';
-  if(!take&&!share)return `<span class="cnt cnt-ok${c}" title="nikdo nemusí nic shánět">✓ připraveno</span>`;
-  return (share?`<span class="cnt cnt-share${c}" title="questy, které se nasdílí u vchodu">↗ ${share}</span>`:'')+
-    (take?`<span class="cnt cnt-take${c}" title="questy, pro které si musí někdo dojít">✋ ${take}</span>`:'')}
-function refreshPanel(rc,i){const team=crew(rc),on=new Set(team),by={};team.forEach(s=>by[s]={take:0,share:0});
+function partyHtml(team,by){const rows=[],out=[],custom=Object.keys(over).length>0;
+  for(const p of PLAYERS){if(viewer&&BY[viewer].player===p)continue;
+    const s=team.find(x=>BY[x].player===p),main=charsOf(p)[0];
+    if(editing){rows.push(`<li><b style="--cls:${main.cls}">${main.name}</b><span class="seg">`+
+      charsOf(p).map(c=>`<button type="button" data-set="${c.slug}" aria-pressed="${c.slug===s}">${c.name} ${c.level}</button>`).join('')+
+      `<button type="button" data-unset="${p}" aria-pressed="${!s}">nejde</button></span></li>`);continue}
+    if(!s){out.push(main.name);continue}
+    const b=by[s],bits=[];if(b.take)bits.push('✋ '+b.take+'× musí dojít');if(b.share)bits.push('↗ '+b.share+'× dostane u vchodu');
+    rows.push(`<li><b style="--cls:${BY[s].cls}">${BY[s].name}</b><span>${bits.join(' · ')||'✓ nic nechybí'}</span></li>`)}
+  return `<div class="rp-head"><h4>${viewer?'Kdo jde s tebou':'Kdo jde'}</h4>`+
+    (custom?'<button type="button" class="rp-copy">zkopírovat odkaz</button><button type="button" class="rp-reset">zpět na výchozí</button>':'')+
+    `<button type="button" class="rp-edit">${editing?'hotovo':'změnit'}</button></div>`+
+    (rows.length?`<ul>${rows.join('')}</ul>`:'<p class="rp-out">Zatím nikdo další.</p>')+
+    (out.length&&!editing?`<p class="rp-out">Nejdou: ${out.join(', ')}</p>`:'')}
+function refreshPanel(rc){const team=crew(rc),on=new Set(team),by={};team.forEach(s=>by[s]={take:0,share:0});
   const given=el=>words(el.dataset.from).filter(s=>on.has(s));
   rc.querySelectorAll('td[data-slug]').forEach(td=>{const s=td.dataset.slug,st=td.dataset.st;
     td.classList.toggle('off',!on.has(s));
     if(st==='missing'&&td.dataset.from!==undefined){const h=given(td);
       td.classList.toggle('st-share',h.length>0);td.classList.toggle('st-take',!h.length);td.textContent=h.length?'↗':'dojít';
-      td.title=h.length?'dostane nasdílením od: '+h.map(x=>NAME[x]).join(', '):'musí si dojít'}
+      td.title=h.length?'dostane nasdílením od: '+h.map(x=>BY[x].name).join(', '):'musí si dojít'}
     if(!on.has(s))return;
     if(st==='missing'&&td.classList.contains('st-share'))by[s].share++;
     else if(['missing','pre','chain'].includes(st))by[s].take++});
   rc.querySelectorAll('th.who-col').forEach(th=>th.classList.toggle('off',!on.has(th.dataset.slug)));
   rc.querySelectorAll('.rc-table tbody tr').forEach(tr=>{tr.hidden=![...tr.querySelectorAll('td[data-slug]')]
     .some(td=>on.has(td.dataset.slug)&&!['done','na'].includes(td.dataset.st))});
-  const take=team.reduce((n,s)=>n+by[s].take,0),share=team.reduce((n,s)=>n+by[s].share,0);
-  document.querySelectorAll(`.rc-cnt[data-cnt="${rc.id.slice(3)}"]`).forEach(c=>c.innerHTML=cntHtml(take,share,c.dataset.big));
   rc.querySelectorAll('.mine').forEach(card=>{card.hidden=card.dataset.slug!==viewer;if(card.hidden)return;
     card.querySelectorAll('li[data-way]').forEach(li=>{const h=given(li);
       li.hidden=li.dataset.way==='get'?!h.length:h.length>0;
-      if(li.dataset.way==='get')li.querySelector('.m-who').textContent='od '+orList(h.map(x=>GEN[x]))});
+      if(li.dataset.way==='get')li.querySelector('.m-who').textContent='od '+orList(h.map(x=>BY[x].gen))});
     card.querySelectorAll('li[data-to]').forEach(li=>{const t=words(li.dataset.to).filter(s=>on.has(s));
-      li.hidden=!t.length;li.querySelector('.m-who').textContent='potřebuje: '+t.map(x=>NAME[x]).join(', ')});
+      li.hidden=!t.length;li.querySelector('.m-who').textContent='potřebuje: '+t.map(x=>BY[x].name).join(', ')});
     card.querySelectorAll('.m-g').forEach(g=>{const n=[...g.querySelectorAll('li')].filter(l=>!l.hidden).length;
       g.hidden=!n;g.querySelector('.m-n').textContent='('+n+')'});
     const t=card.querySelector('.m-take');card.querySelector('.m-ok').hidden=!!t&&!t.hidden});
-  rc.querySelector('.rc-party').innerHTML=team.filter(s=>s!==viewer).map(s=>{const b=by[s],bits=[];
-    if(b.take)bits.push('✋ '+b.take+'× musí dojít');if(b.share)bits.push('↗ '+b.share+'× dostane u vchodu');
-    const col=document.querySelector(`.wg button[data-go="${CSS.escape(s)}"]`).style.getPropertyValue('--cls');
-    return `<li style="--cls:${col}"><b>${NAME[s]}</b><span>${bits.join(' · ')||'✓ nic nechybí'}</span></li>`}).join('')}
+  rc.querySelector('.rc-party').innerHTML=partyHtml(team,by)}
 function refresh(){panels.forEach(refreshPanel);
-  const rc=panels.find(a=>!a.hidden);if(rc){const on=crew(rc);
-    goBtns.forEach(b=>{b.setAttribute('aria-pressed',on.includes(b.dataset.go));b.disabled=!!viewer&&OWNER[b.dataset.go]===OWNER[viewer]})}
-  const custom=Object.keys(over).length>0;
-  document.querySelectorAll('.wg-act').forEach(b=>b.hidden=!custom);
   const u=new URL(location.href),q=Object.entries(over).map(([p,s])=>s||'-'+p).join(',');
   if(q)u.searchParams.set('sestava',q);else u.searchParams.delete('sestava');
   history.replaceState(null,'',u)}
-goBtns.forEach(b=>b.addEventListener('click',()=>{const rc=panels.find(a=>!a.hidden);if(!rc)return;
-  over[OWNER[b.dataset.go]]=crew(rc).includes(b.dataset.go)?'':b.dataset.go;refresh()}));
-document.querySelector('.wg-reset')?.addEventListener('click',()=>{Object.keys(over).forEach(k=>delete over[k]);refresh()});
-document.querySelector('.wg-copy')?.addEventListener('click',ev=>{const b=ev.target;
-  navigator.clipboard?.writeText(location.href).then(()=>{b.textContent='zkopírováno';setTimeout(()=>b.textContent='zkopírovat odkaz',1500)})});
-function pastOrder(slug){if(!pastSel)return;const opts=[...pastSel.options].slice(1);
-  // dungeony, do kterých se vybraný levelem vejde, nahoru s tečkou; jinak podle levelu
-  opts.forEach(o=>{o.dataset.base??=o.textContent;const fit=!!slug&&o.dataset.fit.split(' ').includes(slug);
-    o.dataset.on=fit?1:0;o.textContent=(fit?'● ':'')+o.dataset.base});
-  opts.sort((a,b)=>b.dataset.on-a.dataset.on||a.dataset.idx-b.dataset.idx).forEach(o=>pastSel.add(o))}
-if(pastSel)[...pastSel.options].slice(1).forEach((o,k)=>o.dataset.idx=k);
+document.getElementById('ready')?.addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;
+  if(b.dataset.set){over[BY[b.dataset.set].player]=b.dataset.set;refresh()}
+  else if(b.dataset.unset){over[b.dataset.unset]='';refresh()}
+  else if(b.classList.contains('rp-edit')){editing=!editing;refresh()}
+  else if(b.classList.contains('rp-reset')){Object.keys(over).forEach(k=>delete over[k]);refresh()}
+  else if(b.classList.contains('rp-copy'))navigator.clipboard?.writeText(location.href).then(()=>b.textContent='zkopírováno')});
+function orderSel(){if(!sel)return;const cur=sel.value;sel.textContent='';
+  const grp=(label,list)=>{if(!list.length)return;const g=document.createElement('optgroup');g.label=label;g.append(...list);sel.append(g)};
+  if(viewer){const fit=o=>words(o.dataset.fit).includes(viewer);grp('Sedí ti levelem',selOpts.filter(fit));grp('Ostatní',selOpts.filter(o=>!fit(o)))}
+  else{grp('Před námi',selOpts.filter(o=>!o.dataset.past));grp('Parta už odehrála',selOpts.filter(o=>o.dataset.past))}
+  sel.value=cur}
 function fitJump(slug){const rc=panels.find(a=>!a.hidden);if(!slug||(rc&&words(rc.dataset.fit).includes(slug)))return;
   const to=panels.find(a=>words(a.dataset.fit).includes(slug));if(to)pick(+to.id.slice(3))}
-function me(slug){viewer=slug;meBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));pastOrder(slug);
+function showFig(slug){const f=document.querySelector(`.pc[data-slug="${CSS.escape(slug)}"]`);if(!f||!f.hidden)return;
+  document.querySelectorAll(`.pc[data-player="${CSS.escape(f.dataset.player)}"]`).forEach(x=>x.hidden=x!==f)}
+function me(slug){viewer=slug;const p=slug?BY[slug].player:'';
+  meBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.player!==undefined?b.dataset.player===p:b.dataset.me===slug));
+  document.querySelectorAll('.me-chars').forEach(d=>d.hidden=d.dataset.player!==p);
+  orderSel();if(slug)showFig(slug);
   document.querySelectorAll('.rc-table [data-slug]').forEach(c=>c.classList.toggle('me-col',!!slug&&c.dataset.slug===slug));
   document.querySelectorAll('.rc-full').forEach(d=>d.open=!slug);
   const who=[...document.querySelectorAll('.lt-who')],has=who.some(c=>c.dataset.slug===slug);
   who.forEach(c=>c.classList.toggle('dim',has&&c.dataset.slug!==slug));
   try{localStorage.setItem('me',slug)}catch(e){}}
-meBtns.forEach(b=>b.addEventListener('click',()=>{me(b.dataset.me);fitJump(b.dataset.me);refresh()}));
-try{const m=localStorage.getItem('me');if(m&&meBtns.some(b=>b.dataset.me===m))me(m)}catch(e){}
-const pastOpts=()=>pastSel?[...pastSel.options].slice(1):[];
-function pick(i){tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.rc==i));
-  panels.forEach(a=>a.hidden=a.id!=='rc-'+i);
-  const p=pastOpts().find(o=>o.value==i);
-  if(pastSel){pastSel.value=p?String(i):'';pastSel.classList.toggle('on',!!p)}
-  const t=tabs.find(b=>b.dataset.rc==i)||p;
+meBtns.forEach(b=>b.addEventListener('click',()=>{
+  if(b.dataset.player!==undefined&&viewer&&BY[viewer].player===b.dataset.player)return;
+  me(b.dataset.me);fitJump(b.dataset.me);refresh()}));
+function pick(i){panels.forEach(a=>a.hidden=a.id!=='rc-'+i);if(sel)sel.value=String(i);
+  const t=selOpts.find(o=>o.value==i);
   try{if(t)localStorage.setItem('rc-pick',t.dataset.title)}catch(e){}
   refresh()}
-tabs.forEach(b=>b.addEventListener('click',()=>pick(+b.dataset.rc)));
-if(pastSel)pastSel.addEventListener('change',()=>{if(pastSel.value!=='')pick(+pastSel.value)});
+if(sel)sel.addEventListener('change',()=>pick(+sel.value));
+try{const m=localStorage.getItem('me');if(m&&BY[m])me(m);else orderSel()}catch(e){orderSel()}
 {let saved=null;try{saved=localStorage.getItem('rc-pick')}catch(e){}
-  const t=tabs.find(b=>b.dataset.title===saved),o=pastOpts().find(o=>o.dataset.title===saved);
-  if(t)pick(+t.dataset.rc);else if(o)pick(+o.value);else fitJump(viewer)}
+  const o=selOpts.find(o=>o.dataset.title===saved);if(o)pick(+o.value);else fitJump(viewer)}
 refresh();
 const pcs=[...document.querySelectorAll('.pc[data-slug]')];
 const hasSheet=s=>[...document.querySelectorAll('.sheet')].some(x=>x.dataset.slug===s);
 let openNow='';
 function openSheet(slug,scroll){
   document.querySelectorAll('.sheet').forEach(x=>x.hidden=x.dataset.slug!==slug);
-  openNow=slug;
+  openNow=slug;if(slug)showFig(slug);
   pcs.forEach(p=>{const on=p.dataset.slug===slug;p.classList.toggle('open',on);p.querySelector('a').setAttribute('aria-expanded',on)});
   document.querySelector('.squad').classList.toggle('has-open',!!slug);
   const hint=document.querySelector('.sheet-hint'); if(hint) hint.hidden=!!slug;
@@ -2750,8 +2742,8 @@ function openSheet(slug,scroll){
   if(slug&&scroll){const el=document.getElementById('char-'+slug); if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'})}}
 pcs.forEach(p=>p.querySelector('a').addEventListener('click',ev=>{ev.preventDefault();
   openSheet(p.classList.contains('open')?'':p.dataset.slug,true)}));
-document.querySelectorAll('.pc-alt').forEach(a=>a.addEventListener('click',ev=>{ev.preventDefault();
-  openSheet(openNow===a.dataset.sheet?'':a.dataset.sheet,true)}));
+document.querySelectorAll('.pc-sw button').forEach(b=>b.addEventListener('click',()=>{const was=openNow&&b.closest('.pc').dataset.slug===openNow;
+  showFig(b.dataset.show);if(was)openSheet(b.dataset.show)}));
 document.querySelectorAll('.sheet-close').forEach(b=>b.addEventListener('click',()=>openSheet('')));
 {const h=decodeURIComponent(location.hash);let start='';
  if(h.startsWith('#char-')) start=h.slice(6); else {try{start=localStorage.getItem('me')||''}catch(e){}}

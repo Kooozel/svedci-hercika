@@ -158,10 +158,9 @@ class Dungeons(unittest.TestCase):
         self.assertEqual([c["title"] for c in checks], ["New", "Old"])
         self.assertEqual(checks[1]["quests"][0]["status"], {"a": "done", "alt": "missing"})  # i když ho nikdo nemá
         html = build.ready_section(checks, [member("a", level=25), member("alt", level=14)])
-        self.assertIn("už odehrané (1)", html)
+        self.assertIn('data-past=1', html)
         self.assertIn('data-fit="alt"', html)  # do RFC se vejde jen alt
-        self.assertNotIn('data-rc="1"', html)  # odehraný není čip
-        self.assertIn("odehráno 7. 11.", build.ready_box(checks[1], [member("a"), member("alt")], 1))
+        self.assertIn("parta odehrála 7. 11.", build.ready_box(checks[1], [member("a"), member("alt")], 1))
 
 
 class Baseline(unittest.TestCase):
@@ -419,9 +418,9 @@ class Alts(unittest.TestCase):
         chars = [{**m, "ok": True, "name": m["slug"].title(), "class_slug": "mage"} for m in party]
         chars[1]["alt"] = True
         html = build.ready_section([check], chars)
-        self.assertIn('<div class="wg" data-player="a"><button type="button" data-go="a"', html)
-        self.assertIn('data-go="a2"', html)
-        self.assertIn('class=alt', html)
+        self.assertIn('<div class="me-chars" data-player="a" hidden>', html)  # alt je volba u hráče, ne další hráč
+        self.assertNotIn('class="me-chars" data-player="b"', html)
+        self.assertEqual(html.count('data-player="a" style'), 1)
         self.assertIn('class="mine" data-slug="a2"', html)
         self.assertIn('data-way="get" data-from="b"', html)
 
