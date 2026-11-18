@@ -15,12 +15,12 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   v `roles`, třeba `"johnie-rotking": "tank"` (tank / heal / dps).
 - **Druhý pád jména:** v `genitive` (třeba `"zrza-jegod": "Zrzy"`), aby stránka psala „od Zrzy“.
   Nová postava bez něj dostane první pád.
-- **Novinky od včerejška:** porovná levely, XP, profese, výbavu a achievementy s posledním snímkem v `history/`
+- **Novinky od včerejška:** jeden řádek na člověka, víc aktivních postav je pod sebou a podrobnosti se rozbalí. Porovná levely, XP, profese, výbavu a achievementy s posledním snímkem v `history/`
   před dneškem (ranní stav před včerejším večerem). Večerní push ho neposune. Místo čísel XP je hláška podle toho,
   kolik kdo nahrál vůči svému levelu (drobek, kus, level, víc levelů), nikdy vůči ostatním. U profesí nové
   řemeslo a body skillu jedním řádkem (anglické názvy), recepty jednou větou. Bez historie se vezme `party.json`
   z nasazené stránky (`site_url`).
-- **Tituly a počítadla:** ze statistik postav (smrti, jídlo, need rolly, lety…) dostane každý titul za včerejší večer,
+- **Tituly a počítadla:** ze statistik všech postav hráče dohromady (smrti, jídlo, need rolly, lety…) dostane každý člověk jeden titul za včerejší večer,
   bez žebříčku a stejnou statistiku dostane stejný člověk nejdřív za tři dny (`TITLE_PAUSE`). Kdo nehrál, dostane hezký titul.
   Tituly a jejich varianty jsou v `titles.json` (klidně připiš další), počítadla za partu jsou `COUNTERS` v `build.py`.
   Statistika, kterou `titles.json` nezná, dostane obecný titul „Objevitel“. Vlastní klíče: `_lvl`, `_xp`, `_skill`,
