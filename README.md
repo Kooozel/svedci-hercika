@@ -10,7 +10,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   (malými písmeny, diakritika zůstává, třeba `horaes-velký`). `size` je počet míst v partě (prázdná se ukážou jako volná).
 - **Přezdívka hráče:** `name` u hráče v `players`, ukazuje se nad jménem postavy. Bez ní se vezme křestní jméno hlavní postavy. Hráč s prázdným `chars` se ukáže na volném místě.
 - **Alt:** připiš ho hráči do `chars` za hlavní postavu. Hlavní postava (první) drží místo v partě a počítá se z ní plán výpravy,
-  tituly, loot a řemesla. Alt má ready check, kartu postavy a novinky, ve skupinové fotce se přepíná řádky (jméno, level, classa) na místě svého hráče (výchozí je naposledy hraná postava). Alt pod levelem 10 API nevrací, na stránce se objeví sám, až ho přeleze.
+  tituly, loot a řemesla. Alt má ready check, kartu postavy a novinky, ve skupinové fotce je sbalený pod „Další postavy“ a přepíná se na místě svého hráče (výchozí je naposledy hraná postava). Alt pod levelem 10 API nevrací, na stránce se objeví sám, až ho přeleze.
 - **Role:** odhadují se podle specu. Když někdo hraje jinak (Johnie tankuje s body v Holy), přepiš to v `party.json`
   v `roles`, třeba `"johnie-rotking": "tank"` (tank / heal / dps).
 - **Druhý pád jména:** v `genitive` (třeba `"zrza-jegod": "Zrzy"`), aby stránka psala „od Zrzy“.
@@ -42,7 +42,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   z „Hraju za“ v ready checku.
 - **Ready check:** stránka se jednou zeptá, kdo jsi, a ukáže karty tvých postav. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
   co si má dojít, co jí může někdo nasdílet a co začíná uvnitř. Nasdílet může postava jiného hráče, která se do dungeonu levelem vejde.
-  Pod úkoly je seznam dalších postav, které se do dungeonu vejdou, a jak jsou připravené. Volbu si pamatuje prohlížeč.
+  Pod úkoly je jeden řádek na každého dalšího hráče s jeho nejlépe připravenou postavou, ostatní postavy se rozbalí. Volbu si pamatuje prohlížeč.
 - **Řemesla:** „Dílna“ nabídne nejvýš tři kusy (`CRAFT_MAX`), které někdo z party umí vyrobit a jinému nebo sobě
   výrazně pomůžou (velký upgrade nebo prázdný slot, class je unese, level stačí), u nich kdo co přinese
   (kůže od skinnera, Copper Rod od kováře…), kdo umí třpytky (enchanty, bez jmen, komu chybí) a kdo je na stropu
@@ -55,7 +55,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   celá kronika je na `kronika.html`. Píše se ručně (s Claudem) po výpravě. Zápis může mít `titles`
   (slug → `emoji`, `title`, `detail`): ruční tituly za ten večer, třeba za špatný zeppelin, které přebijí ty ze statistik.
   Platí jen první den po výpravě.
-- **Denní historie:** ranní plánovaný běh commitne `history/RRRR-MM-DD.json` se stavem všech postav
+- **Denní historie:** ranní plánovaný běh commitne `history/RRRR-MM-DD.json` se stavem hlavních postav a altů, kteří se od posledního snímku změnili
   (levely, XP, statistiky, výbava). Z rozdílu dvou dnů se pozná, co se ten večer stalo. Kvůli tomu má workflow
   právo zápisu do repozitáře, takže si před vlastním pushem udělej `git pull`.
 - **Dungeony:** seznam a rozsahy levelů jsou podle

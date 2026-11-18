@@ -179,6 +179,70 @@ class People(unittest.TestCase):
         self.assertIn("Nová postava: Kozel Bezrohý, level 11", self.news(now, olds))
 
 
+class ManyAlts(unittest.TestCase):
+    """Stránka musí zůstat přehledná i s pěti alty na hráče."""
+
+    @staticmethod
+    def char(slug, player, level=25, active=()):
+        return {"ok": True, "slug": slug, "name": slug.title() + " Velký", "nick": player.title(), "player": player, "class": "Mage",
+                "class_slug": "mage", "level": level, "quests_active": [{"id": i} for i in active], "quests_done": []}
+
+    def check(self, party):
+        catalog = {"D": {"quests": [{"id": 1, "name": "Q", "sharable": True}]}}
+        row = {"name": "D", "min": 20, "max": 30, "near": True}
+        orig = build.api_get
+        build.api_get = lambda *a: {}
+        try:
+            return build.ready_check("t", "eu", [row], row, party, catalog)[0]
+        finally:
+            build.api_get = orig
+
+    def test_one_row_per_player_with_best_prepared_character(self):
+        party = [self.char("a", "a", active=[1]), self.char("b", "b"), self.char("b2", "b", active=[1]), self.char("b3", "b")]
+        html = build.ready_box(self.check(party), party, 0)
+        self.assertEqual(html.count('class="ot" data-player="b"'), 1)
+        self.assertIn("<b>B</b><small>B2 Velký · 25 · Mage · +2 další", html)
+
+    def test_sharing_names_player_once_for_many_characters(self):
+        party = [self.char("a", "a"), self.char("b", "b", active=[1]), self.char("b2", "b", active=[1])]
+        html = build.ready_box(self.check(party), party, 0)
+        self.assertIn("může nasdílet B (2 postavy)", html)
+
+    def test_idle_alt_stays_out_of_history_but_stays_in_baseline(self):
+        main, alt = {**member("a"), "player": "a"}, {**member("a2"), "player": "a", "alt": True}
+        old = {s: {"name": m["name"], **build.snapshot(m)} for s, m in (("a", main), ("a2", alt))}
+        old = json.loads(json.dumps(old))
+        self.assertEqual(set(build.history_members([main, alt], {"members": old})), {"a"})
+        self.assertEqual(set(build.history_members([main, {**alt, "level": 19}], {"members": old})), {"a", "a2"})
+        with tempfile.TemporaryDirectory() as tmp:
+            for day, members in (("2026-11-10", {"a": {"attrs": {}}, "a2": {"attrs": {}, "level": 5}}), ("2026-11-11", {"a": {"attrs": {}}})):
+                (Path(tmp) / f"{day}.json").write_text(json.dumps({"date": day, "built": day + "T04:20:00Z", "members": members}))
+            saved, build.HISTORY = build.HISTORY, Path(tmp)
+            try:
+                got = build.load_baseline({}, "2026-11-12T20:00:00Z")
+            finally:
+                build.HISTORY = saved
+        self.assertEqual(got["members"]["a2"]["level"], 5)
+
+    def test_alt_chip_is_marked_and_does_not_make_loot_contested(self):
+        by_slug = {"k": {**member("k"), "nick": "Kozel"}, "z": {**member("z"), "nick": "Zrza", "alt": True, "name": "Zrza Alt"}}
+        chips = build.loot_who({"z": {"gain": "big", "lvl": 0}}, by_slug)
+        self.assertIn("lt-altc", chips)
+        self.assertIn("<b>Zrza Alt</b>", chips)
+        build.Q = build.Quips({}, TODAY)
+        line = build.loot_line({"item": {"name": "Meč"}, "fits": {"k": {"gain": "big", "lvl": 0}, "z": {"gain": "big", "lvl": 0}}}, by_slug)
+        self.assertNotIn("lt-flag", line)
+
+    def test_profession_overview_has_one_column_per_player(self):
+        chars = [{**self.char("a", "a"), "professions": [{"name": "Mining", "skill": 10, "max": 75, "primary": True}]},
+                 {**self.char("a2", "a"), "professions": [{"name": "Mining", "skill": 60, "max": 75, "primary": True}]}]
+        build.Q = build.Quips({}, TODAY)
+        html = build.professions_box(chars)
+        self.assertIn('--cols:1', html)
+        self.assertIn("<b>60</b>", html)
+        self.assertNotIn("<b>10</b>", html)
+
+
 class Dungeons(unittest.TestCase):
     def test_done_dungeon_only_in_list(self):
         ds = [{"name": "RoL", "zone": "z", "min": 15, "max": 20, "done": "2026-11-12"},
@@ -393,7 +457,7 @@ class ReadyCheckLimits(unittest.TestCase):
                    {"slug": "h", "name": "Horaes", "class_slug": "mage", "level": 25}]
         html = build.ready_box(check, members, 0)
         self.assertIn('class="mine" data-slug="j"', html)
-        self.assertIn('class="ot" data-slug="h"', html)
+        self.assertIn('class="ot" data-player="h"', html)
         self.assertIn("✋ Musíš dojít", html)
 
 
@@ -447,8 +511,9 @@ class Alts(unittest.TestCase):
         chars = [{**member(s), "ok": True, "name": n, "nick": "Kozel", "class": "Mage", "roles": [], "player": "k"}
                  for s, n in (("a", "Kozel Mourningale"), ("b", "Kozel Bezrohý"))]
         html = build.pc_figure(chars[0], chars, chars[0])
-        self.assertIn("<b>Kozel Mourningale</b>", html)
+        self.assertIn("<span>Kozel Mourningale</span>", html)  # vybraná postava je nahoře
         self.assertIn("<b>Kozel Bezrohý</b>", html)
+        self.assertIn("Další postavy (1)", html)
     def test_player_without_character_waits_on_free_slot(self):
         party = {"players": [{"name": "Kozel", "chars": ["a"]}, {"name": "Susak", "chars": []}]}
         self.assertEqual(build.roster(party), [["a"]])
