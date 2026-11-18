@@ -124,6 +124,61 @@ class Titles(unittest.TestCase):
         self.assertIn("další milník 1", html)
 
 
+class People(unittest.TestCase):
+    """Tituly, počítadla a novinky za člověka, ne za postavu."""
+
+    @staticmethod
+    def char(slug, player, **kw):
+        return {**member(slug, **kw), "player": player, "class": "Mage", "nick": player.title()}
+
+    def test_one_title_per_person_from_all_characters(self):
+        olds = [self.char("a", "a", stats={"Total deaths": 1}), self.char("a2", "a", stats={"Total deaths": 1}),
+                self.char("b", "b", stats={"Total deaths": 1})]
+        now = [self.char("a", "a", stats={"Total deaths": 4}), self.char("a2", "a", stats={"Total deaths": 6}),
+               self.char("b", "b", stats={"Total deaths": 6})]
+        titles = build.evening_titles(now, base(olds), TODAY, CATALOG)
+        self.assertEqual(set(titles), {"a", "b"})
+        self.assertEqual(titles["a"]["key"], "Total deaths")  # 3 + 5 přebije 5 u b
+        self.assertEqual(titles["a"]["char"], "A2")  # víc přinesl alt
+
+    def test_new_alt_is_not_a_newcomer_and_brings_no_lifetime_stats(self):
+        olds = [self.char("a", "a", stats={"Total deaths": 1})]
+        now = [self.char("a", "a", stats={"Total deaths": 1}), self.char("a2", "a", stats={"Total deaths": 900})]
+        titles = build.evening_titles(now, base(olds), TODAY, CATALOG)
+        self.assertFalse(titles["a"]["key"].startswith("newcomers:"))
+        self.assertNotEqual(titles["a"]["key"], "Total deaths")
+        deaths = next(c for c in build.party_counters(now, base(olds)) if c["label"] == "smrtí")
+        self.assertEqual((deaths["total"], deaths["delta"], deaths["crossed"]), (901, 0, None))
+
+    def test_alt_doing_something_main_did_is_no_premiere(self):
+        olds = [self.char("a", "a", stats={"Food eaten": 3}), self.char("a2", "a", stats={"Total deaths": 1})]
+        now = [self.char("a", "a", stats={"Food eaten": 3}), self.char("a2", "a", stats={"Total deaths": 1, "Food eaten": 1})]
+        titles = build.evening_titles(now, base(olds), TODAY, CATALOG)
+        self.assertFalse(titles["a"]["key"].startswith("_first:"))
+
+    def test_chronicle_title_for_alt_goes_to_player(self):
+        entry = {"date": "2026-11-11", "titles": {"a2": {"title": "Zeppelin"}}}
+        got = build.chronicle_titles([entry], base([member("a")]), TODAY, {"a"}, {"a2": "a"})
+        self.assertEqual(got["a"]["title"], "Zeppelin")
+
+    def news(self, now, olds):
+        build.Q = build.Quips({}, TODAY)
+        return build.news_box(now, base(olds), TODAY)
+
+    def test_news_has_one_row_per_person(self):
+        olds = [self.char("a", "a", xp=100), self.char("a2", "a", xp=100), self.char("b", "b", xp=100)]
+        now = [self.char("a", "a", xp=500), self.char("a2", "a", xp=300), self.char("b", "b", xp=100)]
+        html = self.news(now, olds)
+        self.assertEqual(html.count('class="who-n"'), 1)
+        self.assertEqual(html.count('nw-line'), 2)
+        self.assertIn("B: nic nového", html)
+
+    def test_news_announces_new_alt(self):
+        olds = [self.char("a", "a")]
+        now = [self.char("a", "a"), {**self.char("a2", "a", level=11), "name": "Kozel Bezrohý"}]
+        self.assertIn("Nová postava: Kozel Bezrohý, level 11", self.news(now, olds))
+
+
 class Dungeons(unittest.TestCase):
     def test_done_dungeon_only_in_list(self):
         ds = [{"name": "RoL", "zone": "z", "min": 15, "max": 20, "done": "2026-11-12"},

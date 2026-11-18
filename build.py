@@ -969,7 +969,7 @@ def crafting(members, static):
 
     capped = [(m["slug"], p["name"], p["skill"]) for m in members for p in m.get("professions") or []
               if p["primary"] and p["max"] and p["skill"] >= p["max"] and p["max"] < 300]
-    return {"ups": ups, "enchants": enchants, "capped": capped, "names": {s: first(m) for s, m in by_slug.items()}}
+    return {"ups": ups, "enchants": enchants, "capped": capped, "names": {s: nick(m) for s, m in by_slug.items()}}
 
 
 # ---------- co se změnilo od včerejška ----------
@@ -1161,6 +1161,27 @@ def evening_values(m, base):
     return dict(now), True, info
 
 
+def person_values(chars, base):
+    """Hodnoty pro tituly za člověka: součet všech jeho postav. Vrací totéž co evening_values,
+    v info navíc `top`: která postava ke statistice přispěla nejvíc."""
+    rows = [(m, *evening_values(m, base)) for m in chars]
+    if len(rows) == 1:
+        return rows[0][1:]
+    vals = {}
+    for _, v, _, _ in rows:
+        for k, x in v.items():
+            vals[k] = vals.get(k, 0) + x
+    top = {k: max(rows, key=lambda r: r[1].get(k, 0))[0] for k in vals}
+    pick = lambda stat, field: next((r[3][field] for r in sorted(rows, key=lambda r: -r[1].get(stat, 0)) if r[3][field]), None)
+    if "_skill" in vals:  # řemeslo se nesčítá, platí největší skok
+        vals["_skill"] = max(r[1].get("_skill", 0) for r in rows)
+    olds = [(((base or {}).get("members") or {}).get(m["slug"]) or {}).get("stats") or {} for m in chars]
+    firsts = {k for r in rows for k in r[3]["firsts"] if not any(o.get(k) for o in olds)}  # premiéra jen, když to neumí žádná jeho postava
+    info = {"skill": pick("_skill", "skill"), "firsts": firsts, "zone": pick("_explore", "zone"),
+            "new": all(r[3]["new"] for r in rows), "top": top}  # nový alt z člověka nováčka nedělá
+    return vals, any(r[2] for r in rows), info
+
+
 def pick_variant(variants, today, slug):
     """Varianta podle dne a postavy: každý den jiná, ale při opakovaném buildu stejná."""
     return variants[(today.toordinal() + zlib.crc32(slug.encode())) % len(variants)]
@@ -1213,12 +1234,16 @@ LEAD = 0.75
 
 
 def evening_titles(members, base, today, catalog):
-    """Každý dostane jeden titul, žádná statistika se nedá dvakrát a nikdo nedostane stejnou jako včera."""
-    with_stats = [m for m in members if m.get("stats") is not None]
+    """Každý člověk dostane jeden titul za všechny své postavy (klíč = jeho hlavní postava),
+    žádná statistika se nedá dvakrát a nikdo nedostane stejnou jako včera."""
+    people = {}
+    for m in members:
+        if m.get("stats") is not None:
+            people.setdefault(m.get("player", m["slug"]), []).append(m)
     yesterday = (base or {}).get("titles") or {}
     values, played, info = {}, {}, {}
-    for m in with_stats:
-        values[m["slug"]], played[m["slug"]], info[m["slug"]] = evening_values(m, base)
+    for s, chars in people.items():
+        values[s], played[s], info[s] = person_values(chars, base)
     stats = catalog.get("stats") or {}
     rules = dict(stats)
     daily = has_daily(base)
@@ -1242,17 +1267,17 @@ def evening_titles(members, base, today, catalog):
                 score = v / top + rule["bonus"] + 0.1 * math.log2(v / rule["min"])
                 candidates.append((score, v / rule["min"], s, stat, v))
     # premiéra: postava něco udělala úplně poprvé (Johnie snědl první jídlo), klíč _first:<statistika>
-    first = catalog.get("first")
-    if first and daily:
+    premiere = catalog.get("first")
+    if premiere and daily:
         for s in values:
             for stat in info[s]["firsts"]:
                 key = "_first:" + stat
                 if stat in stats and not stat.startswith("_") and played[s] and yesterday.get(s) != key:
-                    rules[key] = {**first, "forms": stats[stat]["forms"]}
+                    rules[key] = {**premiere, "forms": stats[stat]["forms"]}
                     # čím víc to ostatní dělají, tím vtipnější premiéra (první jídlo > první vzdaný quest)
                     others = sum(((b or {}).get("stats") or {}).get(stat, 0)
-                                 for slug, b in base["members"].items() if slug != s)
-                    candidates.append((1 + first["bonus"] + 0.05 * math.log2(1 + others), 1, s, key, values[s][stat]))
+                                 for slug, b in base["members"].items() if slug not in {m["slug"] for m in people[s]})
+                    candidates.append((1 + premiere["bonus"] + 0.05 * math.log2(1 + others), 1, s, key, values[s][stat]))
     out, used = {}, set()
     for _, _, s, stat, v in sorted(candidates, reverse=True):
         # premiéra a objev jen jednou za den, ať nejsou čtyři „Konečně!“
@@ -1267,9 +1292,10 @@ def evening_titles(members, base, today, catalog):
             line = (t["line"].replace("{v}", pl(v, rule["forms"])).replace("{skill}", info[s]["skill"] or "")
                     .replace("{zone}", info[s]["zone"] or "Azerothu"))
         out[s] = {"key": stat, "emoji": rule["emoji"], "title": t["name"], "detail": line}
+        if hero := (info[s].get("top") or {}).get(stat.removeprefix("_first:")):
+            out[s]["char"] = first(hero)
         used |= {stat, group}
-    for m in with_stats:
-        s = m["slug"]
+    for s in people:
         if s in out:
             continue
         # hrál a něco nahrál, jen v ničem nevedl: „nic se nestalo“ by nebyla pravda
@@ -1282,8 +1308,9 @@ def evening_titles(members, base, today, catalog):
     return out
 
 
-def chronicle_titles(chronicle, base, today, slugs):
-    """Tituly napsané ručně u zápisu v kronice: platí jen první den po výpravě (večer, za který se tituly dávají)."""
+def chronicle_titles(chronicle, base, today, slugs, owners=None):
+    """Tituly napsané ručně u zápisu v kronice: platí jen první den po výpravě (večer, za který se tituly dávají).
+    Titul pro alta (owners: postava → hlavní postava) dostane jeho hráč."""
     since = (base or {}).get("date")
     if not since:  # bez včerejšího stavu nevíme, který večer to byl
         return {}
@@ -1291,6 +1318,7 @@ def chronicle_titles(chronicle, base, today, slugs):
     for entry in chronicle:
         if since <= entry["date"] < today.isoformat():
             for s, t in (entry.get("titles") or {}).items():
+                s = (owners or {}).get(s, s)
                 if s in slugs and s not in out:
                     out[s] = {"key": "_kronika", "emoji": t.get("emoji", "📖"), "title": t["title"],
                               "detail": t.get("detail", "")}
@@ -1353,7 +1381,7 @@ def shown_char(group):
 
 def first_gen(m):
     """Druhý pád křestního jména (od Zrzy), z party.json; bez něj první pád."""
-    return m.get("gen") or first(m)
+    return m.get("gen") or nick(m)
 
 
 def cls_color(m):
@@ -1609,8 +1637,8 @@ def sheet(m, today):
 # ---------- hlavička ----------
 
 def short_status(r, members):
-    under = [f"{e(first(m))} −{r['status'][m['slug']][1]}" for m in members if r["status"][m["slug"]][0] == "under"]
-    over = [e(first(m)) for m in members if r["status"][m["slug"]][0] == "over"]
+    under = [f"{e(nick(m))} −{r['status'][m['slug']][1]}" for m in members if r["status"][m["slug"]][0] == "under"]
+    over = [e(nick(m)) for m in members if r["status"][m["slug"]][0] == "over"]
     bits = []
     if under:
         bits.append("chybí lvl: " + ", ".join(under))
@@ -1634,7 +1662,7 @@ def next_box(rows, best, members, checks):
     for m in members:
         mark, kind = fit_mark(best["status"][m["slug"]])
         party.append(f'<li class="nx-m nx-{kind}" style="--cls:{cls_color(m)}">{avatar(m, "nx-av")}'
-                     f'<span class="nx-name">{e(first(m))}</span><span class="nx-lvl">{m["level"]}</span>'
+                     f'<span class="nx-name">{e(nick(m))}</span><span class="nx-lvl">{m["level"]}</span>'
                      f'<span class="nx-mark" title="{e(short_status(best, [m]))}">{mark}</span></li>')
     check = next((c for c in checks if c["best"]), None)
     rc = ""
@@ -1661,7 +1689,7 @@ def next_box(rows, best, members, checks):
 def pak_dot(r, m):
     mark, kind = fit_mark(r["status"][m["slug"]])
     return (f'<span class="pk-dot pk-{kind}" style="--cls:{cls_color(m)}" '
-            f'title="{e(first(m))}: {"sedí" if kind == "fit" else mark + " lvl"}">{"✓" if kind == "fit" else mark}</span>')
+            f'title="{e(nick(m))}: {"sedí" if kind == "fit" else mark + " lvl"}">{"✓" if kind == "fit" else mark}</span>')
 
 
 def since_label(base, today):
@@ -1702,30 +1730,70 @@ def prof_news(m, ch):
     return out
 
 
+def news_bits(ch, brief=False):
+    """Level a XP postavy jedním dechem; brief bez podílu na levelu, když je postav pod sebou víc."""
+    lvl = f'<span class="nw-lvl">{ch["from"]} → {ch["to"]}</span>' if ch["to"] > ch["from"] else ""
+    text = f'+{num(ch["xp"])} XP' if brief else xp_news(ch)
+    xp = f'<span class="nw-xp">{e(text)}</span>' if ch["xp"] else ""
+    return lvl + xp
+
+
+def news_extra(m, ch):
+    """Achievementy, řemesla, recepty a nové kusy výbavy."""
+    extra = "".join(f'<p class="nw-ach">🏆 {e(a)}</p>' for a in ch["ach"])
+    extra += "".join(f'<p class="nw-profs">{e(x)}</p>' for x in prof_news(m, ch))
+    gear = "".join(item_link(g, compact=True) for g in ch["gear"])
+    return extra + (f"<div class=nw-gear>{gear}</div>" if gear else "")
+
+
+def news_person(chars, log, fresh):
+    """Řádek jednoho člověka: jedna aktivní postava rovnou, víc postav pod sebou a podrobnosti k rozbalení."""
+    active = sorted(log, key=lambda x: -x[1]["xp"])
+    lead = active[0][0] if active else chars[0]
+    body = ""
+    if len(active) == 1:
+        m, ch = active[0]
+        name = f'<span class="nw-char" style="--cls:{cls_color(m)}">{e(first(m))}</span>' if len(chars) > 1 else ""
+        body = f'<p class="nw-head"><b class="who-n">{e(nick(m))}</b>{name}{news_bits(ch)}</p>{news_extra(m, ch)}'
+    else:
+        body = f'<p class="nw-head"><b class="who-n">{e(nick(lead))}</b></p>'
+        if active:
+            body += "".join(f'<p class="nw-head nw-line"><span class="nw-char" style="--cls:{cls_color(m)}">{e(first(m))}</span>{news_bits(ch, True)}</p>'
+                            for m, ch in active)
+            more = "".join(f'<div class="nw-det" style="--cls:{cls_color(m)}"><b>{e(first(m))}</b>{x}</div>'
+                           for m, ch in active if (x := news_extra(m, ch)))
+            body += f'<details class="nw-more"><summary>Podrobnosti</summary>{more}</details>' if more else ""
+    body += "".join(f'<p class="nw-profs">🆕 Nová postava: {e(m["name"])}, level {m["level"]}</p>' for m in fresh)
+    return f'<li style="--cls:{cls_color(lead)}">{avatar(lead, "nw-av")}<div class="nw-main">{body}</div></li>'
+
+
 def news_box(members, base, today):
-    """Novinky po postavách: levely a XP, nové řemeslo a body skillu, recepty jednou větou a nové kusy výbavy."""
-    rows, quiet = [], []
+    """Novinky po lidech: co nahrály všechny jejich postavy, jeden řádek na člověka."""
+    people, rows, quiet = {}, [], []
     for m in members:
-        ch = changes(m, base)
-        if ch is None:
+        people.setdefault(m.get("player", m["slug"]), []).append(m)
+    for chars in people.values():
+        known = [(m, ch) for m in chars if (ch := changes(m, base)) is not None]
+        if not known:  # úplně nový člověk, přivítá ho titul
             continue
-        if not (ch["to"] > ch["from"] or ch["xp"] or ch["profs"] or ch["gear"] or ch["ach"] or ch["learned"]):
-            quiet.append(m)
-            continue
-        lvl = f'<span class="nw-lvl">{ch["from"]} → {ch["to"]}</span>' if ch["to"] > ch["from"] else ""
-        quip = f'<span class="nw-xp">{e(xp_news(ch))}</span>' if ch["xp"] else ""
-        extra = "".join(f'<p class="nw-ach">🏆 {e(a)}</p>' for a in ch["ach"])
-        extra += "".join(f'<p class="nw-profs">{e(x)}</p>' for x in prof_news(m, ch))
-        gear = "".join(item_link(g, compact=True) for g in ch["gear"])
-        rows.append(f'<li style="--cls:{cls_color(m)}">{avatar(m, "nw-av")}<div class="nw-main">'
-                    f'<p class="nw-head"><b class="who-n">{e(first(m))}</b>{lvl}{quip}</p>{extra}'
-                    f'{f"<div class=nw-gear>{gear}</div>" if gear else ""}</div></li>')
+        fresh = [m for m in chars if not any(m is x for x, _ in known)]
+        log = [(m, ch) for m, ch in known
+               if ch["to"] > ch["from"] or ch["xp"] or ch["profs"] or ch["gear"] or ch["ach"] or ch["learned"]]
+        if log or fresh:
+            rows.append(news_person(chars, log, fresh))
+        else:
+            quiet.append(shown_char(chars))
     if quiet:
-        names = ", ".join(first(m) for m in quiet)
+        names = ", ".join(nick(m) for m in quiet)
         rows.append(f'<li class="nw-quiet"><span class="nw-avs">{"".join(avatar(m, "nw-av") for m in quiet)}</span>'
                     f'<span>{e(names)}: nic nového</span></li>')
     body = f'<ul class="nw">{"".join(rows)}</ul>' if rows else '<p class="muted">Nic nového, nikdo nehrál.</p>'
     return f'<section class="news"><p class="eyebrow">Novinky {since_label(base, today)}</p>{body}</section>'
+
+
+def title_who(m, t):
+    """Kdo titul dostal, u hráče s alty i postava, která k němu přispěla nejvíc."""
+    return f'{nick(m)} · {t["char"]}' if t.get("char") else nick(m)
 
 
 def evening_box(members, base, titles, counters):
@@ -1734,7 +1802,7 @@ def evening_box(members, base, titles, counters):
     daily = has_daily(base)
     cards = "".join(
         f'<li class="title" style="--cls:{cls_color(m)}"><span class="t-emoji">{t["emoji"]}</span>'
-        f'<span class="t-who">{e(first(m))}</span><b class="t-name">{e(t["title"])}</b>'
+        f'<span class="t-who">{e(title_who(m, t))}</span><b class="t-name">{e(t["title"])}</b>'
         f'<small>{e(t["detail"])}</small></li>'
         for m in members if (t := titles.get(m["slug"])))
     tiles = []
@@ -2038,7 +2106,7 @@ def loot_who(fits, by_slug):
         if f["lvl"]:
             tip += f', nasadí až na levelu {m["level"] + f["lvl"]}'
         chips.append(f'<span class="lt-who{cls}" data-slug="{e(slug)}" style="--cls:{cls_color(m)}" title="{e(tip)}">'
-                     f'<b>{e(first(m))}</b> {e(text)}{lvl}</span>')
+                     f'<b>{e(nick(m))}</b> {e(text)}{lvl}</span>')
     return "".join(chips)
 
 
@@ -2134,7 +2202,7 @@ def professions_box(members):
     sec = sorted({p["name"] for m in members for p in m.get("professions") or [] if not p["primary"]})
     nobody = [n for n in ALL_PRIMARIES if n not in names]
     cols = len(members)
-    head = "".join(f'<span class="pg-h" style="color:{cls_color(m)}">{e(first(m))}</span>' for m in members)
+    head = "".join(f'<span class="pg-h" style="color:{cls_color(m)}">{e(nick(m))}</span>' for m in members)
 
     def row(name, cls=""):
         cells = ""
@@ -2149,7 +2217,7 @@ def professions_box(members):
 
     grid = "".join(row(n) for n in prim) + "".join(row(n, " pg-sec") for n in sec)
     # vedlejší profese skoro na nule: hláška místo čísla
-    low = [Q.line(f"prof_low.{p['name']}", m["slug"], who=first(m))
+    low = [Q.line(f"prof_low.{p['name']}", m["slug"], who=nick(m))
            for m in members for p in m.get("professions") or [] if not p["primary"] and p["skill"] <= 5]
     foot = "".join(f'<p class="note pg-low">{e(x)}</p>' for x in low if x)
     if nobody:
@@ -2169,7 +2237,7 @@ def status_cell(st):
 
 
 def dungeon_table(rows, best, members):
-    head = "".join(f'<th class="who-col" style="--cls:{cls_color(m)}">{e(first(m))}</th>' for m in members)
+    head = "".join(f'<th class="who-col" style="--cls:{cls_color(m)}">{e(nick(m))}</th>' for m in members)
     body = []
     for r in rows:
         chips = '<span class="chip chip-new">nový</span>' if r.get("new") else ""
@@ -2226,7 +2294,7 @@ def cz_date(iso):
 
 def chronicle_entry(entry, members, full=True):
     by_slug = {m["slug"]: m for m in members}
-    who = " ".join(f'<span class="k-who" style="--cls:{cls_color(by_slug[s])}">{e(first(by_slug[s]))}</span>'
+    who = " ".join(f'<span class="k-who" style="--cls:{cls_color(by_slug[s])}">{e(nick(by_slug[s]))}</span>'
                    for s in entry.get("party") or [] if s in by_slug)
     paras = entry.get("text") or []
     if not full:
@@ -2282,7 +2350,7 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
         return f'<span class="flag {"flag-ok" if good else "flag-bad"}">{"✓" if good else "✗"} {label}</span>'
 
     by_slug = {m["slug"]: m for m in ok}
-    desc = " · ".join(f'{first(by_slug[s])}: {t["title"]}' for s, t in titles.items() if s in by_slug)
+    desc = " · ".join(f'{nick(by_slug[s])}: {t["title"]}' for s, t in titles.items() if s in by_slug)
     lead = next(iter(titles), None)
     image = (by_slug.get(lead) or {}).get("render") or next((m.get("render") for m in ok if m.get("render")), "")
     nav = [("postavy", "Postavy", True), ("tituly", "Tituly", bool(titles)), ("vyprava", "Výprava", True), ("ready", "Ready check", bool(checks)), ("loot", "Loot", bool(loot)),
@@ -2566,6 +2634,8 @@ background:var(--cls);color:#1a120c;padding:0 4px}
 .nw-xp{margin-left:auto;color:#c9b2ff;font-size:13px;font-weight:600}
 .nw-profs{font-size:13px;color:var(--muted)}.nw-profs b{color:var(--text);font-weight:600}
 .nw-ach{font-size:13px;color:var(--gold)}
+.nw-char{color:var(--cls);font-size:13px;font-weight:600}.nw-line{font-size:13px;gap:8px}
+.nw-more summary{cursor:pointer;color:var(--muted);font-size:12px}.nw-det{display:grid;gap:3px;margin-top:6px}.nw-det>b{color:var(--cls);font-size:13px;font-weight:600}
 .nw-gear{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
 .nw-gear .item-ic img{width:28px;height:28px}
 .nw-quiet{grid-template-columns:auto 1fr!important;align-items:center;color:var(--muted);font-size:13px}
@@ -2759,9 +2829,10 @@ def main():
     kronika = ROOT / "kronika.json"
     chronicle = sorted(json.loads(kronika.read_text(encoding="utf-8")).get("entries") or [] if kronika.exists() else [],
                        key=lambda x: x["date"], reverse=True)
-    titles = evening_titles(ok, base, today, catalog_titles)
-    titles.update(chronicle_titles(chronicle, base, today, {m["slug"] for m in ok}))
-    counters = party_counters(ok, base)
+    titles = evening_titles(chars, base, today, catalog_titles)
+    titles.update(chronicle_titles(chronicle, base, today, {m["slug"] for m in ok},
+                                   {m["slug"]: m["player"] for m in chars}))
+    counters = party_counters(chars, base)
 
     OUT.mkdir(exist_ok=True)
     (OUT / "kronika.html").write_text(render_chronicle(party, chronicle, ok), encoding="utf-8")
