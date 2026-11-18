@@ -3,17 +3,18 @@
   "region": "eu",
   "size": 6,
   "site_url": "https://kooozel.github.io/svedci-hercika/",
-  "characters": [
-    "kozel-mourningale",
-    "zrza-jegod",
-    "johnie-rotking",
-    "horaes-velký",
-    "cildac-velky"
+  "players": [
+    {"chars": ["kozel-mourningale"]},
+    {"chars": ["zrza-jegod"]},
+    {"chars": ["johnie-rotking", "johnie-tusklord"]},
+    {"chars": ["horaes-velký"]},
+    {"chars": ["cildac-velky"]}
   ],
   "genitive": {
     "kozel-mourningale": "Kozla",
     "zrza-jegod": "Zrzy",
     "johnie-rotking": "Johnieho",
+    "johnie-tusklord": "Tusklorda",
     "horaes-velký": "Horaese",
     "cildac-velky": "Cildy"
   },

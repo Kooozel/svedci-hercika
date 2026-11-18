@@ -389,14 +389,34 @@ def to_day(ts):
     return d.astimezone(TZ).date().isoformat()
 
 
+def roster(party):
+    """Postavy po hráčích, první je hlavní. Starý zápis `characters` znamená jednu postavu na hráče."""
+    if party.get("players"):
+        return [list(p["chars"]) for p in party["players"]]
+    return [[slug] for slug in party["characters"]]
+
+
+def short_names(members):
+    """Postava se stejným křestním jménem jako předchozí (alt) se na stránce jmenuje příjmením."""
+    seen = set()
+    for m in members:
+        if not m["ok"]:
+            continue
+        parts = m["name"].split()
+        if parts[0] in seen and len(parts) > 1:
+            m["short"] = parts[-1]
+        seen.add(parts[0])
+
+
 def load_party(party, token):
     region = party["region"]
     members = []
-    for i, slug in enumerate(party["characters"]):
+    chars = [(slug, player[0], n > 0) for player in roster(party) for n, slug in enumerate(player)]
+    for i, (slug, owner, alt) in enumerate(chars):
         try:
             if not token:
                 raise RuntimeError("bez API")
-            members.append(fetch_api(token, region, slug))
+            members.append({**fetch_api(token, region, slug), "player": owner, "alt": alt})
             continue
         except Exception as exc:
             if token:
@@ -404,11 +424,14 @@ def load_party(party, token):
         if i:
             time.sleep(2)  # Armory je neoficiální zdroj, nebombardujeme ho
         try:
-            members.append(fetch_armory(region, slug))
+            members.append({**fetch_armory(region, slug), "player": owner, "alt": alt})
         except Exception as exc:  # jedna rozbitá postava nesmí shodit celou stránku
             print(f"{slug}: {exc}", file=sys.stderr)
+            if alt:  # alt pod levelem 10 API ani Armory neznají, na stránce prostě zatím není
+                continue
             url = ARMORY.format(region=region, slug=urllib.parse.quote(slug))
-            members.append({"ok": False, "slug": slug, "url": url, "error": str(exc)})
+            members.append({"ok": False, "slug": slug, "url": url, "error": str(exc), "player": owner, "alt": False})
+    short_names(members)
     # ruční role z party.json přebijí odhad podle specu (Johnie tankuje, i když má body v Holy)
     for m in members:
         role = (party.get("roles") or {}).get(m["slug"])
@@ -419,9 +442,11 @@ def load_party(party, token):
     return members
 
 
-def plan_dungeons(members, dungeons):
+def plan_dungeons(members, dungeons, chars=None):
+    """Plán počítají hlavní postavy (members), alti (chars = všechny postavy) jen drží odehrané dungeony v nabídce."""
     levels = [m["level"] for m in members]
     lo, hi = min(levels), max(levels)
+    lowest = min(m["level"] for m in chars or members)
     rows = []
     for d in dungeons:
         status = {}
@@ -436,15 +461,30 @@ def plan_dungeons(members, dungeons):
         # odehraný dungeon zůstává jen v seznamu všech, z plánu, ready checku a lootu zmizí
         near = d["max"] >= lo and d["min"] <= hi + 5 and not d.get("done")
         # odehraný dungeon, do kterého se ještě někdo levelem vejde (alt), ukáže ready check jako minulý
-        past = bool(d.get("done")) and d["max"] >= lo
+        past = bool(d.get("done")) and d["max"] >= lowest
         rows.append({**d, "status": status, "fit": fit, "near": near, "past": past})
     # Víc lidí v rozsahu > vyšší dungeon > užší rozsah
     best = max((r for r in rows if not r.get("done")), key=lambda r: (r["fit"], r["min"], -r["max"]), default=None)
     return rows, best
 
 
+def default_lineup(r, members):
+    """Výchozí sestava na dungeon: od každého hráče první postava, která se do něj levelem vejde.
+    Když se nevejde nikdo, jdou hlavní postavy. Stránka ji umí přepsat („Kdo jde“)."""
+    owner = lambda m: m.get("player", m["slug"])
+    picked = {}
+    for m in members:
+        if r["min"] <= m["level"] <= r["max"]:
+            picked.setdefault(owner(m), m["slug"])
+    if not picked:
+        for m in members:
+            picked.setdefault(owner(m), m["slug"])
+    return list(picked.values())
+
+
 def ready_check(token, region, rows, best, members, catalog):
-    """Dungeonové questy z dungeonů v dosahu a stav každého člena party."""
+    """Dungeonové questy z dungeonů v dosahu a stav každé postavy včetně altů.
+    `status` a souhrny platí pro výchozí sestavu, `holders` říká, od koho se quest dá dostat při jiné sestavě."""
     with_quests = [m for m in members if "quests_active" in m]
     if not token or not with_quests:
         return []
@@ -452,6 +492,7 @@ def ready_check(token, region, rows, best, members, catalog):
     done = {m["slug"]: set(m["quests_done"]) for m in with_quests}
     levels = {m["slug"]: m["level"] for m in with_quests}
     who = {m["slug"]: m for m in with_quests}
+    owner = {m["slug"]: m.get("player", m["slug"]) for m in with_quests}
     details = {}
 
     def quest_detail(qid):
@@ -476,6 +517,7 @@ def ready_check(token, region, rows, best, members, catalog):
             continue
         seen.add(title)
         quests = []
+        lineup = default_lineup(r, with_quests)
         for q in catalog[title]["quests"]:
             qid, pre = q["id"], q.get("pre")
             # předquesty se nezobrazují, jen se podle nich pozná, kdo už quest může vzít
@@ -516,27 +558,33 @@ def ready_check(token, region, rows, best, members, catalog):
                     status[slug] = "missing"
             if all(st in ("done", "na") for st in status.values()):
                 continue
-            # kdo quest nemá, dostane ho u vchodu od toho, kdo ho má v logu
-            if q.get("sharable") and not pre and "active" in status.values():
-                status = {s: "share" if st == "missing" else st for s, st in status.items()}
+            unclaimed = not any(st in ("active", "done", "pre") for st in status.values())
+            # nasdílet může jen postava jiného hráče (dvě své postavy naráz online nemá)
+            holders = {}
+            if q.get("sharable") and not pre:
+                holders = {s: [o for o, other in status.items() if other == "active" and owner[o] != owner[s]]
+                           for s, st in status.items() if st == "missing"}
+                holders = {s: h for s, h in holders.items() if h}
+            # kdo quest nemá, dostane ho u vchodu od toho, kdo jde s ním a má ho v logu
+            status = {s: "share" if set(holders.get(s, ())) & set(lineup) else st for s, st in status.items()}
             quests.append({
                 "id": qid, "name": q["name"], "xp": det["xp"], "req": q.get("req"), "limit": limit,
                 "sharable": q.get("sharable"), "start": q.get("start"), "note": q.get("note"),
-                "prev": pre["name"] if pre else None, "status": status,
-                "unclaimed": not any(st in ("active", "done", "pre") for st in status.values()),
+                "prev": pre["name"] if pre else None, "status": status, "holders": holders,
+                "unclaimed": unclaimed,
             })
         # nejdřív questy, které někdo má, pak volné, nakonec ty, na které zatím nikdo nemůže
         # classové questy až za společnými
         quests.sort(key=lambda q: (q["unclaimed"], all(st in ("level", "chain", "na") for st in q["status"].values()),
                                    q["limit"] is not None))
         # ✋ = musí si někam dojít: pro quest, dokončit rozjetý řetěz nebo udělat předquesty
-        take = sum(1 for q in quests for st in q["status"].values() if st in ("missing", "pre", "chain"))
-        share = sum(1 for q in quests for st in q["status"].values() if st == "share")
+        take = sum(1 for q in quests for s in lineup if q["status"][s] in ("missing", "pre", "chain"))
+        share = sum(1 for q in quests for s in lineup if q["status"][s] == "share")
         past = r.get("past", False)
         if quests and (r is best or past or any(not q["unclaimed"] for q in quests)):
             checks.append({"title": title, "min": r["min"], "max": r["max"], "difficulty": r.get("difficulty"),
                            "best": r is best, "past": past, "done": r.get("done") if past else None,
-                           "quests": quests, "members": list(active), "take": take, "share": share,
+                           "quests": quests, "members": list(active), "lineup": lineup, "take": take, "share": share,
                            "source": catalog[title].get("source"), "tavern": catalog[title].get("tavern")})
     return checks
 
@@ -1271,7 +1319,7 @@ def num(n):
 
 
 def first(m):
-    return m["name"].split()[0]
+    return m.get("short") or m["name"].split()[0]
 
 
 def first_gen(m):
@@ -1681,8 +1729,9 @@ def evening_box(members, base, titles, counters):
             f'<p class="note" title="Počítá se ze statistik Blizzard API, které se aktualizují, když se postava odhlásí.">{e(note)}</p></section>')
 
 
-def squad(members, size, today):
-    """Skupinová fotka: celotělové rendery vedle sebe a jmenovky. Klik na postavu otevře pod ní její kartu."""
+def squad(members, size, today, alts=()):
+    """Skupinová fotka: celotělové rendery vedle sebe a jmenovky. Klik na postavu otevře pod ní její kartu.
+    Alt nemá vlastní místo, jen odkaz na kartu pod hlavní postavou svého hráče."""
     out = []
     for m in members:
         if not m["ok"]:
@@ -1692,14 +1741,16 @@ def squad(members, size, today):
         img = (f'<div class="pc-img" style="background-image:url(\'{e(m["render"])}\')"></div>' if m.get("render")
                else f'<div class="pc-img pc-noimg">{avatar(m, "pc-avatar")}</div>')
         role = "/".join(ROLE_LABEL[r] for r in m["roles"]) or "bez specu"
+        links = "".join(f'<a class="pc-alt" href="#char-{e(a["slug"])}" data-sheet="{e(a["slug"])}" style="--cls:{cls_color(a)}">'
+                        f'alt: {e(first(a))} {a["level"]}</a>' for a in alts if a.get("player") == m["slug"])
         out.append(f'<figure class="pc" data-slug="{e(m["slug"])}" style="--cls:{cls_color(m)}">'
                    f'<a href="#char-{e(m["slug"])}" aria-label="Karta postavy {e(m["name"])}" aria-expanded="false">'
                    f'{img}</a><figcaption><span class="pc-name">{e(first(m))} <b>{m["level"]}</b></span>{xp_bar(m)}'
-                   f'<span class="pc-sub">{e(m["class"])} · {e(role)}</span></figcaption></figure>')
+                   f'<span class="pc-sub">{e(m["class"])} · {e(role)}</span>{links}</figcaption></figure>')
     out += ['<figure class="pc pc-empty"><div class="pc-img"><span>?</span></div><figcaption>'
             '<span class="pc-name">volné místo</span><span class="pc-sub">hledá se parťák</span></figcaption></figure>'] \
         * max(0, size - len(members))
-    sheets = "".join(sheet(m, today) for m in members if m["ok"])
+    sheets = "".join(sheet(m, today) for m in [*members, *alts] if m["ok"])
     return (f'<section id="postavy"><div class="squad" style="--n:{len(out)}">{"".join(out)}</div>'
             f'<p class="sheet-hint">Klikni na postavu a uvidíš, v čem chodí.</p>{sheets}</section>')
 
@@ -1766,41 +1817,51 @@ def counts(check, cls=""):
     return out
 
 
-def todo_cards(check, cols):
-    cards = []
-    for m in cols:
-        s = m["slug"]
-        take, chain, start, get, give, low = [], [], [], [], [], []
-        for q in check["quests"]:
-            st = q["status"][s]
-            if st == "missing":
-                take.append(q)
-            elif st == "pre":
-                chain.append(q)
-            elif st == "chain":
-                start.append(q)
-            elif st == "share":
-                get.append(q)
-            elif st == "active" and any(q["status"][o["slug"]] == "share" for o in cols):
-                give.append(q)
-            elif st == "level":
-                low.append(q)
-        lines = []
-        if not take and not chain and not start:
-            lines.append('<li class="t-ok">✓ nemusí nikam chodit</li>')
-        lines += [f'<li class="t-take">dojde si: <b>{e(q["name"])}</b><small>{e(q["start"] or "")}</small></li>' for q in take]
-        lines += [f'<li class="t-take">dokončí řetěz: <b>{e(q["name"])}</b><small>nejdřív {e(q["prev"])}</small></li>' for q in chain]
-        lines += [f'<li class="t-take">udělá předquesty: <b>{e(q["name"])}</b><small>nejdřív {e(q["prev"])}</small></li>' for q in start]
-        if get:
-            lines.append(f'<li class="t-get">u vchodu dostane: {e(", ".join(q["name"] for q in get))}</li>')
-        if give:
-            lines.append(f'<li class="t-give">nasdílí: {e(", ".join(q["name"] for q in give))}</li>')
-        if low:
-            names = ", ".join(f'{q["name"]} ({q["req"]})' for q in low)
-            lines.append(f'<li class="t-low">až s levelem: {e(names)}</li>')
-        cards.append(f'<div class="todo" data-slug="{e(s)}" style="--cls:{cls_color(m)}"><h4>{e(first(m))}</h4>'
-                     f'<ul>{"".join(lines)}</ul></div>')
-    return f'<div class="todos">{"".join(cards)}</div>'
+def quest_link(q):
+    return f'<a href="https://www.wowhead.com/forever/quest={q["id"]}" target="_blank" rel="noopener">{e(q["name"])}</a>'
+
+
+def mine_group(cls, title, items):
+    if not items:
+        return ""
+    return f'<div class="m-g {cls}"><h4>{title} <span class="m-n"></span></h4><ul>{"".join(items)}</ul></div>'
+
+
+def mine_card(check, m):
+    """Co má udělat vybraná postava. Řádky s data-from a data-to přepíná sestava v „Kdo jde“."""
+    s = m["slug"]
+    take, get, give, inside, low, log = [], [], [], [], [], []
+    for q in check["quests"]:
+        st = q["status"][s]
+        givers = q.get("holders", {}).get(s, [])
+        if st in ("missing", "share"):
+            attr = f' data-from="{e(" ".join(givers))}"' if givers else ""
+            take.append(f'<li data-way="take"{attr}><b>{quest_link(q)}</b><small>{e(q["start"] or "")}</small></li>')
+            if givers:
+                get.append(f'<li data-way="get"{attr}><b>{quest_link(q)}</b><small class="m-who"></small></li>')
+        elif st == "pre":
+            take.append(f'<li><b>{quest_link(q)}</b><small>dokončit řetěz, nejdřív {e(q["prev"])}</small></li>')
+        elif st == "chain":
+            take.append(f'<li><b>{quest_link(q)}</b><small>nejdřív {e(q["prev"])}</small></li>')
+        elif st == "active":
+            log.append(q)
+            takers = [o for o, h in q.get("holders", {}).items() if s in h]
+            if takers:
+                give.append(f'<li data-to="{e(" ".join(takers))}"><b>{quest_link(q)}</b><small class="m-who"></small></li>')
+        elif st == "inside":
+            inside.append(q)
+        elif st == "level":
+            low.append(q)
+    off = ""
+    if m.get("level") and not check["min"] <= m["level"] <= check["max"]:
+        off = f'<p class="m-off">Level {m["level"]}, dungeon je pro {check["min"]}–{check["max"]}.</p>'
+    plain = [("Máš v logu", log, lambda q: q["name"]), ("Začne až uvnitř", inside, lambda q: q["name"]),
+             ("Až s levelem", low, lambda q: f'{q["name"]} ({q["req"]})')]
+    lines = "".join(f'<p class="m-line"><b>{title}:</b> {e(", ".join(fmt(q) for q in qs))}</p>' for title, qs, fmt in plain if qs)
+    return (f'<div class="mine" data-slug="{e(s)}" style="--cls:{cls_color(m)}" hidden>{off}'
+            f'<p class="m-ok" hidden>✓ Nemusíš nikam chodit.</p>'
+            f'{mine_group("m-take", "✋ Musíš dojít", take)}{mine_group("m-get", "↗ Dostaneš u vchodu", get)}'
+            f'{mine_group("m-give", "↗ Nasdílíš", give)}{lines}</div>')
 
 
 DIFFICULTY = [("na krev", "Hard"), ("dá se", "Medium"), ("akorát", "At Level"), ("procházka", "Easy")]
@@ -1834,13 +1895,21 @@ def done_chip(done):
 def ready_box(check, members, idx):
     by_slug = {m["slug"]: m for m in members}
     cols = [by_slug[s] for s in check["members"]]
+    crew = check.get("lineup") or check["members"]
     head = "".join(f'<th class="who-col" data-slug="{e(m["slug"])}" style="--cls:{cls_color(m)}">{e(first(m))}</th>'
                    for m in cols)
     body = []
+
+    def cell(q, m):
+        s, st = m["slug"], q["status"][m["slug"]]
+        givers = q.get("holders", {}).get(s, [])
+        names = ", ".join(first(by_slug[h]) for h in givers if h in crew)
+        attrs = f'data-slug="{e(s)}" data-st="{"missing" if st == "share" else st}"'
+        attrs += f' data-from="{e(" ".join(givers))}"' if givers else ""
+        return quest_cell(q, st, names).replace("<td ", f"<td {attrs} ", 1)
+
     for q in check["quests"]:
-        holders = ", ".join(first(m) for m in cols if q["status"][m["slug"]] == "active")
-        cells = "".join(quest_cell(q, q["status"][m["slug"]], holders).replace("<td ", f'<td data-slug="{e(m["slug"])}" ', 1)
-                        for m in cols)
+        cells = "".join(cell(q, m) for m in cols)
         classes = (["q-none"] if q["unclaimed"] else []) + (["q-cls"] if q["limit"] and q["limit"]["cls"] else [])
         cls = f' class="{" ".join(classes)}"' if classes else ""
         if q["limit"] and q["limit"]["cls"]:
@@ -1857,11 +1926,15 @@ def ready_box(check, members, idx):
                      for url, name, tip in links if url)
     source = f'<span class="rc-source">{source}</span>' if source else ""
     hidden = "" if idx == 0 else " hidden"
-    return f'''<article class="rc" id="rc-{idx}" role="tabpanel"{hidden}>
-  <header class="rc-head"><h3>{e(check["title"])}{best}</h3>{level_scale(check, [m["level"] for m in cols if m.get("level")])}{counts(check, " big")}{source}</header>
-  {todo_cards(check, cols)}
+    fit = " ".join(m["slug"] for m in cols if m.get("level") and check["min"] <= m["level"] <= check["max"])
+    levels = [by_slug[s]["level"] for s in crew if by_slug[s].get("level")]
+    return f'''<article class="rc" id="rc-{idx}" role="tabpanel" data-lineup="{e(" ".join(crew))}" data-fit="{e(fit)}"{hidden}>
+  <header class="rc-head"><h3>{e(check["title"])}{best}</h3>{level_scale(check, levels)}<span class="rc-cnt" data-cnt="{idx}" data-big="1">{counts(check, " big")}</span>{source}</header>
+  {"".join(mine_card(check, m) for m in cols)}
+  <ul class="rc-party"></ul>
+  <details class="rc-full" open><summary>Celá tabulka questů</summary>
   <div class="table-wrap"><table class="dungeons rc-table"><thead><tr><th>Quest</th>{head}</tr></thead>
-  <tbody>{"".join(body)}</tbody></table></div>
+  <tbody>{"".join(body)}</tbody></table></div></details>
 </article>'''
 
 
@@ -1871,26 +1944,32 @@ def ready_section(checks, members):
     # dungeony v dosahu jako čipy, odehrané (může jich být hodně) v jednom výběru seřazené podle levelu
     tabs = "".join(
         f'<button type="button" role="tab" data-rc="{i}" data-title="{e(c["title"])}" '
-        f'aria-selected="{"true" if i == 0 else "false"}">{e(c["title"])}{counts(c)}</button>'
+        f'aria-selected="{"true" if i == 0 else "false"}">{e(c["title"])}<span class="rc-cnt" data-cnt="{i}">{counts(c)}</span></button>'
         for i, c in enumerate(checks) if not c.get("past"))
     past = sorted(((i, c) for i, c in enumerate(checks) if c.get("past")), key=lambda x: (x[1]["min"], x[1]["max"]))
     if past:
-        def plain(c):
-            bits = [f"↗{c['share']}" if c["share"] else "", f"✋{c['take']}" if c["take"] else ""]
-            return " ".join(b for b in bits if b) or "✓"
         # data-fit: kdo se do dungeonu levelem vejde, „Já jsem“ podle toho dá jeho dungeony nahoru
         opts = "".join(
             f'<option value="{i}" data-title="{e(c["title"])}" data-fit="{e(" ".join(m["slug"] for m in members if c["min"] <= m.get("level", 0) <= c["max"]))}">'
-            f'{e(c["title"])} · {c["min"]}–{c["max"]} · {plain(c)}</option>' for i, c in past)
+            f'{e(c["title"])} · {c["min"]}–{c["max"]}</option>' for i, c in past)
         tabs += (f'<label class="rc-past" title="dungeony, které parta už má za sebou, třeba pro alty">'
                  f'<select aria-label="Už odehrané dungeony"><option value="">už odehrané ({len(past)})</option>'
                  f'{opts}</select></label>')
-    me = "".join(f'<button type="button" data-me="{e(m["slug"])}" style="--cls:{cls_color(m)}">{e(first(m))}</button>'
-                 for m in members)
+    me = "".join(f'<button type="button" data-me="{e(m["slug"])}" data-gen="{e(first_gen(m))}"{" class=alt" if m.get("alt") else ""} '
+                 f'style="--cls:{cls_color(m)}">{e(first(m))}</button>' for m in members)
+    players = {}
+    for m in members:
+        players.setdefault(m.get("player", m["slug"]), []).append(m)
+    go = "".join(f'<div class="wg" data-player="{e(p)}">' + "".join(
+        f'<button type="button" data-go="{e(m["slug"])}" style="--cls:{cls_color(m)}">{e(first(m))}</button>' for m in chars) + "</div>"
+        for p, chars in players.items())
     return (f'<section id="ready"><div class="sec-row"><h2 class="sec">Ready check</h2>'
-            f'<div class="me-pick" aria-label="Kdo se dívá"><span>Já jsem</span>'
+            f'<div class="me-pick" aria-label="Za koho hraju"><span>Hraju za</span>'
             f'<button type="button" data-me="" aria-pressed="true">všichni</button>{me}</div></div>'
             f'<div class="rc-picker" role="tablist">{tabs}</div>'
+            f'<div class="who-go" aria-label="Kdo jde do dungeonu"><span>Kdo jde</span>{go}'
+            f'<button type="button" class="wg-act wg-copy" hidden>zkopírovat odkaz</button>'
+            f'<button type="button" class="wg-act wg-reset" hidden>zpět na výchozí</button></div>'
             f'{"".join(ready_box(c, members, i) for i, c in enumerate(checks))}'
             f'<p class="note legend"><span class="st-fit">✓</span> má v logu · <span class="st-share">↗</span> dostane nasdílením u vchodu · '
             f'<span class="st-take">dojít</span> musí si pro quest dojít · ⛓ ✓ rozjetý řetěz · ⛓ nejdřív předchozí quest · '
@@ -2202,11 +2281,13 @@ def render_chronicle(party, entries, members):
 '''
 
 
-def render(party, members, rows, best, built, checks, base, titles, counters, chronicle, today, plan=None, loot=None):
+def render(party, members, rows, best, built, checks, base, titles, counters, chronicle, today, plan=None, loot=None, chars=None):
+    """members = hlavní postavy (místa v partě), chars = všechny načtené postavy včetně altů."""
     global Q
     Q = Quips(Q.data, today)  # hlášky na dnešek, nové počítání opakování
     Q.used |= {t["detail"] for t in titles.values()}  # ať novinky neopakují titul
     ok = [m for m in members if m["ok"]]
+    chars = chars or ok
     has_tank = any("tank" in m["roles"] for m in ok)
     has_heal = any("heal" in m["roles"] for m in ok)
     levels = [m["level"] for m in ok]
@@ -2236,11 +2317,11 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
       <p class="built">Natočeno <time data-ts="{built}">{built}</time></p>
     </div>
   </header>
-  {squad(members, party.get("size", len(members)), today)}
+  {squad(members, party.get("size", len(members)), today, [m for m in chars if m.get("alt")])}
   <nav class="nav">{nav_html}</nav>
   {evening_box(ok, base, titles, counters)}
-  <div class="hero" id="vyprava">{next_box(rows, best, ok, checks)}{news_box(ok, base, today) if base else ""}</div>
-  {ready_section(checks, ok)}
+  <div class="hero" id="vyprava">{next_box(rows, best, ok, checks)}{news_box(chars, base, today) if base else ""}</div>
+  {ready_section(checks, chars)}
   {loot_section(loot, ok)}
   {chronicle_box(chronicle, ok)}
   <section id="profese"><h2 class="sec">Řemesla</h2>{craft_box(plan, ok) if plan else ""}
@@ -2304,7 +2385,8 @@ section[id],div[id]{scroll-margin-top:56px}
 .me-pick button{font:600 12px Inter,system-ui,sans-serif;color:var(--cls,var(--text));background:var(--panel);border:1px solid var(--line);
 border-radius:999px;padding:3px 10px;cursor:pointer}
 .me-pick button[aria-pressed=true]{border-color:var(--cls,var(--gold));background:var(--panel2);box-shadow:inset 0 0 0 1px var(--cls,var(--gold))}
-.todo.dim{display:none}
+.me-pick button.alt{border-style:dashed}
+#ready .sec-row{margin-bottom:12px}
 .rc-table .me-col{background:color-mix(in srgb,var(--gold) 9%,transparent)}
 .item-ic img{width:26px;height:26px;border-radius:5px;border:2px solid var(--line);vertical-align:middle}
 .hero{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px;margin-bottom:8px}
@@ -2351,12 +2433,25 @@ border-radius:999px;padding:6px 8px 6px 14px;cursor:pointer;display:flex;align-i
 border-radius:999px;padding:6px 12px;cursor:pointer;max-width:100%}
 .rc-past select.on{border:1px solid var(--gold);background:#2c2014;color:var(--gold)}
 .rc-past option{color:var(--text);background:var(--panel)}
-.todos{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:14px}
-.todo{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--cls);border-radius:0 10px 10px 0;padding:10px 12px}
-.todo h4{margin:0 0 6px;color:var(--cls);font-size:14px}
-.todo ul{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13px}
-.todo small{display:block;color:var(--muted);font-size:12px}
-.t-take{color:var(--warn)}.t-take b{color:var(--text)}.t-get{color:var(--share)}.t-give{color:#8fe39a}.t-ok{color:var(--ok)}.t-low{color:var(--muted)}
+.who-go{display:flex;gap:6px 8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:0 0 16px}
+.wg{display:flex;gap:2px;border:1px solid var(--line);border-radius:999px;padding:2px}
+.wg button{font:600 12px Inter,system-ui,sans-serif;color:var(--muted);background:none;border:0;border-radius:999px;padding:2px 9px;cursor:pointer;text-decoration:line-through}
+.wg button[aria-pressed=true]{color:var(--cls);background:var(--panel2);text-decoration:none}
+.wg button:disabled{cursor:default}
+.wg-act{font:600 12px Inter,system-ui,sans-serif;color:var(--gold);background:none;border:0;cursor:pointer;padding:2px 4px}
+.mine{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--cls);border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:12px;display:grid;gap:10px}
+.mine[hidden],.mine [hidden]{display:none}
+.m-g h4{margin:0 0 4px;font-size:13px}.m-n{font-weight:400}
+.m-take h4{color:var(--warn)}.m-get h4{color:var(--share)}.m-give h4{color:#8fe39a}
+.m-g ul{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:14px}
+.m-g b{font-weight:600}.m-g b a{color:var(--text)}.m-g small{display:block;color:var(--muted);font-size:12px}
+.m-ok{margin:0;color:var(--ok);font-size:14px}.m-off{margin:0;color:var(--warn);font-size:13px}
+.m-line{margin:0;color:var(--muted);font-size:13px}.m-line b{font-weight:600}
+.rc-party{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.rc-party li{display:flex;justify-content:space-between;gap:12px}.rc-party b{color:var(--cls);font-weight:600}
+.rc-full summary{cursor:pointer;color:var(--gold);font-size:13px;font-weight:600;margin-bottom:10px}
+.rc-table .off{display:none}
+.pc-alt{display:block;font-size:12px;font-weight:600;color:var(--cls);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
 .dungeons th,.dungeons td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
@@ -2549,34 +2644,105 @@ background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:
 JS = """
 const tabs=[...document.querySelectorAll('.rc-picker button')];
 const meBtns=[...document.querySelectorAll('.me-pick button')];
+const goBtns=[...document.querySelectorAll('.wg button')];
+const panels=[...document.querySelectorAll('.rc')];
 const pastSel=document.querySelector('.rc-past select');
+const OWNER=Object.fromEntries(goBtns.map(b=>[b.dataset.go,b.closest('.wg').dataset.player]));
+const NAME=Object.fromEntries(goBtns.map(b=>[b.dataset.go,b.textContent]));
+const GEN=Object.fromEntries(meBtns.filter(b=>b.dataset.me).map(b=>[b.dataset.me,b.dataset.gen]));
+let viewer='';
+// ruční sestava jen v adrese stránky: slug = hráč jde na téhle postavě, -hlavní = hráč nejde
+const over={};
+for(const t of (new URLSearchParams(location.search).get('sestava')||'').split(',')){
+  if(t[0]==='-'&&Object.values(OWNER).includes(t.slice(1)))over[t.slice(1)]='';
+  else if(OWNER[t])over[OWNER[t]]=t}
+const words=s=>(s||'').split(' ').filter(Boolean);
+const orList=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' nebo '+a[a.length-1];
+function crew(rc){const m=new Map(words(rc.dataset.lineup).map(s=>[OWNER[s],s]));
+  for(const [p,s] of Object.entries(over))s?m.set(p,s):m.delete(p);
+  if(viewer)m.set(OWNER[viewer],viewer);
+  return [...m.values()]}
+function cntHtml(take,share,big){const c=big?' big':'';
+  if(!take&&!share)return `<span class="cnt cnt-ok${c}" title="nikdo nemusí nic shánět">✓ připraveno</span>`;
+  return (share?`<span class="cnt cnt-share${c}" title="questy, které se nasdílí u vchodu">↗ ${share}</span>`:'')+
+    (take?`<span class="cnt cnt-take${c}" title="questy, pro které si musí někdo dojít">✋ ${take}</span>`:'')}
+function refreshPanel(rc,i){const team=crew(rc),on=new Set(team),by={};team.forEach(s=>by[s]={take:0,share:0});
+  const given=el=>words(el.dataset.from).filter(s=>on.has(s));
+  rc.querySelectorAll('td[data-slug]').forEach(td=>{const s=td.dataset.slug,st=td.dataset.st;
+    td.classList.toggle('off',!on.has(s));
+    if(st==='missing'&&td.dataset.from!==undefined){const h=given(td);
+      td.classList.toggle('st-share',h.length>0);td.classList.toggle('st-take',!h.length);td.textContent=h.length?'↗':'dojít';
+      td.title=h.length?'dostane nasdílením od: '+h.map(x=>NAME[x]).join(', '):'musí si dojít'}
+    if(!on.has(s))return;
+    if(st==='missing'&&td.classList.contains('st-share'))by[s].share++;
+    else if(['missing','pre','chain'].includes(st))by[s].take++});
+  rc.querySelectorAll('th.who-col').forEach(th=>th.classList.toggle('off',!on.has(th.dataset.slug)));
+  rc.querySelectorAll('.rc-table tbody tr').forEach(tr=>{tr.hidden=![...tr.querySelectorAll('td[data-slug]')]
+    .some(td=>on.has(td.dataset.slug)&&!['done','na'].includes(td.dataset.st))});
+  const take=team.reduce((n,s)=>n+by[s].take,0),share=team.reduce((n,s)=>n+by[s].share,0);
+  document.querySelectorAll(`.rc-cnt[data-cnt="${rc.id.slice(3)}"]`).forEach(c=>c.innerHTML=cntHtml(take,share,c.dataset.big));
+  rc.querySelectorAll('.mine').forEach(card=>{card.hidden=card.dataset.slug!==viewer;if(card.hidden)return;
+    card.querySelectorAll('li[data-way]').forEach(li=>{const h=given(li);
+      li.hidden=li.dataset.way==='get'?!h.length:h.length>0;
+      if(li.dataset.way==='get')li.querySelector('.m-who').textContent='od '+orList(h.map(x=>GEN[x]))});
+    card.querySelectorAll('li[data-to]').forEach(li=>{const t=words(li.dataset.to).filter(s=>on.has(s));
+      li.hidden=!t.length;li.querySelector('.m-who').textContent='potřebuje: '+t.map(x=>NAME[x]).join(', ')});
+    card.querySelectorAll('.m-g').forEach(g=>{const n=[...g.querySelectorAll('li')].filter(l=>!l.hidden).length;
+      g.hidden=!n;g.querySelector('.m-n').textContent='('+n+')'});
+    const t=card.querySelector('.m-take');card.querySelector('.m-ok').hidden=!!t&&!t.hidden});
+  rc.querySelector('.rc-party').innerHTML=team.filter(s=>s!==viewer).map(s=>{const b=by[s],bits=[];
+    if(b.take)bits.push('✋ '+b.take+'× musí dojít');if(b.share)bits.push('↗ '+b.share+'× dostane u vchodu');
+    const col=document.querySelector(`.wg button[data-go="${CSS.escape(s)}"]`).style.getPropertyValue('--cls');
+    return `<li style="--cls:${col}"><b>${NAME[s]}</b><span>${bits.join(' · ')||'✓ nic nechybí'}</span></li>`}).join('')}
+function refresh(){panels.forEach(refreshPanel);
+  const rc=panels.find(a=>!a.hidden);if(rc){const on=crew(rc);
+    goBtns.forEach(b=>{b.setAttribute('aria-pressed',on.includes(b.dataset.go));b.disabled=!!viewer&&OWNER[b.dataset.go]===OWNER[viewer]})}
+  const custom=Object.keys(over).length>0;
+  document.querySelectorAll('.wg-act').forEach(b=>b.hidden=!custom);
+  const u=new URL(location.href),q=Object.entries(over).map(([p,s])=>s||'-'+p).join(',');
+  if(q)u.searchParams.set('sestava',q);else u.searchParams.delete('sestava');
+  history.replaceState(null,'',u)}
+goBtns.forEach(b=>b.addEventListener('click',()=>{const rc=panels.find(a=>!a.hidden);if(!rc)return;
+  over[OWNER[b.dataset.go]]=crew(rc).includes(b.dataset.go)?'':b.dataset.go;refresh()}));
+document.querySelector('.wg-reset')?.addEventListener('click',()=>{Object.keys(over).forEach(k=>delete over[k]);refresh()});
+document.querySelector('.wg-copy')?.addEventListener('click',ev=>{const b=ev.target;
+  navigator.clipboard?.writeText(location.href).then(()=>{b.textContent='zkopírováno';setTimeout(()=>b.textContent='zkopírovat odkaz',1500)})});
 function pastOrder(slug){if(!pastSel)return;const opts=[...pastSel.options].slice(1);
   // dungeony, do kterých se vybraný levelem vejde, nahoru s tečkou; jinak podle levelu
   opts.forEach(o=>{o.dataset.base??=o.textContent;const fit=!!slug&&o.dataset.fit.split(' ').includes(slug);
     o.dataset.on=fit?1:0;o.textContent=(fit?'● ':'')+o.dataset.base});
   opts.sort((a,b)=>b.dataset.on-a.dataset.on||a.dataset.idx-b.dataset.idx).forEach(o=>pastSel.add(o))}
 if(pastSel)[...pastSel.options].slice(1).forEach((o,k)=>o.dataset.idx=k);
-function me(slug){meBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));pastOrder(slug);
-  document.querySelectorAll('.todo').forEach(t=>t.classList.toggle('dim',!!slug&&t.dataset.slug!==slug));
+function fitJump(slug){const rc=panels.find(a=>!a.hidden);if(!slug||(rc&&words(rc.dataset.fit).includes(slug)))return;
+  const to=panels.find(a=>words(a.dataset.fit).includes(slug));if(to)pick(+to.id.slice(3))}
+function me(slug){viewer=slug;meBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));pastOrder(slug);
   document.querySelectorAll('.rc-table [data-slug]').forEach(c=>c.classList.toggle('me-col',!!slug&&c.dataset.slug===slug));
-  document.querySelectorAll('.lt-who').forEach(c=>c.classList.toggle('dim',!!slug&&c.dataset.slug!==slug));
+  document.querySelectorAll('.rc-full').forEach(d=>d.open=!slug);
+  const who=[...document.querySelectorAll('.lt-who')],has=who.some(c=>c.dataset.slug===slug);
+  who.forEach(c=>c.classList.toggle('dim',has&&c.dataset.slug!==slug));
   try{localStorage.setItem('me',slug)}catch(e){}}
-meBtns.forEach(b=>b.addEventListener('click',()=>me(b.dataset.me)));
+meBtns.forEach(b=>b.addEventListener('click',()=>{me(b.dataset.me);fitJump(b.dataset.me);refresh()}));
 try{const m=localStorage.getItem('me');if(m&&meBtns.some(b=>b.dataset.me===m))me(m)}catch(e){}
 const pastOpts=()=>pastSel?[...pastSel.options].slice(1):[];
 function pick(i){tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.rc==i));
-  document.querySelectorAll('.rc').forEach(a=>a.hidden=a.id!=='rc-'+i);
+  panels.forEach(a=>a.hidden=a.id!=='rc-'+i);
   const p=pastOpts().find(o=>o.value==i);
   if(pastSel){pastSel.value=p?String(i):'';pastSel.classList.toggle('on',!!p)}
   const t=tabs.find(b=>b.dataset.rc==i)||p;
-  try{if(t)localStorage.setItem('rc-pick',t.dataset.title)}catch(e){}}
+  try{if(t)localStorage.setItem('rc-pick',t.dataset.title)}catch(e){}
+  refresh()}
 tabs.forEach(b=>b.addEventListener('click',()=>pick(+b.dataset.rc)));
 if(pastSel)pastSel.addEventListener('change',()=>{if(pastSel.value!=='')pick(+pastSel.value)});
-try{const saved=localStorage.getItem('rc-pick');const t=tabs.find(b=>b.dataset.title===saved);
-  const o=pastOpts().find(o=>o.dataset.title===saved);if(t)pick(+t.dataset.rc);else if(o)pick(+o.value)}catch(e){}
+{let saved=null;try{saved=localStorage.getItem('rc-pick')}catch(e){}
+  const t=tabs.find(b=>b.dataset.title===saved),o=pastOpts().find(o=>o.dataset.title===saved);
+  if(t)pick(+t.dataset.rc);else if(o)pick(+o.value);else fitJump(viewer)}
+refresh();
 const pcs=[...document.querySelectorAll('.pc[data-slug]')];
+const hasSheet=s=>[...document.querySelectorAll('.sheet')].some(x=>x.dataset.slug===s);
+let openNow='';
 function openSheet(slug,scroll){
   document.querySelectorAll('.sheet').forEach(x=>x.hidden=x.dataset.slug!==slug);
+  openNow=slug;
   pcs.forEach(p=>{const on=p.dataset.slug===slug;p.classList.toggle('open',on);p.querySelector('a').setAttribute('aria-expanded',on)});
   document.querySelector('.squad').classList.toggle('has-open',!!slug);
   const hint=document.querySelector('.sheet-hint'); if(hint) hint.hidden=!!slug;
@@ -2584,12 +2750,14 @@ function openSheet(slug,scroll){
   if(slug&&scroll){const el=document.getElementById('char-'+slug); if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'})}}
 pcs.forEach(p=>p.querySelector('a').addEventListener('click',ev=>{ev.preventDefault();
   openSheet(p.classList.contains('open')?'':p.dataset.slug,true)}));
+document.querySelectorAll('.pc-alt').forEach(a=>a.addEventListener('click',ev=>{ev.preventDefault();
+  openSheet(openNow===a.dataset.sheet?'':a.dataset.sheet,true)}));
 document.querySelectorAll('.sheet-close').forEach(b=>b.addEventListener('click',()=>openSheet('')));
 {const h=decodeURIComponent(location.hash);let start='';
  if(h.startsWith('#char-')) start=h.slice(6); else {try{start=localStorage.getItem('me')||''}catch(e){}}
- if(start&&pcs.some(p=>p.dataset.slug===start)) openSheet(start,h.startsWith('#char-'));}
+ if(start&&hasSheet(start)) openSheet(start,h.startsWith('#char-'));}
 addEventListener('hashchange',()=>{const h=decodeURIComponent(location.hash);
-  if(h.startsWith('#char-')&&pcs.some(p=>p.dataset.slug===h.slice(6))) openSheet(h.slice(6),true)});
+  if(h.startsWith('#char-')&&hasSheet(h.slice(6))) openSheet(h.slice(6),true)});
 const rtf=new Intl.RelativeTimeFormat('cs',{numeric:'auto'});
 for(const t of document.querySelectorAll('time[data-ts]')){
   const d=new Date(t.dataset.ts); if(isNaN(d)) continue;
@@ -2613,18 +2781,20 @@ def main():
     if not token:
         print("Bez API klíčů, data beru z Armory", file=sys.stderr)
 
-    members = load_party(party, token)
+    loaded = load_party(party, token)
+    members = [m for m in loaded if not m.get("alt")]  # hlavní postavy: místa v partě, plán, tituly, loot, řemesla
     ok = [m for m in members if m["ok"]]
+    chars = [m for m in loaded if m["ok"]]  # navíc alti: ready check, karty, novinky
     if not ok:
         sys.exit("Nepodařilo se načíst žádnou postavu, stránku neměním.")
     if token:
-        add_icons(token, region, members)
-    rows, best = plan_dungeons(ok, dungeons)
+        add_icons(token, region, loaded)
+    rows, best = plan_dungeons(ok, dungeons, chars)
     # ručně domluvená příští výprava přebije odhad podle levelů
     best = next((r for r in rows if r["name"] == party.get("next")), best)
     try:  # váhy statů pro hodnocení upgradů; bez nich se porovnává item level
         weights = json.loads((ROOT / "weights.json").read_text(encoding="utf-8"))
-        for m in ok:
+        for m in chars:
             m["weights"] = weights_for(m, weights)
     except Exception as exc:
         print(f"Váhy: {exc}", file=sys.stderr)
@@ -2643,7 +2813,7 @@ def main():
     static.save()
     try:
         catalog = json.loads((ROOT / "quests.json").read_text(encoding="utf-8"))["dungeons"]
-        checks = ready_check(token, region, rows, best, ok, catalog)
+        checks = ready_check(token, region, rows, best, chars, catalog)
     except Exception as exc:  # ready check je bonus, stránka musí vzniknout i bez něj
         print(f"Ready check: {exc}", file=sys.stderr)
         checks = []
@@ -2664,11 +2834,11 @@ def main():
     (OUT / "snapshot.json").write_text(json.dumps(
         {"date": today.isoformat(), "built": built,
          "titles": {s: t["key"] for s, t in titles.items()},
-         "members": {m["slug"]: {"name": m["name"], **snapshot(m)} for m in ok}},
+         "members": {m["slug"]: {"name": m["name"], **snapshot(m)} for m in chars}},
         ensure_ascii=False, indent=1), encoding="utf-8")
     (OUT / "index.html").write_text(render(party, members, rows, best, built, checks, base, titles, counters,
-                                                    chronicle, today, plan, loot), encoding="utf-8")
-    public = [{k: v for k, v in m.items() if k not in ("quests_done", "yday", "weights")} for m in members]
+                                                    chronicle, today, plan, loot, chars), encoding="utf-8")
+    public = [{k: v for k, v in m.items() if k not in ("quests_done", "yday", "weights")} for m in loaded]
     (OUT / "party.json").write_text(json.dumps({"built": built, "members": public, "ready_check": checks,
                                                 "baseline": base,
                                                 "titles": {s: t["key"] for s, t in titles.items()}}, ensure_ascii=False, indent=2), encoding="utf-8")
