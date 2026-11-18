@@ -391,15 +391,15 @@ def to_day(ts):
 
 
 def roster(party):
-    """Postavy po hráčích, první je hlavní. Starý zápis `characters` znamená jednu postavu na hráče."""
+    """Postavy po hráčích, první je hlavní. Hráč bez postav se přeskočí. Starý zápis `characters` znamená jednu postavu na hráče."""
     if party.get("players"):
-        return [list(p["chars"]) for p in party["players"]]
+        return [list(p["chars"]) for p in party["players"] if p.get("chars")]
     return [[slug] for slug in party["characters"]]
 
 
 def add_nicks(party, members):
     """Přezdívka člověka za postavou (`name` v players), bez ní křestní jméno jeho hlavní postavy."""
-    names = {p["chars"][0]: p["name"] for p in party.get("players") or [] if p.get("name")}
+    names = {p["chars"][0]: p["name"] for p in party.get("players") or [] if p.get("name") and p.get("chars")}
     mains = {m["player"]: m for m in members if m["ok"] and not m.get("alt")}
     for m in members:
         if m["ok"]:
@@ -1869,7 +1869,12 @@ def pc_figure(m, group, shown):
             f'<span class="pc-sub">{e(m["class"])} · {e(role)}</span>{switch}</figcaption></figure>')
 
 
-def squad(members, size, today, alts=()):
+def waiting_players(party):
+    """Přezdívky hráčů, kteří v party.json ještě nemají postavu."""
+    return [p["name"] for p in party.get("players") or [] if p.get("name") and not p.get("chars")]
+
+
+def squad(members, size, today, alts=(), waiting=()):
     """Skupinová fotka: celotělové rendery vedle sebe a jmenovky. Klik na postavu otevře pod ní její kartu.
     Alt nemá vlastní místo, přepíná se na místě svého hráče."""
     out, slots = [], 0
@@ -1882,8 +1887,10 @@ def squad(members, size, today, alts=()):
         group = [m, *(a for a in alts if a.get("player") == m["slug"])]
         out += [pc_figure(c, group, shown_char(group)) for c in group]
     free = max(0, size - slots)
-    out += ['<figure class="pc pc-empty"><div class="pc-img"><span>?</span></div><figcaption>'
-            '<span class="pc-name">volné místo</span><span class="pc-sub">hledá se parťák</span></figcaption></figure>'] * free
+    for i in range(free):
+        name, sub = (waiting[i], "bez postavy") if i < len(waiting) else ("volné místo", "hledá se parťák")
+        out.append(f'<figure class="pc pc-empty"><div class="pc-img"><span>?</span></div><figcaption>'
+                   f'<span class="pc-name">{e(name)}</span><span class="pc-sub">{sub}</span></figcaption></figure>')
     sheets = "".join(sheet(m, today) for m in [*members, *alts] if m["ok"])
     return (f'<section id="postavy"><div class="squad" style="--n:{slots + free}">{"".join(out)}</div>'
             f'<p class="sheet-hint">Klikni na postavu a uvidíš, v čem chodí.</p>{sheets}</section>')
@@ -2389,7 +2396,7 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
       <p class="built">Natočeno <time data-ts="{built}">{built}</time></p>
     </div>
   </header>
-  {squad(members, party.get("size", len(members)), today, [m for m in chars if m.get("alt")])}
+  {squad(members, party.get("size", len(members)), today, [m for m in chars if m.get("alt")], waiting_players(party))}
   <nav class="nav">{nav_html}</nav>
   {evening_box(ok, base, titles, counters)}
   <div class="hero" id="vyprava">{next_box(rows, best, ok, checks)}{news_box(chars, base, today) if base else ""}</div>
