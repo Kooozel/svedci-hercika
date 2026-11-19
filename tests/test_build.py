@@ -323,6 +323,19 @@ class ReadyCheckLimits(unittest.TestCase):
         self.assertEqual(check["take"], 4)  # Q1 oba, Q2 jen paladin, Q4 jen orc
         self.assertEqual([q["id"] for q in check["quests"]][-2:], [2, 4])  # omezené až za společnými
 
+    def test_followup_done_counts_as_done(self):
+        """Johnie má hotový A Moon-Kissed Blade, Seeking the Kor Gem mu tedy nechybí, i když ho API mezi splněnými nemá."""
+        party = [{"slug": "j", "class": "Paladin", "race": "Undead", "level": 28, "quests_active": [], "quests_done": [95036]}]
+        catalog = {"D": {"quests": [{"id": 1, "name": "Kor Gem", "sharable": True, "after": [95036, 95126]}]}}
+        row = {"name": "D", "min": 20, "max": 30, "near": True}
+        orig = build.api_get
+        build.api_get = lambda token, region, path, kind: {}
+        try:
+            checks = build.ready_check("t", "eu", [row], row, party, catalog)
+        finally:
+            build.api_get = orig
+        self.assertEqual(checks, [])  # všichni hotovo, dungeon nemá co ukázat
+
     def test_difficulty_scale(self):
         """Stupnice z Wowheadu místo rozpětí; zvýrazněný stupeň podle nejslabšího v partě."""
         steps = [22, 24, 26, 29]

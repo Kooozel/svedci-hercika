@@ -1,5 +1,5 @@
 {
- "_info": "Hordské dungeonové questy. Hlavní zdroj je Wowhead (source: průvodce dungeonu, souhrn https://www.wowhead.com/forever/guide/dungeons/every-dungeon-quest-location): které questy, ID, req, sharable, start, pre. Warcraft Tavern (tavern) jen na note, co a kde se dělá uvnitř. Blizzard API rozhoduje spory: ID musí existovat a mít typ Dungeon, ne Raid (Season of Discovery). Pole questu: id, req (od levelu), sharable, start (kde quest začíná, \"dungeon\" = až uvnitř, předmětem nebo od postavy), pre (předquesty mimo dungeon: name + ids v pořadí, poslední musí být hotový), note, volitelně classes / races (jinak se berou z API). Dungeon bez záznamu ready check nemá.",
+ "_info": "Hordské dungeonové questy. Hlavní zdroj je Wowhead (source: průvodce dungeonu, souhrn https://www.wowhead.com/forever/guide/dungeons/every-dungeon-quest-location): které questy, ID, req, sharable, start, pre. Warcraft Tavern (tavern) jen na note, co a kde se dělá uvnitř. Blizzard API rozhoduje spory: ID musí existovat a mít typ Dungeon, ne Raid (Season of Discovery). Pole questu: id, req (od levelu), sharable, start (kde quest začíná, \"dungeon\" = až uvnitř, předmětem nebo od postavy), pre (předquesty mimo dungeon: name + ids v pořadí, poslední musí být hotový), after (navazující questy: když je některý hotový, počítá se quest jako hotový, i když ho API mezi splněnými nemá), note, volitelně classes / races (jinak se berou z API). Dungeon bez záznamu ready check nemá.",
  "dungeons": {
   "Ragefire Chasm": {
    "source": "https://www.wowhead.com/forever/guide/ragefire-chasm-dungeon-overview-location-rewards",
@@ -133,7 +133,8 @@
     {"id": 95042, "name": "Seeking the Kor Gem", "req": 20, "sharable": true,
      "start": "Ulric Frostveil (Ashenvale)",
      "pre": {"name": "řetěz nemrtvého paladina od Diplomatic Incident (Bandarion Keep, Tirisfal) po The Debt (Lumina Windsinger, krypta v Silverpine), 7 questů", "ids": [91858, 91859, 91860, 91861, 91862, 96204, 95034]},
-     "note": "Corrupted Kor Gem z nag uvnitř, Purified Kor Gem je potřeba na A Moon-Kissed Blade"},
+     "after": [95036, 95126],
+   "note": "Corrupted Kor Gem z nag uvnitř, Purified Kor Gem je potřeba na A Moon-Kissed Blade"},
     {"id": 1740, "name": "The Orb of Soran'ruk", "req": 20, "sharable": true,
      "start": "Doan Karhan (u Camp Taurajo, The Barrens 49 57)",
      "note": "střepy z BFD i ze Shadowfang Keep, nasdílet jde jen jiným warlockům"}

@@ -502,8 +502,8 @@ def ready_check(token, region, rows, best, members, catalog):
                     status[slug] = "na"
                 elif qid in active[slug]:
                     status[slug] = "active"
-                elif qid in done[slug]:
-                    status[slug] = "done"
+                elif qid in done[slug] or set(q.get("after") or []) & done[slug]:
+                    status[slug] = "done"  # after: navazující quest je hotový, tenhle už se brát nedá
                 elif q.get("req") and levels[slug] < q["req"]:
                     status[slug] = "level"
                 elif earlier & active[slug]:
