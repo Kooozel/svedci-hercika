@@ -26,7 +26,7 @@
    {"name": "Postrach přírody", "line": "{v}. Cestou na quest nepřežil ani jeden králík."}
   ]},
   "Total deaths": {"emoji": "🪦", "min": 1, "bonus": 0.7, "forms": ["{n} smrt", "{n} smrti", "{n} smrtí"], "titles": [
-   {"name": "Kaskadér", "line": "{v}. Pády jsou jeho specialita."},
+   {"name": "Kaskadér", "line": "{v}. Riskuje, aby to ostatní nemuseli."},
    {"name": "Kamarád Spirit Healera", "line": "{v}. Už si tykají."},
    {"name": "Zkoušeč podlahy", "line": "{v}. Podlaha drží, potvrzeno."},
    {"name": "Pravidelný host hřbitova", "line": "{v}. Má tam vlastní lavičku."},
@@ -123,7 +123,7 @@
    {"name": "Kůže nikde", "line": "{v}. Boss padl, Deviate Hides ne."}
   ]},
   "Redeemed by paladins": {"emoji": "✨", "min": 1, "bonus": 0.7, "forms": ["{n}× zvednut paladinem", "{n}× zvednut paladinem", "{n}× zvednut paladinem"], "titles": [
-   {"name": "Zachráněná duše", "line": "{v}. Světlo má slabost pro tanky."},
+   {"name": "Zachráněná duše", "line": "{v}. Světlo má slabost pro hrdiny."},
    {"name": "Lazar", "line": "{v}. Spirit healer zůstal bez kšeftu."}
   ]},
   "Elixirs consumed": {"emoji": "🧴", "min": 1, "bonus": 0.3, "forms": ["{n} elixír", "{n} elixíry", "{n} elixírů"], "titles": [
@@ -132,7 +132,7 @@
   ]},
   "Mana potions consumed": {"emoji": "💙", "min": 1, "bonus": 0.3, "forms": ["{n} lektvar many", "{n} lektvary many", "{n} lektvarů many"], "titles": [
    {"name": "Modrá láhev", "line": "{v}. Na drink nebyl čas."},
-   {"name": "Prázdná nádrž", "line": "{v}. Fireball nepočká."}
+   {"name": "Prázdná nádrž", "line": "{v}. Kouzla nepočkají."}
   ]},
   "Fish caught": {"emoji": "🐟", "min": 1, "bonus": 0.5, "forms": ["{n} ryba", "{n} ryby", "{n} ryb"], "titles": [
    {"name": "Rybář", "line": "{v}. Nikdo neví, kdy na to měl čas."},
@@ -148,7 +148,8 @@
   "Deaths from falling": {"emoji": "🪂", "min": 1, "bonus": 0.95, "forms": ["{n}× spadl", "{n}× spadl", "{n}× spadl"], "titles": [
    {"name": "Zkoušeč gravitace", "line": "{v}. Gravitace funguje."},
    {"name": "Skokan", "line": "{v}. Ta zkratka to nebyla."},
-   {"name": "Ikarus", "line": "{v}. Slow Fall je pro slabochy."}
+   {"name": "Ikarus", "line": "{v}. Slow Fall je pro slabochy."},
+   {"name": "Kaskadér bez jištění", "line": "{v}. Pády jsou jeho specialita."}
   ]},
   "Deaths from fire and lava": {"emoji": "🌋", "min": 1, "bonus": 0.95, "forms": ["{n}× uhořel", "{n}× uhořel", "{n}× uhořel"], "titles": [
    {"name": "Grilmajstr", "line": "{v}. Medium rare."},
@@ -196,7 +197,7 @@
    {"name": "Pull magnet", "line": "{v}. Moby ho prostě milují."},
    {"name": "Obětní beránek", "line": "{v}. Pro dobro party."},
    {"name": "Suvenýr podzemí", "line": "{v}. Dungeon si chtěl něco nechat."},
-   {"name": "Detektor pastí", "line": "{v}. Past byla přesně tam, kde ji našel."}
+   {"name": "Zvěd", "line": "{v}. Někdo musí zjistit, co je za rohem."}
   ]},
   "_skill": {"emoji": "🔨", "min": 10, "bonus": 0.45, "forms": ["+{n} bod", "+{n} body", "+{n} bodů"], "titles": [
    {"name": "Mistr řemesla", "line": "{skill} {v}. Kovadlina ještě dýmá."},
