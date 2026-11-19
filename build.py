@@ -440,40 +440,56 @@ def load_party(party, token):
     return members
 
 
+def level_status(level, d):
+    if level < d["min"]:
+        return ("under", d["min"] - level)
+    if level > d["max"]:
+        return ("over", level - d["max"])
+    return ("fit", 0)
+
+
+def pick_char(group, d):
+    """Postava hráče pro dungeon: z pasujících naposledy hraná (při shodě vyšší level), jinak levelem nejbližší."""
+    fit = [c for c in group if level_status(c["level"], d)[0] == "fit"]
+    if fit:
+        return max(fit, key=lambda c: (c.get("updated") or "", c["level"]))
+    return min(group, key=lambda c: (level_status(c["level"], d)[1], -c["level"]))
+
+
 def plan_dungeons(members, dungeons, chars=None):
-    """Plán počítají hlavní postavy (members), alti (chars = všechny postavy) jen drží odehrané dungeony v nabídce."""
+    """Místa v partě jsou hlavní postavy (members), za hráče ale v každém dungeonu počítá jeho nejvhodnější
+    postava (`pick`, ze všech postav v chars). Status je klíčovaný hlavní postavou, ať tabulky drží jedno místo na hráče."""
     levels = [m["level"] for m in members]
     lo, hi = min(levels), max(levels)
     lowest = min(m["level"] for m in chars or members)
+    groups = {m["slug"]: [c for c in chars or [] if c.get("player") == m["slug"]] or [m] for m in members}
     rows = []
     for d in dungeons:
-        status = {}
+        status, pick = {}, {}
         for m in members:
-            if m["level"] < d["min"]:
-                status[m["slug"]] = ("under", d["min"] - m["level"])
-            elif m["level"] > d["max"]:
-                status[m["slug"]] = ("over", m["level"] - d["max"])
-            else:
-                status[m["slug"]] = ("fit", 0)
+            c = pick_char(groups[m["slug"]], d)
+            status[m["slug"]], pick[m["slug"]] = level_status(c["level"], d), c["slug"]
         fit = sum(1 for s, _ in status.values() if s == "fit")
         # odehraný dungeon zůstává jen v seznamu všech, z plánu, ready checku a lootu zmizí
         near = d["max"] >= lo and d["min"] <= hi + 5 and not d.get("done")
         # odehraný dungeon, do kterého se ještě někdo levelem vejde (alt), ukáže ready check jako minulý
         past = bool(d.get("done")) and d["max"] >= lowest
-        rows.append({**d, "status": status, "fit": fit, "near": near, "past": past})
+        rows.append({**d, "status": status, "pick": pick, "fit": fit, "near": near, "past": past})
     # Víc lidí v rozsahu > vyšší dungeon > užší rozsah
     best = max((r for r in rows if not r.get("done")), key=lambda r: (r["fit"], r["min"], -r["max"]), default=None)
     return rows, best
 
 
 def default_lineup(r, members):
-    """Odhad sestavy pro souhrn příští výpravy: od každého hráče první postava, která se do dungeonu levelem vejde.
-    Když se nevejde nikdo, počítají se hlavní postavy."""
+    """Odhad sestavy pro souhrn příští výpravy: od každého hráče postava, která se do dungeonu levelem vejde,
+    stejně jako ve výpravě (pick_char). Když se nevejde nikdo, počítají se hlavní postavy."""
     owner = lambda m: m.get("player", m["slug"])
-    picked = {}
+    groups, picked = {}, {}
     for m in members:
         if r["min"] <= m["level"] <= r["max"]:
-            picked.setdefault(owner(m), m["slug"])
+            groups.setdefault(owner(m), []).append(m)
+    for p, g in groups.items():
+        picked[p] = pick_char(g, r)["slug"]
     if not picked:
         for m in members:
             picked.setdefault(owner(m), m["slug"])
@@ -1658,9 +1674,11 @@ def walk_level(r):
     return min(r["max"], diff[3]) if diff else r["max"]
 
 
-def ahead_rows(rows, members):
+def ahead_rows(rows, members, by_slug=None):
     """Dungeony začínající pod AHEAD_UNTIL, které aspoň pro jednu postavu ještě nejsou procházka, nejdřív ty, co utečou."""
-    keep = [r for r in rows if r["min"] < AHEAD_UNTIL and any(m["level"] <= walk_level(r) for m in members)]
+    by_slug = by_slug or {}
+    keep = [r for r in rows if r["min"] < AHEAD_UNTIL
+            and any(picked(r, m, by_slug)["level"] <= walk_level(r) for m in members)]
     return sorted(keep, key=lambda r: (walk_level(r), r["min"]))
 
 
@@ -1689,14 +1707,16 @@ def short_dungeon(name):
     return name.replace("Scarlet Monastery:", "SM:").replace("Excavation Site: ", "")
 
 
-def ahead_table(rows, best, members):
-    head = "".join(f'<th style="--cls:{cls_color(m)}" title="{e(first(m))}"><span class="ah-long">{e(first(m))}</span>'
-                   f'<span class="ah-short">{e(first(m)[:3])}</span></th>' for m in members)
+def ahead_table(rows, best, members, by_slug=None):
+    """Sloupec za hráče (members = hlavní postavy), v řádku jeho postava, kterou do dungeonu pošle."""
+    by_slug = by_slug or {}
+    head = "".join(f'<th style="--cls:{cls_color(m)}" title="{e(nick(m))}"><span class="ah-long">{e(nick(m))}</span>'
+                   f'<span class="ah-short">{e(nick(m)[:3])}</span></th>' for m in members)
     body = []
-    for r in ahead_rows(rows, members):
+    for r in ahead_rows(rows, members, by_slug):
         cls = " class=ah-best" if r is best else " class=ah-done" if r.get("done") else ""
         cells = "".join(f'<td><span class="ah ah-{k}" title="{e(tip)}">{ahead_text(t)}</span></td>'
-                        for k, t, tip in (ahead_cell(r, m) for m in members))
+                        for k, t, tip in (ahead_cell(r, picked(r, m, by_slug)) for m in members))
         mark = "✓ " if r.get("done") else ""
         body.append(f'<tr{cls}><th scope="row" title="{e(r["name"])}, level {r["min"]}–{r["max"]}, {e(r["zone"])}">'
                     f'{mark}{e(short_dungeon(r["name"]))}</th><td class="ah-cap">{walk_level(r)}</td>{cells}</tr>')
@@ -1711,10 +1731,16 @@ def ahead_table(rows, best, members):
             f'<span class="ah ah-late">pozdě</span> procházka</p>')
 
 
-def next_box(rows, best, members, checks):
+def picked(r, m, by_slug):
+    """Postava, kterou hráč (jeho hlavní postava m) do dungeonu r pošle."""
+    return by_slug.get((r.get("pick") or {}).get(m["slug"]), m)
+
+
+def next_box(rows, best, members, checks, chars=None):
     """Příští výprava: dungeon, souhrn ready checku a kam dál, než dungeony přelevlíme."""
     if not best:
         return ""
+    by_slug = {c["slug"]: c for c in chars or members}
     check = next((c for c in checks if c["best"]), None)
     rc = ""
     if check:
@@ -1730,7 +1756,7 @@ def next_box(rows, best, members, checks):
             f'<h2>{e(best["name"])}{"<span class=chip chip-new>nový</span>" if best.get("new") else ""}</h2>'
             f'<p class="next-meta"><span class="nx-range">level {best["min"]}–{best["max"]}</span>'
             f'<span>{e(best["zone"])}{note}</span></p>'
-            f'{rc}{ahead_table(rows, best, members)}</section>')
+            f'{rc}{ahead_table(rows, best, members, by_slug)}</section>')
 
 
 def since_label(base, today):
@@ -2007,6 +2033,16 @@ def other_row(check, chars):
     return f'<li {attrs}><details><summary class="ot-row">{head}</summary><ul class="ot-more">{"".join(lines)}</ul></details></li>'
 
 
+def out_row(check, chars):
+    """Hráč, který do dungeonu nemá postavu v rozsahu: jeho levelem nejbližší postava a kolik chybí."""
+    m = pick_char(chars, check)
+    kind, n = level_status(m["level"], check)
+    gap = f"chybí {n} lvl" if kind == "under" else f"přerostl o {n} lvl"
+    return (f'<li class="ot ot-out" data-player="{e(m.get("player", m["slug"]))}" style="--cls:{cls_color(m)}"><div class="ot-row">'
+            f'{avatar(m, "ot-av")}<span class="ot-name"><b>{e(nick(m))}</b><small>{e(m["name"])} · {m["level"]} · {gap}</small></span>'
+            f'<span class="ot-st">mimo rozsah</span></div></li>')
+
+
 DIFFICULTY = [("na krev", "Hard"), ("dá se", "Medium"), ("akorát", "At Level"), ("procházka", "Easy")]
 
 
@@ -2048,10 +2084,14 @@ def ready_box(check, members, idx):
     hidden = "" if idx == 0 else " hidden"
     fit = [m["slug"] for m in cols if m.get("level") and check["min"] <= m["level"] <= check["max"]]
     levels = [by_slug[s]["level"] for s in crew if by_slug[s].get("level")]
-    groups = {}
+    groups, players = {}, {}
     for s in fit:
         groups.setdefault(by_slug[s].get("player", s), []).append(by_slug[s])
+    for m in members:
+        if m.get("level"):
+            players.setdefault(m.get("player", m["slug"]), []).append(m)
     others = "".join(other_row(check, g) for g in groups.values())
+    others += "".join(out_row(check, g) for p, g in players.items() if p not in groups)
     return f'''<article class="rc" id="rc-{idx}" role="tabpanel" data-fit="{e(" ".join(fit))}"{hidden}>
   <header class="rc-head">{best}{level_scale(check, levels)}{source}</header>
   {"".join(mine_card(check, m, by_slug, fit) for m in cols)}
@@ -2092,8 +2132,10 @@ def ready_section(checks, members):
                      + "".join(char_card(m, f'data-me="{e(m["slug"])}" aria-pressed="false"') for m in chars) + "</div>"
                      for p, chars in players.items())
     data = json.dumps({m["slug"]: m.get("player", m["slug"]) for m in members}, ensure_ascii=False).replace("<", "\\u003c")
+    names = json.dumps({m["slug"]: [nick(m), m["name"]] for m in members}, ensure_ascii=False).replace("<", "\\u003c")
     return (f'<section id="ready"><h2 class="sec">Ready check</h2>'
             f'<script type="application/json" id="rc-chars">{data}</script>'
+            f'<script type="application/json" id="rc-names">{names}</script>'
             f'<div class="me-box"><div class="me-top"><span class="me-title">Kdo jsi?</span>'
             f'<button type="button" class="me-swap" hidden>změnit hráče</button></div>'
             f'<div class="me-strip me-who">{who}</div>{strips}</div>'
@@ -2469,14 +2511,14 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
       <h1>{e(party["title"])}</h1>
     </div>
     <div class="top-right">
-      <div class="flags">{flag("Tank", has_tank)}{flag("Healer", has_heal)}<span class="flag">Levely {lvl_range}</span></div>
+      <div class="flags" title="Podle hlavních postav">{flag("Tank", has_tank)}{flag("Healer", has_heal)}<span class="flag">Levely {lvl_range}</span></div>
       <p class="built">Natočeno <time data-ts="{built}">{built}</time></p>
     </div>
   </header>
   {squad(members, party.get("size", len(members)), today, [m for m in chars if m.get("alt")], waiting_players(party))}
-  <nav class="nav">{nav_html}</nav>
+  <nav class="nav"><div class="nav-links">{nav_html}</div>{'<button type="button" class="nav-me" hidden><span>Hraju za</span><b>Kdo jsi?</b><small></small></button>' if checks else ""}</nav>
   {evening_box(ok, base, titles, counters)}
-  <div class="hero" id="vyprava">{next_box(rows, best, ok, checks)}{news_box(chars, base, today) if base else ""}</div>
+  <div class="hero" id="vyprava">{next_box(rows, best, ok, checks, chars)}{news_box(chars, base, today) if base else ""}</div>
   {ready_section(checks, chars)}
   {loot_section(loot, chars)}
   {chronicle_box(chronicle, ok)}
@@ -2530,10 +2572,19 @@ box-shadow:inset 0 -50px 40px -24px var(--panel);position:relative}
 .pc-empty{border-style:dashed;background:transparent;color:var(--muted)}
 .pc-empty .pc-img{display:grid;place-items:center;background:transparent;box-shadow:none}
 .pc-empty .pc-img span{font:700 64px Cinzel,serif;color:var(--line)}.pc-empty figcaption{border-top:1px dashed var(--line)}
-.nav{position:sticky;top:0;z-index:20;display:flex;gap:4px;overflow-x:auto;margin:14px -16px 6px;padding:8px 16px;
-background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);scrollbar-width:none}
+.nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;margin:14px -16px 6px;padding:8px 16px;
+background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
+.nav-links{display:flex;gap:4px;overflow-x:auto;min-width:0;flex:1;scrollbar-width:none}
 .nav a{white-space:nowrap;color:var(--muted);font-size:14px;font-weight:600;padding:4px 10px;border-radius:999px}
 .nav a:hover{color:var(--gold);background:var(--panel2);text-decoration:none}
+.nav-me{flex:none;display:flex;align-items:baseline;gap:6px;max-width:60vw;
+  font:inherit;font-size:13px;color:var(--text);background:var(--panel2);border:1px solid #6b5420;border-radius:999px;
+  padding:4px 12px;cursor:pointer}
+.nav-me[hidden]{display:none}.nav-me:hover{border-color:var(--gold)}
+.nav-me span{color:var(--muted);font-size:12px}.nav-me b{color:var(--gold);font-weight:600}
+.nav-me small{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-me small:empty{display:none}
+@media (max-width:600px){.nav-me span,.nav-me small{display:none}}
 section[id],div[id]{scroll-margin-top:56px}
 .sec-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap}
 .me-box{margin:0 0 14px}
@@ -2603,6 +2654,7 @@ summary.ot-row{cursor:pointer;list-style:none}summary.ot-row::-webkit-details-ma
 .ot-more ul{list-style:none;margin:2px 0 0;padding:0;display:grid;gap:2px}
 .ot-ch{display:flex;justify-content:space-between;gap:10px;margin:0}.ot-ch b{font-weight:600}.ot-ch span{color:var(--muted);white-space:nowrap}
 .ot-none{margin:0;color:var(--muted);font-size:13px}
+.ot-out{opacity:.6}.ot-out .ot-st{color:var(--muted)}
 .pc[hidden]{display:none}
 .pc-nick{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .pc[data-player] .pc-name{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:start;min-height:2.7em;line-height:1.35}
@@ -2813,6 +2865,11 @@ background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:
 
 JS = """
 const OWNER=JSON.parse(document.getElementById('rc-chars')?.textContent||'{}');
+const NAMES=JSON.parse(document.getElementById('rc-names')?.textContent||'{}');
+const navMe=document.querySelector('.nav-me');
+function syncMe(){if(navMe){const n=NAMES[viewer],same=n&&n[1].split(' ')[0]===n[0];navMe.hidden=!whoStrip;
+  navMe.querySelector('b').textContent=n?(same?n[1]:n[0]):'Kdo jsi?';navMe.querySelector('small').textContent=n&&!same?n[1]:'';navMe.title=n?'Hraju za '+n[1]+': změnit postavu':'Vyber, za koho hraješ'}
+  document.querySelectorAll('.nx-m').forEach(x=>x.classList.toggle('nx-me',!!viewer&&x.dataset.player===OWNER[viewer]))}
 const panels=[...document.querySelectorAll('.rc')];
 const sel=document.querySelector('.rc-sel select');
 const selOpts=sel?[...sel.options]:[];
@@ -2853,7 +2910,8 @@ function me(slug){viewer=slug;
   document.querySelectorAll('.ch[data-me]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));
   panels.forEach(rc=>{rc.querySelectorAll('.mine').forEach(c=>c.hidden=c.dataset.slug!==slug);
     const rows=[...rc.querySelectorAll('.ot')];rows.forEach(r=>r.hidden=!!slug&&r.dataset.player===OWNER[slug]);
-    rc.querySelector('.ot-none').hidden=rows.some(r=>!r.hidden)});
+    rc.querySelector('.ot-none').hidden=rows.some(r=>!r.hidden&&!r.classList.contains('ot-out'))});
+  syncMe();
   orderSel();if(slug)showFig(slug);choosing(!slug);
   const on=document.querySelector('.me-chars:not([hidden]) .ch[aria-pressed=true]');
   if(on)on.parentElement.scrollLeft=on.offsetLeft-on.parentElement.offsetLeft-2;
@@ -2864,6 +2922,7 @@ document.querySelectorAll('.ch[data-who]').forEach(b=>b.addEventListener('click'
   if(OWNER[viewer]===p){choosing(false);return}
   const slug=Object.keys(OWNER).find(s=>OWNER[s]===p);me(slug);fitJump(slug)}));
 swap?.addEventListener('click',()=>choosing(true));
+navMe?.addEventListener('click',()=>{if(!viewer)choosing(true);document.getElementById('ready')?.scrollIntoView({behavior:'smooth'})});
 if(sel)sel.addEventListener('change',()=>pick(+sel.value));
 {let m='',saved=null;try{m=localStorage.getItem('me')||'';saved=localStorage.getItem('rc-pick')}catch(e){}
   me(OWNER[m]?m:'');const o=selOpts.find(o=>o.dataset.title===saved);if(o)pick(+o.value);fitJump(viewer)}

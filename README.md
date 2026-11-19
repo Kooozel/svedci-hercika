@@ -29,7 +29,8 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Titul za statistiku dostane jen ten, kdo v ní vede (nebo má aspoň 75 % nejlepšího, `LEAD`); kdo hrál,
   ale v ničem nevedl, dostane titul z `busy`.
 - **Příští výprava:** dungeon, rozsah levelů a souhrn ready checku. Pod tím mřížka „Kam dál“: dungeony začínající
-  pod 40 (`AHEAD_UNTIL`) × postavy, kolik levelů každé zbývá, než bude dungeon procházka. Hranice „do lvl“ je konec
+  pod 40 (`AHEAD_UNTIL`) × hráči, kolik levelů zbývá, než bude dungeon procházka. Za hráče se v každém řádku bere postava,
+  která se do dungeonu levelem vejde (z víc naposledy hraná), a když žádná, ta levelem nejbližší. Hranice „do lvl“ je konec
   rozsahu, nebo Wowhead Easy z `difficulty`, co přijde dřív. Dungeon, který je procházka pro všechny, zmizí,
   nahoře je, co uteče nejdřív. Vybírá se podle levelů, domluvený dungeon se dá napsat
   do `party.json` jako `"next": "Wailing Caverns"`. Odehraný dungeon dostane v `dungeons.json` `"done": "RRRR-MM-DD"` (nebo `true`, když datum
@@ -37,14 +38,15 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   někdo levelem vejde (alt), je v ready checku ve výběru „už odehrané“.
 - **Postavy:** klik na postavu ve skupinovce otevře pod ní její kartu: render uprostřed, kolem výbava jako okno
   postavy ve hře (rámeček barvy kvality, 🩴 hadr = nejslabší kus podle item levelu, prázdné sloty čárkovaně), vedle
-  hláška, jak je oblečený (průměrný item level proti levelu), co mu chybí („chodí bez čepice“), pár řádků „Jak na tom je“
-  (Vydrží, Léčí, Bije… hrubě podle statů na level, `BODY` v `build.py`), stupně řemesel a pet. Přesná čísla schválně
-  ne, ta jsou na Armory. Kdo se odhlásil s Resurrection
+  hláška, jak je oblečený (průměrný item level proti levelu), co mu chybí („chodí bez čepice“), „Jak na tom je“
+  (HP a dva hlavní staty role číslem, `STAT_ROWS` v `build.py`, zbytek je na Armory), stupně řemesel a pet. Kdo se odhlásil s Resurrection
   Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu, jinak se otevře ta
   z „Hraju za“ v ready checku.
-- **Ready check:** stránka se jednou zeptá, kdo jsi, a ukáže karty tvých postav. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
+- **Ready check:** stránka se jednou zeptá, kdo jsi, a ukáže karty tvých postav. Vybraná postava je vpravo v liště
+  („Hraju za“, klik vede sem) a podle ní se řídí ready check, loot, Dílna a tvoje místo ve skupinové fotce. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
   co si má dojít, co jí může někdo nasdílet a co začíná uvnitř. Nasdílet může postava jiného hráče, která se do dungeonu levelem vejde.
-  Pod úkoly je jeden řádek na každého dalšího hráče s jeho nejlépe připravenou postavou, ostatní postavy se rozbalí. Volbu si pamatuje prohlížeč.
+  Pod úkoly je jeden řádek na každého dalšího hráče s jeho nejlépe připravenou postavou, ostatní postavy se rozbalí.
+  Hráč bez postavy v rozsahu má vybledlý řádek s nejbližší postavou a kolik jí chybí. Volbu si pamatuje prohlížeč.
 - **Řemesla:** „Dílna“ nabídne nejvýš tři kusy (`CRAFT_MAX`), které někdo z party umí vyrobit a jinému nebo sobě
   výrazně pomůžou (velký upgrade nebo prázdný slot, class je unese, level stačí), u nich kdo co přinese
   (kůže od skinnera, Copper Rod od kováře…), kdo umí třpytky (enchanty, bez jmen, komu chybí) a kdo je na stropu

@@ -598,9 +598,9 @@ class Alts(unittest.TestCase):
         self.assertEqual(check["quests"][0]["status"]["a"], "share")
         self.assertEqual((check["take"], check["share"]), (0, 1))
 
-    def test_lineup_takes_first_fitting_char_of_each_player(self):
+    def test_lineup_takes_fitting_char_of_each_player(self):
         party = [self.char("a", 40), self.char("a2", 25, "a"), self.char("b", 25), self.char("b2", 26, "b"), self.char("c", 14)]
-        self.assertEqual(build.default_lineup({"min": 24, "max": 32}, party), ["a2", "b"])
+        self.assertEqual(build.default_lineup({"min": 24, "max": 32}, party), ["a2", "b2"])  # z pasujících vyšší level
         self.assertEqual(build.default_lineup({"min": 50, "max": 60}, party), ["a", "b", "c"])  # nikdo: hlavní postavy
 
     def test_alt_keeps_done_dungeon_on_offer_but_not_the_plan(self):
@@ -1037,3 +1037,47 @@ class BossLoot(unittest.TestCase):
         bucket = {"name": "B", "inv": "HOLDABLE", "level": 22, "stat": "Healing"}
         self.assertIsNone(build.loot_fit(build.loot_item(bucket, FakeStatic({}, {})), party[2]))
         self.assertIsNotNone(build.loot_fit(build.loot_item(bucket, FakeStatic({}, {})), party[0]))
+
+
+class OneChoice(unittest.TestCase):
+    """Výprava a ready check ukazují za hráče stejnou postavu: tu, která se do dungeonu hodí."""
+    ds = [{"name": "BFD", "zone": "z", "min": 24, "max": 32}]
+
+    @staticmethod
+    def char(slug, level, player, updated="2026-11-11"):
+        return {**member(slug, level=level, updated=updated), "player": player, "name": slug.title() + " Velký",
+                "class": "Mage", "class_slug": "mage", "roles": ["dps"], "nick": player.title()}
+
+    def test_plan_takes_fitting_alt(self):
+        main, alt = self.char("s", 20, "s"), self.char("s2", 25, "s")
+        rows, best = build.plan_dungeons([main], self.ds, [main, alt])
+        self.assertEqual(best["status"]["s"], ("fit", 0))
+        self.assertEqual(best["pick"]["s"], "s2")
+        self.assertEqual(best["fit"], 1)
+
+    def test_plan_takes_closest_when_none_fits(self):
+        main, alt = self.char("s", 20, "s"), self.char("s2", 23, "s")
+        _, best = build.plan_dungeons([main], self.ds, [main, alt])
+        self.assertEqual(best["status"]["s"], ("under", 1))
+        self.assertEqual(best["pick"]["s"], "s2")
+
+    def test_plan_prefers_last_played_of_fitting(self):
+        main = self.char("k", 25, "k", "2026-11-10")
+        alt = self.char("k2", 26, "k", "2026-11-12")
+        _, best = build.plan_dungeons([main], self.ds, [main, alt])
+        self.assertEqual(best["pick"]["k"], "k2")
+
+    def test_next_box_names_picked_character(self):
+        main, alt = self.char("s", 20, "s"), self.char("s2", 23, "s")
+        rows, best = build.plan_dungeons([main], self.ds, [main, alt])
+        html = build.next_box(rows, best, [main], [], [main, alt])
+        # sloupec za hráče, buňka za jeho alta, který se do dungeonu vejde nejlíp
+        self.assertIn('title="S2: dungeon od levelu 24"><span class="ah-long">za </span>1</span>', html)
+
+    def test_others_list_player_without_fitting_char(self):
+        party = [Alts.char("a", 25), Alts.char("c", 20), Alts.char("c2", 23, "c")]
+        check = Alts().check(party)
+        chars = [{**m, "ok": True, "name": m["slug"].title() + " Velký", "class_slug": "mage"} for m in party]
+        html = build.ready_box(check, chars, 0)
+        self.assertIn('class="ot ot-out" data-player="c"', html)
+        self.assertIn("C2 Velký · 23 · chybí 1 lvl", html)
