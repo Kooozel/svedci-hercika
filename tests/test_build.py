@@ -206,11 +206,13 @@ class ManyAlts(unittest.TestCase):
         finally:
             build.api_get = orig
 
-    def test_one_row_per_player_with_best_prepared_character(self):
+    def test_party_table_has_one_visible_column_per_player(self):
         party = [self.char("a", "a", active=[1]), self.char("b", "b"), self.char("b2", "b", active=[1]), self.char("b3", "b")]
         html = build.ready_box(self.check(party), party, 0)
-        self.assertEqual(html.count('class="ot" data-player="b"'), 1)
-        self.assertIn("<b>B</b><small>B2 Velký · 25 · Mage · +2 další", html)
+        head = html.split("<thead>")[1].split("</thead>")[0]
+        self.assertEqual(head.count('data-player="b"'), 3)  # všechny postavy hráče, aby šlo přepnout
+        self.assertEqual(head.count("data-def"), 2)  # viditelný sloupec jen jeden na hráče
+        self.assertIn('<th>Quest</th>', head)
 
     def test_sharing_names_player_once_for_many_characters(self):
         party = [self.char("a", "a"), self.char("b", "b", active=[1]), self.char("b2", "b", active=[1])]
@@ -581,7 +583,7 @@ class ReadyCheckLimits(unittest.TestCase):
                    {"slug": "h", "name": "Horaes", "class_slug": "mage", "level": 25}]
         html = build.ready_box(check, members, 0)
         self.assertIn('class="mine" data-slug="j"', html)
-        self.assertIn('class="ot" data-player="h"', html)
+        self.assertIn('data-player="h" data-slug="h" data-def', html)
         self.assertIn("✋ Musíš dojít", html)
 
 
@@ -1153,10 +1155,11 @@ class OneChoice(unittest.TestCase):
         # sloupec za hráče, buňka za jeho alta, který se do dungeonu vejde nejlíp
         self.assertIn('title="S2: dungeon od levelu 24"><span class="ah-long">za </span>1</span>', html)
 
-    def test_others_list_player_without_fitting_char(self):
+    def test_party_table_shows_closest_char_of_player_out_of_range(self):
         party = [Alts.char("a", 25), Alts.char("c", 20), Alts.char("c2", 23, "c")]
         check = Alts().check(party)
         chars = [{**m, "ok": True, "name": m["slug"].title() + " Velký", "class_slug": "mage"} for m in party]
         html = build.ready_box(check, chars, 0)
-        self.assertIn('class="ot ot-out" data-player="c"', html)
-        self.assertIn("C2 Velký · 23 · chybí 1 lvl", html)
+        self.assertIn('data-player="c" data-slug="c2" data-def', html)
+        self.assertIn('data-player="c" data-slug="c" hidden', html)
+        self.assertIn("<small>C2 Velký · 23</small><small class=\"gap\">−1 lvl</small>", html)

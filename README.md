@@ -53,8 +53,9 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Ready check:** stránka se jednou zeptá, kdo jsi, a ukáže karty tvých postav. Vybraná postava je vpravo v liště
   („Hraju za“, klik vede sem) a podle ní se řídí ready check, loot, Dílna a tvoje místo ve skupinové fotce. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
   co si má dojít, co jí může někdo nasdílet a co začíná uvnitř. Nasdílet může postava jiného hráče, která se do dungeonu levelem vejde.
-  Pod úkoly je jeden řádek na každého dalšího hráče s jeho nejlépe připravenou postavou, ostatní postavy se rozbalí.
-  Hráč bez postavy v rozsahu má vybledlý řádek s nejbližší postavou a kolik jí chybí. Volbu si pamatuje prohlížeč.
+  Pod úkoly je tabulka „Celá parta“: řádek = quest, sloupec = hráč s postavou, kterou do dungeonu nejspíš vezme
+  (stejná jako ve výpravě, u postavy mimo rozsah kolik chybí). Tvůj sloupec ukazuje tvou vybranou postavu a je zvýrazněný.
+  Na mobilu je tabulka bez popisů questů a posouvá se do strany. Volbu si pamatuje prohlížeč.
 - **Řemesla:** „Dílna“ nabídne nejvýš tři kusy (`CRAFT_MAX`), které někdo z party umí vyrobit a jinému nebo sobě
   výrazně pomůžou (velký upgrade nebo prázdný slot, class je unese, level stačí), u nich kdo co přinese
   (kůže od skinnera, Copper Rod od kováře…), kdo umí třpytky (enchanty, bez jmen, komu chybí) a kdo je na stropu

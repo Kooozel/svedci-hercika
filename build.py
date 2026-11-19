@@ -2052,36 +2052,96 @@ def todo_state(go, get):
     return " · ".join(b for b in bits if b) or "✓ připraveno"
 
 
-def other_row(check, chars):
-    """Jeden řádek na hráče: jeho nejlépe připravená postava, ostatní a co jim chybí se dá rozbalit."""
-    def rank(m):
-        go, get = char_todo(check, m)
-        return (len(go), len(get), -m.get("level", 0))
-    chars = sorted(chars, key=rank)
-    m, (go, get) = chars[0], char_todo(check, chars[0])
-    more = f' · +{len(chars) - 1} další' if len(chars) > 1 else ""
-    head = (f'{avatar(m, "ot-av")}<span class="ot-name"><b>{e(nick(m))}</b><small>{e(m["name"])} · {m.get("level", "")} · {e(m.get("class", ""))}{more}</small></span>'
-            f'<span class="ot-st {"ot-ok" if not go and not get else "ot-todo"}">{e(todo_state(go, get))}</span>')
-    attrs = f'class="ot" data-player="{e(m.get("player", m["slug"]))}" style="--cls:{cls_color(m)}"'
-    if len(chars) == 1 and not go and not get:
-        return f'<li {attrs}><div class="ot-row">{head}</div></li>'
-    lines = []
-    for c in chars:
-        c_go, c_get = char_todo(check, c)
-        quests = "".join(f"<li>✋ {quest_link(q)}</li>" for q in c_go) + "".join(f"<li>↗ {quest_link(q)}</li>" for q in c_get)
-        lines.append(f'<li><p class="ot-ch"><b style="color:{cls_color(c)}">{e(c["name"])}</b><span>{c.get("level", "")} · {e(todo_state(c_go, c_get))}</span></p>'
-                     f'{f"<ul>{quests}</ul>" if quests else ""}</li>')
-    return f'<li {attrs}><details><summary class="ot-row">{head}</summary><ul class="ot-more">{"".join(lines)}</ul></details></li>'
+def quest_cell(q, st, holders):
+    if st == "na":
+        return f'<td class="st st-na" title="nemůže vzít: {e(q["limit"]["why"])}">—</td>'
+    if st == "active":
+        return '<td class="st st-fit" title="má v logu">✓</td>'
+    if st == "share":
+        return f'<td class="st st-share" title="dostane nasdílením od: {e(holders)}">↗</td>'
+    if st == "missing":
+        start = f': {q["start"]}' if q["start"] else ""
+        return f'<td class="st st-take" title="musí si dojít{e(start)}">dojít</td>'
+    if st == "done":
+        return '<td class="st st-over" title="už odevzdal">hotovo</td>'
+    if st == "level":
+        return f'<td class="st st-over" title="quest jde vzít od levelu {q["req"]}">lvl {q["req"]}</td>'
+    if st == "inside":
+        return '<td class="st st-over" title="quest začíná až v dungeonu (předmět nebo postava uvnitř)">uvnitř</td>'
+    if st == "pre":
+        return '<td class="st st-pre" title="má v logu předquest, musí dokončit řetěz">⛓ ✓</td>'
+    return f'<td class="st st-over" title="nejdřív: {e(q["prev"])}">⛓</td>'
 
 
-def out_row(check, chars):
-    """Hráč, který do dungeonu nemá postavu v rozsahu: jeho levelem nejbližší postava a kolik chybí."""
-    m = pick_char(chars, check)
-    kind, n = level_status(m["level"], check)
-    gap = f"chybí {n} lvl" if kind == "under" else f"přerostl o {n} lvl"
-    return (f'<li class="ot ot-out" data-player="{e(m.get("player", m["slug"]))}" style="--cls:{cls_color(m)}"><div class="ot-row">'
-            f'{avatar(m, "ot-av")}<span class="ot-name"><b>{e(nick(m))}</b><small>{e(m["name"])} · {m["level"]} · {gap}</small></span>'
-            f'<span class="ot-st">mimo rozsah</span></div></li>')
+def quest_meta(q):
+    bits = [f'od lvl {q["req"]}' if q["req"] else None,
+            f'start: {e(q["start"])}' if q["start"] and q["start"] != "dungeon" else None,
+            f'nejdřív: {e(q["prev"])}' if q["prev"] else None,
+            e(q["note"]) if q.get("note") else None]
+    return " · ".join(b for b in bits if b)
+
+
+def share_label(q):
+    tags = []
+    lim = q.get("limit")
+    if lim and lim["cls"]:
+        tags.append(f'<span class="share share-cls" style="--cls:{CLASS_COLOR.get(lim["cls"], "var(--muted)")}" '
+                    f'title="{e(lim["why"])}, ostatní ho nevidí">{e(lim["text"])}</span>')
+    elif lim:
+        tags.append(f'<span class="share share-race" title="{e(lim["why"])}">{e(lim["text"])}</span>')
+    if q["start"] == "dungeon":
+        tags.append('<span class="share share-in" title="začíná až v dungeonu: předmětem, který tam padne, nebo od postavy uvnitř">začíná uvnitř</span>')
+    if q["prev"]:
+        tags.append(f'<span class="share share-no" title="navazuje na {e(q["prev"])}, každý si ho musí vzít sám">✋ každý sám · řetěz</span>')
+    elif q["sharable"]:
+        whom = f'jen dalším, kdo ho můžou vzít ({lim["text"][4:] if lim["cls"] else lim["why"]})' if lim else "ostatním v partě"
+        tags.append(f'<span class="share share-yes" title="kdo ho má, nasdílí ho {e(whom)}">↗ sdílitelný</span>')
+    elif q["sharable"] is False and q["start"] != "dungeon":
+        tags.append('<span class="share share-no" title="nejde nasdílet, každý si ho musí vzít sám">✋ každý sám</span>')
+    return "".join(tags)
+
+
+def party_table(check, members, by_slug, crew):
+    """Celá parta: řádek = quest, sloupec = hráč. Ve sloupci je postava, kterou by do dungeonu poslal (pick_char),
+    ostatní jeho postavy jsou skryté a stránka do sloupce vybraného hráče dá jeho vybranou postavu."""
+    players = {}
+    for s in check["members"]:
+        m = by_slug[s]
+        players.setdefault(m.get("player", s), []).append(m)
+    cols = []
+    for group in players.values():
+        default = pick_char(group, check)
+        cols += [(m, m is default) for m in group]
+
+    def attrs(m, default):
+        return (f'data-player="{e(m.get("player", m["slug"]))}" data-slug="{e(m["slug"])}"'
+                + (" data-def" if default else " hidden"))
+
+    def head(m, default):
+        kind, n = level_status(m.get("level", 0), check)
+        gap = "" if kind == "fit" else f'<small class="gap">{"−" if kind == "under" else "+"}{n} lvl</small>'
+        return (f'<th class="who-col" {attrs(m, default)} style="--cls:{cls_color(m)}"><b>{e(nick(m))}</b>'
+                f'<small>{e(m["name"])} · {m.get("level", "")}</small>{gap}</th>')
+
+    def cell(q, m, default):
+        st = q["status"][m["slug"]]
+        givers = q.get("holders", {}).get(m["slug"], [])
+        names = ", ".join(by_slug[h]["name"] for h in givers if h in by_slug)
+        return quest_cell(q, st, names).replace("<td ", f"<td {attrs(m, default)} ", 1)
+
+    body = []
+    for q in check["quests"]:
+        classes = (["q-none"] if q["unclaimed"] else []) + (["q-cls"] if q["limit"] and q["limit"]["cls"] else [])
+        cls = f' class="{" ".join(classes)}"' if classes else ""
+        if q["limit"] and q["limit"]["cls"]:
+            cls += f' style="--cls:{CLASS_COLOR.get(q["limit"]["cls"], "var(--muted)")}"'
+        body.append(f'<tr{cls}><th scope="row"><div class="q-name">{quest_link(q)}{share_label(q)}</div>'
+                    f'<small>{quest_meta(q)}</small></th>{"".join(cell(q, m, d) for m, d in cols)}</tr>')
+    return (f'<div class="rc-party"><h4>Celá parta</h4><div class="table-wrap"><table class="dungeons rc-table">'
+            f'<thead><tr><th>Quest</th>{"".join(head(m, d) for m, d in cols)}</tr></thead>'
+            f'<tbody>{"".join(body)}</tbody></table></div>'
+            f'<p class="note">✓ má v logu · ↗ dostane nasdílet · dojít = musí si ho vzít · ⛓ nejdřív předquest · '
+            f'uvnitř = začne v dungeonu. Sloupec je postava, kterou hráč do dungeonu nejspíš vezme.</p></div>')
 
 
 DIFFICULTY = [("na krev", "Hard"), ("dá se", "Medium"), ("akorát", "At Level"), ("procházka", "Easy")]
@@ -2125,18 +2185,10 @@ def ready_box(check, members, idx):
     hidden = "" if idx == 0 else " hidden"
     fit = [m["slug"] for m in cols if m.get("level") and check["min"] <= m["level"] <= check["max"]]
     levels = [by_slug[s]["level"] for s in crew if by_slug[s].get("level")]
-    groups, players = {}, {}
-    for s in fit:
-        groups.setdefault(by_slug[s].get("player", s), []).append(by_slug[s])
-    for m in members:
-        if m.get("level"):
-            players.setdefault(m.get("player", m["slug"]), []).append(m)
-    others = "".join(other_row(check, g) for g in groups.values())
-    others += "".join(out_row(check, g) for p, g in players.items() if p not in groups)
     return f'''<article class="rc" id="rc-{idx}" role="tabpanel" data-fit="{e(" ".join(fit))}"{hidden}>
   <header class="rc-head">{best}{level_scale(check, levels)}{source}</header>
   {"".join(mine_card(check, m, by_slug, fit) for m in cols)}
-  <div class="others"><h4>Jak jsou na tom ostatní</h4><ul>{others}</ul><p class="ot-none" hidden>Nikdo další se sem levelem nevejde.</p></div>
+  {party_table(check, members, by_slug, crew)}
 </article>'''
 
 
@@ -2716,16 +2768,6 @@ border-bottom:2px solid color-mix(in srgb,var(--cls) 45%,transparent);filter:sat
 .m-line{margin:0;color:var(--muted);font-size:13px}.m-line b{font-weight:600}
 .others{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0 0 12px}
 .others h4{margin:0 0 8px;font-size:13px}.others>ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
-.ot[hidden]{display:none}.ot-row{display:flex;align-items:center;gap:10px;padding:5px 0;cursor:default}
-summary.ot-row{cursor:pointer;list-style:none}summary.ot-row::-webkit-details-marker{display:none}
-.ot-av{width:32px;height:32px;border-radius:50%;border:2px solid var(--cls);background:var(--panel2);flex:none}
-.ot-name{min-width:0;flex:1;display:grid;line-height:1.25}.ot-name b{color:var(--cls);font-size:14px;font-weight:600}.ot-name small{color:var(--muted);font-size:12px}
-.ot-st{font-size:13px;white-space:nowrap}.ot-ok{color:var(--ok)}.ot-todo{color:var(--warn)}
-.ot-more{list-style:none;margin:2px 0 8px 42px;padding:0;display:grid;gap:7px;font-size:13px}.ot-more a{color:var(--text)}
-.ot-more ul{list-style:none;margin:2px 0 0;padding:0;display:grid;gap:2px}
-.ot-ch{display:flex;justify-content:space-between;gap:10px;margin:0}.ot-ch b{font-weight:600}.ot-ch span{color:var(--muted);white-space:nowrap}
-.ot-none{margin:0;color:var(--muted);font-size:13px}
-.ot-out{opacity:.6}.ot-out .ot-st{color:var(--muted)}
 .pc[hidden]{display:none}
 .pc-nick{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .pc[data-player] .pc-name{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:start;min-height:2.7em;line-height:1.35}
@@ -2754,6 +2796,25 @@ table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520p
 .diff small{margin:0 0 0 -5px;font-size:11px}.diff .dl-on{color:var(--gold);font-weight:700}
 .diff .dl-on+small{color:var(--gold)}
 .st{text-align:center!important;font-weight:600;white-space:nowrap}
+.rc-party{margin:0 0 12px}.rc-party h4{margin:0 0 8px;font-size:13px}.rc-party .note{margin:6px 0 0;color:var(--muted);font-size:12px}
+.rc-table th,.rc-table td{padding:6px 8px}
+.rc-table thead th.who-col{text-transform:none;letter-spacing:0;font-size:13px;line-height:1.25;min-width:84px}
+.rc-table thead th.who-col b{display:block}.rc-table thead th.who-col small{display:block;color:var(--muted);font-weight:400;font-size:11px}
+.rc-table thead th.who-col small.gap{color:var(--warn)}
+.rc-table tbody>tr>th:first-child,.rc-table thead th:first-child{position:sticky;left:0;z-index:1;background:var(--panel);min-width:150px}
+.rc-table .me-col{background:color-mix(in srgb,var(--gold) 9%,transparent)}
+.rc-table thead th.me-col{box-shadow:inset 0 -2px 0 var(--gold)}
+.rc-table tbody th a{color:var(--text)}.rc-table tr.q-none th a{color:var(--muted)}
+.rc-table tbody th small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.q-name{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.rc-table tr.q-cls>th:first-child{box-shadow:inset 3px 0 0 var(--cls)}
+@media (max-width:600px){.rc-table tbody th small{display:none}.rc-table tbody>tr>th:first-child,.rc-table thead th:first-child{min-width:120px;max-width:140px}
+  .rc-table thead th.who-col{min-width:68px;font-size:12px}.rc-table th,.rc-table td{padding:6px 5px}.rc-table .share{font-size:10px;padding:0 6px}}
+.st-na{color:var(--muted);opacity:.45}
+.share{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.share-cls{background:color-mix(in srgb,var(--cls) 18%,transparent);color:var(--cls);border:1px solid color-mix(in srgb,var(--cls) 45%,transparent)}
+.share-race{background:#3a2626;color:#e0a0a0}
+.share-yes{background:#16324d;color:var(--share)}.share-in{background:#3b2a5c;color:#c9b2ff}.share-no{background:#4a3a14;color:var(--warn)}
 .st-fit{color:var(--ok)}.st-share{color:var(--share);font-size:17px}.st-take{color:var(--warn)}.st-over{color:var(--muted)}.st-pre{color:#9fd3a3;font-size:12px}
 tr.best{background:#2c1611}tr.best th:first-child{box-shadow:inset 3px 0 var(--red)}
 .note{color:var(--muted);font-size:13px}
@@ -3034,8 +3095,9 @@ function choosing(on){if(!whoStrip)return;const p=OWNER[viewer];whoStrip.hidden=
 function me(slug){viewer=slug;
   document.querySelectorAll('.ch[data-me]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));
   panels.forEach(rc=>{rc.querySelectorAll('.mine').forEach(c=>c.hidden=c.dataset.slug!==slug);
-    const rows=[...rc.querySelectorAll('.ot')];rows.forEach(r=>r.hidden=!!slug&&r.dataset.player===OWNER[slug]);
-    rc.querySelector('.ot-none').hidden=rows.some(r=>!r.hidden&&!r.classList.contains('ot-out'))});
+    const has=!!slug&&!!rc.querySelector(`.rc-table th[data-slug="${CSS.escape(slug)}"]`);
+    rc.querySelectorAll('.rc-table [data-player]').forEach(c=>{const mine=has&&c.dataset.player===OWNER[slug];
+      c.hidden=mine?c.dataset.slug!==slug:!('def' in c.dataset);c.classList.toggle('me-col',mine)})});
   syncMe();
   orderSel();if(slug)showFig(slug);choosing(!slug);
   const on=document.querySelector('.me-chars:not([hidden]) .ch[aria-pressed=true]');
