@@ -870,6 +870,16 @@
 "req": 0,
 "sub": "Bandages"
 },
+"3575": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133232.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 30,
+"name": "Iron Bar",
+"quality": "COMMON",
+"req": 0,
+"sub": "Metal & Stone"
+},
 "3576": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133219.jpg",
 "inv": "NON_EQUIP",
@@ -1730,6 +1740,16 @@
 [
 2592,
 2
+]
+]
+},
+"1847": {
+"item": 3575,
+"name": "Smelt Iron",
+"reagents": [
+[
+2772,
+1
 ]
 ]
 },
