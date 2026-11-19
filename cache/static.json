@@ -960,6 +960,16 @@
 "req": 11,
 "sub": "Leather"
 },
+"4305": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132907.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 35,
+"name": "Bolt of Silk Cloth",
+"quality": "COMMON",
+"req": 0,
+"sub": "Cloth"
+},
 "4307": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132939.jpg",
 "inv": "HAND",
@@ -1128,6 +1138,26 @@
 "name": "Pearl-clasped Cloak",
 "quality": "UNCOMMON",
 "req": 14,
+"sub": "Cloth"
+},
+"5763": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133643.jpg",
+"inv": "BAG",
+"kind": "Container",
+"level": 15,
+"name": "Red Woolen Bag",
+"quality": "COMMON",
+"req": 0,
+"sub": "Bag"
+},
+"5766": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132658.jpg",
+"inv": "ROBE",
+"kind": "Armor",
+"level": 27,
+"name": "Lesser Wizard's Robe",
+"quality": "UNCOMMON",
+"req": 22,
 "sub": "Cloth"
 },
 "5957": {
@@ -2015,6 +2045,16 @@
 ]
 ]
 },
+"2376": {
+"item": 4305,
+"name": "Bolt of Silk Cloth",
+"reagents": [
+[
+4306,
+4
+]
+]
+},
 "2378": {
 "item": 4307,
 "name": "Heavy Linen Gloves",
@@ -2230,6 +2270,42 @@
 [
 2321,
 1
+]
+]
+},
+"4020": {
+"item": 5763,
+"name": "Red Woolen Bag",
+"reagents": [
+[
+2997,
+5
+],
+[
+2604,
+1
+],
+[
+2321,
+1
+]
+]
+},
+"4021": {
+"item": 5766,
+"name": "Lesser Wizard's Robe",
+"reagents": [
+[
+4305,
+2
+],
+[
+2321,
+2
+],
+[
+3182,
+2
 ]
 ]
 },
@@ -4694,6 +4770,14 @@
 "ARMOR": 16,
 "INTELLECT": 3,
 "SPELL_POWER": 2
+}
+},
+"5766": {
+"v": 1,
+"values": {
+"ARMOR": 41,
+"INTELLECT": 8,
+"SPELL_POWER": 5
 }
 },
 "5957": {
