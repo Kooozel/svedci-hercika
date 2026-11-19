@@ -514,7 +514,9 @@ def ready_check(token, region, rows, best, members, catalog):
                     status[slug] = "inside"
                 else:
                     status[slug] = "missing"
-            if all(st in ("done", "na") for st in status.values()):
+            finished = all(st in ("done", "na") for st in status.values())
+            # hotový quest zůstane s fajfkou jen u příští výpravy, ať je vidět celý seznam; jinde jen překáží
+            if finished and r is not best:
                 continue
             # kdo quest nemá, dostane ho u vchodu od toho, kdo ho má v logu
             if q.get("sharable") and not pre and "active" in status.values():
@@ -524,16 +526,17 @@ def ready_check(token, region, rows, best, members, catalog):
                 "sharable": q.get("sharable"), "start": q.get("start"), "note": q.get("note"),
                 "prev": pre["name"] if pre else None, "status": status,
                 "unclaimed": not any(st in ("active", "done", "pre") for st in status.values()),
+                "finished": finished,
             })
         # nejdřív questy, které někdo má, pak volné, nakonec ty, na které zatím nikdo nemůže
         # classové questy až za společnými
-        quests.sort(key=lambda q: (q["unclaimed"], all(st in ("level", "chain", "na") for st in q["status"].values()),
+        quests.sort(key=lambda q: (q["finished"], q["unclaimed"], all(st in ("level", "chain", "na") for st in q["status"].values()),
                                    q["limit"] is not None))
         # ✋ = musí si někam dojít: pro quest, dokončit rozjetý řetěz nebo udělat předquesty
         take = sum(1 for q in quests for st in q["status"].values() if st in ("missing", "pre", "chain"))
         share = sum(1 for q in quests for st in q["status"].values() if st == "share")
         past = r.get("past", False)
-        if quests and (r is best or past or any(not q["unclaimed"] for q in quests)):
+        if quests and (r is best or past or any(not q["unclaimed"] for q in quests)) and not all(q["finished"] for q in quests):
             checks.append({"title": title, "min": r["min"], "max": r["max"], "difficulty": r.get("difficulty"),
                            "best": r is best, "past": past, "done": r.get("done") if past else None,
                            "quests": quests, "members": list(active), "take": take, "share": share,

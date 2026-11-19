@@ -334,7 +334,20 @@ class ReadyCheckLimits(unittest.TestCase):
             checks = build.ready_check("t", "eu", [row], row, party, catalog)
         finally:
             build.api_get = orig
-        self.assertEqual(checks, [])  # všichni hotovo, dungeon nemá co ukázat
+        self.assertEqual(checks, [])  # všechno hotové, dungeon nemá co ukázat
+
+    def test_finished_quest_stays_with_tick_on_next_dungeon(self):
+        party = [{"slug": "j", "class": "Paladin", "race": "Undead", "level": 28, "quests_active": [], "quests_done": [95036]}]
+        catalog = {"D": {"quests": [{"id": 1, "name": "Kor Gem", "sharable": True, "after": [95036]},
+                                    {"id": 2, "name": "Jiný", "sharable": True}]}}
+        row = {"name": "D", "min": 20, "max": 30, "near": True}
+        orig = build.api_get
+        build.api_get = lambda token, region, path, kind: {}
+        try:
+            check = build.ready_check("t", "eu", [row], row, party, catalog)[0]
+        finally:
+            build.api_get = orig
+        self.assertEqual([(q["name"], q["status"]["j"]) for q in check["quests"]], [("Jiný", "missing"), ("Kor Gem", "done")])
 
     def test_difficulty_scale(self):
         """Stupnice z Wowheadu místo rozpětí; zvýrazněný stupeň podle nejslabšího v partě."""
