@@ -6,7 +6,7 @@
    {"name": "Ding!", "line": "{v}. Ten zvuk nikdy neomrzí."},
    {"name": "Povýšený", "line": "{v}. Talentový bod čeká na rozmyšlení."},
    {"name": "Rostoucí legenda", "line": "{v}. Ještě pár a bude se o něm zpívat."},
-   {"name": "Ruinový ding", "line": "{v}. V Lordaeronu se roste rychleji než v kanálech."}
+   {"name": "Rychlokvaška", "line": "{v}. XP bar se ani nestihl nadechnout."}
   ]},
   "Resurrected by priests": {"emoji": "👼", "min": 1, "bonus": 0.8, "forms": ["{n}× oživen", "{n}× oživen", "{n}× oživen"], "titles": [
    {"name": "Lazar", "line": "{v} priestem. Vstaň a choď."},
@@ -23,7 +23,7 @@
    {"name": "Lovec veverek", "line": "{v}. Nevinnost nezná slitování."},
    {"name": "Ekoterorista", "line": "{v}. Cenarion Circle píše stížnost."},
    {"name": "Zabiják roztomilosti", "line": "{v}. Ty oči už se ti budou zdát."},
-   {"name": "Postrach Barrens", "line": "{v}. Cestou do WC nepřežil ani jeden králík."}
+   {"name": "Postrach přírody", "line": "{v}. Cestou na quest nepřežil ani jeden králík."}
   ]},
   "Total deaths": {"emoji": "🪦", "min": 1, "bonus": 0.7, "forms": ["{n} smrt", "{n} smrti", "{n} smrtí"], "titles": [
    {"name": "Kaskadér", "line": "{v}. Pády jsou jeho specialita."},
@@ -37,7 +37,7 @@
    {"name": "Ten, který to vzdal", "line": "{v}. Někdy je moudré odejít."},
    {"name": "Uklízeč questlogu", "line": "{v}. Místo pro nové dobrodružství."},
    {"name": "Realista", "line": "{v}. Patnáct kančích jater nikdo nepotřebuje."},
-   {"name": "Místo pro Lordaeron", "line": "{v}. Questlog má jen dvacet řádků."}
+   {"name": "Plný questlog", "line": "{v}. Questlog má jen dvacet řádků."}
   ]},
   "Beverages consumed": {"emoji": "🍺", "min": 3, "bonus": 0.4, "forms": ["{n} nápoj", "{n} nápoje", "{n} nápojů"], "titles": [
    {"name": "Štamgast", "line": "{v}. Hospodský mu drží židli."},
@@ -67,9 +67,9 @@
   ]},
   "Times camped": {"emoji": "⛺", "min": 1, "bonus": 0.4, "forms": ["{n}× tábořil", "{n}× tábořil", "{n}× tábořil"], "titles": [
    {"name": "Trampík", "line": "{v}. Kytara chybí, ale jinak dobrý."},
-   {"name": "Skaut", "line": "{v}. Oheň rozdělá i v Barrens."},
+   {"name": "Skaut", "line": "{v}. Oheň rozdělá i za deště."},
    {"name": "Nomád", "line": "{v}. Domov je tam, kde je stan."},
-   {"name": "Štamgast z Brillu", "line": "{v}. V Gallows' End Tavern má stálou postel."}
+   {"name": "Stálý host", "line": "{v}. Ve vesnické hospodě má vlastní postel."}
   ]},
   "Bandages used": {"emoji": "🩹", "min": 2, "bonus": 0.3, "forms": ["{n} obvaz", "{n} obvazy", "{n} obvazů"], "titles": [
    {"name": "Zdravotník", "line": "{v}. Healer si může odpočinout."},
@@ -163,12 +163,40 @@
    {"name": "Mučedník Hordy", "line": "{v}. Lok'tar ogar, i v hrobě."},
    {"name": "Terč", "line": "{v}. Někdo z Aliance má dobrý den."}
   ]},
+  "Spirit returned to body by shamans": {"emoji": "🌀", "min": 1, "bonus": 0.8, "forms": ["{n}× oživen šamanem", "{n}× oživen šamanem", "{n}× oživen šamanem"], "titles": [
+   {"name": "Duch na gumičce", "line": "{v}. Totem ho stáhl zpátky do těla."},
+   {"name": "Ankh na dluh", "line": "{v}. Šaman si to zapsal na sekeru."},
+   {"name": "Předci ho nechtěli", "line": "{v}. Prý ještě nedopil."}
+  ]},
+  "Healthstones used": {"emoji": "💚", "min": 1, "bonus": 0.5, "forms": ["{n} healthstone", "{n} healthstony", "{n} healthstonů"], "titles": [
+   {"name": "Kamenožrout", "line": "{v}. Warlock už nestíhá vyrábět."},
+   {"name": "Zelená svačina", "line": "{v}. Nikdo radši neříká, z čeho to je."},
+   {"name": "Lízátko pro tvrďáky", "line": "{v}. Lektvar je pro amatéry."}
+  ]},
+  "Total Honorable Kills": {"emoji": "🏹", "min": 1, "bonus": 0.6, "forms": ["{n} čestné zabití", "{n} čestná zabití", "{n} čestných zabití"], "titles": [
+   {"name": "Lovec Aliance", "line": "{v}. Pomsta byla sladká."},
+   {"name": "Čest a sláva", "line": "{v}. Honor se nasbíral, mozoly taky."},
+   {"name": "Vrácená facka", "line": "{v}. Aliance taky občas umře."}
+  ]},
+  "Battlegrounds played": {"emoji": "🚩", "min": 1, "bonus": 0.7, "forms": ["{n} battleground", "{n} battlegroundy", "{n} battlegroundů"], "titles": [
+   {"name": "Odvedenec", "line": "{v}. Přihlásil se dobrovolně, prý."},
+   {"name": "Nosič vlajky", "line": "{v}. Vlajku aspoň jednou viděl zblízka."},
+   {"name": "Válečný turista", "line": "{v}. Questy počkají, Aliance ne."}
+  ]},
+  "Archmage Arugal kills (Shadowfang Keep)": {"emoji": "🐺", "min": 1, "bonus": 0.5, "forms": ["{n}× Arugal", "{n}× Arugal", "{n}× Arugal"], "titles": [
+   {"name": "Lovec vlkodlaků", "line": "{v}. „Jsem tvým nejhorším snem“ už neplatí."},
+   {"name": "Konec pro arcimága", "line": "{v}. Teleport mu tentokrát nepomohl."}
+  ]},
+  "Bazzalan kills (Ragefire Chasm)": {"emoji": "😈", "min": 1, "bonus": 0.5, "forms": ["{n}× Bazzalan", "{n}× Bazzalan", "{n}× Bazzalan"], "titles": [
+   {"name": "Deratizátor", "line": "{v}. Pod Orgrimmarem je zas klid."},
+   {"name": "Kultista na odpis", "line": "{v}. Burning Blade má o člena míň."}
+  ]},
   "Total deaths in 5-player dungeons": {"emoji": "🏚️", "min": 1, "bonus": 0.75, "forms": ["{n} smrt v dungeonu", "{n} smrti v dungeonu", "{n} smrtí v dungeonu"], "titles": [
    {"name": "Hrdina podzemí", "line": "{v}. Někdo musí jít první."},
    {"name": "Pull magnet", "line": "{v}. Moby ho prostě milují."},
    {"name": "Obětní beránek", "line": "{v}. Pro dobro party."},
-   {"name": "Host Lordaeronu", "line": "{v}. Ruiny si chtěly nechat suvenýr."},
-   {"name": "Host Wailing Caverns", "line": "{v}. Jeskyně taky naříkala."}
+   {"name": "Suvenýr podzemí", "line": "{v}. Dungeon si chtěl něco nechat."},
+   {"name": "Detektor pastí", "line": "{v}. Past byla přesně tam, kde ji našel."}
   ]},
   "_skill": {"emoji": "🔨", "min": 10, "bonus": 0.45, "forms": ["+{n} bod", "+{n} body", "+{n} bodů"], "titles": [
    {"name": "Mistr řemesla", "line": "{skill} {v}. Kovadlina ještě dýmá."},
