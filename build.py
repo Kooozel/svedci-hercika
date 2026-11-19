@@ -1879,19 +1879,34 @@ def news_box(members, base, today):
 
 
 def title_who(m, t):
-    """Kdo titul dostal, u hráče s alty i postava, která k němu přispěla nejvíc."""
-    return f'{nick(m)} · {t["char"]}' if t.get("char") else nick(m)
+    """Kdo titul dostal, u hráče s alty i postava, která k němu přispěla nejvíc.
+    Když jméno postavy začíná přezdívkou, stačí celé jméno (Johnie Nemrtvý, ne Johnie · Johnie Nemrtvý)."""
+    char = t.get("char")
+    if not char:
+        return nick(m)
+    return char if char.split()[0] == nick(m) else f'{nick(m)} · {char}'
+
+
+def title_cards(members, titles):
+    """Stejný titul (emoji, název i věta) u víc lidí je jedna karta se všemi jmény."""
+    groups = {}
+    for m in members:
+        if t := titles.get(m["slug"]):
+            groups.setdefault((t["emoji"], t["title"], t["detail"]), []).append((m, t))
+    cards = []
+    for (emoji, title, detail), got in groups.items():
+        who = ", ".join(f'<span style="color:{cls_color(m)}">{e(title_who(m, t))}</span>' for m, t in got)
+        cards.append(f'<li class="title" style="--cls:{cls_color(got[0][0])}"><span class="t-emoji">{emoji}</span>'
+                     f'<span class="t-who">{who}</span><b class="t-name">{e(title)}</b>'
+                     f'<small>{e(detail)}</small></li>')
+    return "".join(cards)
 
 
 def evening_box(members, base, titles, counters):
     if not titles:
         return ""
     daily = has_daily(base)
-    cards = "".join(
-        f'<li class="title" style="--cls:{cls_color(m)}"><span class="t-emoji">{t["emoji"]}</span>'
-        f'<span class="t-who">{e(title_who(m, t))}</span><b class="t-name">{e(t["title"])}</b>'
-        f'<small>{e(t["detail"])}</small></li>'
-        for m in members if (t := titles.get(m["slug"])))
+    cards = title_cards(members, titles)
     tiles = []
     for c in counters:
         if not c["total"]:
@@ -1966,7 +1981,7 @@ def squad(members, size, today, alts=(), waiting=()):
 # ---------- ready check ----------
 
 def quest_link(q):
-    return f'<a href="https://www.wowhead.com/forever/quest={q["id"]}" target="_blank" rel="noopener">{e(q["name"])}</a>'
+    return f'<a class="ql" href="https://www.wowhead.com/forever/quest={q["id"]}" target="_blank" rel="noopener">{e(q["name"])}</a>'
 
 
 def or_list(names):
@@ -2352,15 +2367,27 @@ def loot_section(lists, members):
     return (f'<section id="loot"><div class="sec-row"><h2 class="sec">Bossové a loot</h2>'
             f'<button type="button" class="loot-all" hidden>ukázat i kusy pro ostatní</button></div>{"".join(parts)}'
             f'<p class="muted loot-empty" hidden>K tomuhle dungeonu loot zatím nemáme.</p>'
-            f'<p class="note legend">U kusu jsou jen ti, komu se hodí. '
-            f'<b>velký upgrade</b> = výrazně lepší než to, co nosí · '
-            f'<b>malý upgrade</b> = o něco lepší · '
-            f'<b>prázdný slot</b> = ten slot má prázdný · '
-            f'<b>nic moc</b> = nosí stejně dobré nebo lepší · '
-            f'<b>asi lepší</b> = staty neznáme · <b>lvl N</b> = až na tom levelu · '
-            f'<b>2. volba</b> (tlumeně) = využije jen část · '
-            f'{e(Q.label("loot.fight", "🎲 víc zájemců"))} = hodí se víc lidem. '
-            f'Bossové jsou schovaní, ať si nikdo nekazí překvapení.</p></section>')
+            f'{loot_legend()}</section>')
+
+
+def loot_legend():
+    """Vysvětlivky štítků lootu jako vzorové štítky, schované za „?“."""
+    def chip(cls, text, small=""):
+        return (f'<span class="lt-who{cls}" style="--cls:var(--gold)">{e(text)}'
+                f'{f" <small>{small}</small>" if small else ""}</span>')
+    rows = [(chip("", gain_text("big")[0]), "výrazně lepší než to, co nosí"),
+            (chip(" lt-small", gain_text("small")[0]), "o něco lepší"),
+            (chip("", gain_text("empty")[0]), "ten slot má prázdný"),
+            (chip("", gain_text(3)[0]), "staty neznáme, má vyšší item level"),
+            (chip(" lt-maybe", gain_text("?")[0]), "porovnej ve hře"),
+            (chip(" lt-no", gain_text(None)[0]), "nosí stejně dobré nebo lepší"),
+            (chip("", gain_text("big")[0], "lvl N"), "nasadí až na tom levelu"),
+            (chip(" lt-second", "2. volba · " + gain_text("small")[0]), "využije jen část"),
+            (f'<span class="lt-flag">{e(Q.label("loot.fight", "🎲 víc zájemců"))}</span>', "hodí se víc lidem")]
+    items = "".join(f'<li>{c}<span>{e(t)}</span></li>' for c, t in rows)
+    return (f'<details class="note legend"><summary>U kusu jsou jen ti, komu se hodí. Bossové jsou schovaní, ať si nikdo '
+            f'nekazí překvapení. <span class="lg-q" title="co znamenají štítky">?</span></summary>'
+            f'<ul class="lg">{items}</ul></details>')
 
 
 def professions_box(members):
@@ -2376,19 +2403,30 @@ def professions_box(members):
     cols = len(people)
     head = "".join(f'<span class="pg-h" style="color:{cls_color(g[0])}">{e(nick(g[0]))}</span>' for g in people.values())
 
+    def best(chars, name):
+        have = [(p, m) for m in chars for p in m.get("professions") or [] if p["name"] == name]
+        return max(have, key=lambda x: x[0]["skill"]) if have else None
+
     def row(name, cls=""):
         cells = ""
         for chars in people.values():
-            have = [(p, m) for m in chars for p in m.get("professions") or [] if p["name"] == name]
-            if not have:
+            if not (got := best(chars, name)):
                 cells += '<span class="pg-cell pg-none"><b>–</b></span>'
                 continue
-            p, m = max(have, key=lambda x: x[0]["skill"])
+            p, m = got
             cells += (f'<span class="pg-cell" title="{e(m["name"])}: {prof_num(p)}" style="--cls:{cls_color(m)}">'
                       f'<b>{p["skill"]}</b></span>')
         return f'<span class="pg-name{cls}">{e(name)}</span>{cells}'
 
     grid = "".join(row(n) for n in prim) + "".join(row(n, " pg-sec") for n in sec)
+    # na mobilu se šest sloupců nevejde: řádek = hráč a jeho profese
+    lines = []
+    for chars in people.values():
+        bits = "".join(f'<span class="pl-p{" pg-sec" if n in sec else ""}" title="{e(m["name"])}: {prof_num(p)}" '
+                       f'style="--cls:{cls_color(m)}">{e(n)} <b>{p["skill"]}</b></span>'
+                       for n in prim + sec if (got := best(chars, n)) for p, m in [got])
+        lines.append(f'<li><b class="pl-who" style="color:{cls_color(chars[0])}">{e(nick(chars[0]))}</b>'
+                     f'<span class="pl-ps">{bits or "<span class=pg-sec>nic</span>"}</span></li>')
     # vedlejší profese skoro na nule: hláška místo čísla (jen u hlavních postav, alt začíná od nuly)
     low = [Q.line(f"prof_low.{p['name']}", m["slug"], who=nick(m))
            for m in members if not m.get("alt") for p in m.get("professions") or [] if not p["primary"] and p["skill"] <= 5]
@@ -2397,7 +2435,8 @@ def professions_box(members):
         bits = [Q.line(f"missing.{n}", "missing", n) for n in nobody]
         line = and_join(bits)
         foot += f'<p class="note" title="nikdo nemá: {e(", ".join(nobody))}">{e(line[:1].upper() + line[1:])}.</p>'
-    return (f'<div class="prof-grid2" style="--cols:{cols}"><span></span>{head}{grid}</div>{foot}')
+    return (f'<div class="prof-grid2" style="--cols:{cols}"><span></span>{head}{grid}</div>'
+            f'<ul class="prof-list">{"".join(lines)}</ul>{foot}')
 
 
 def status_cell(st):
@@ -2606,6 +2645,11 @@ background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(6px
 .nav-links{display:flex;gap:4px;overflow-x:auto;min-width:0;flex:1;scrollbar-width:none}
 .nav a{white-space:nowrap;color:var(--muted);font-size:14px;font-weight:600;padding:4px 10px;border-radius:999px}
 .nav a:hover{color:var(--gold);background:var(--panel2);text-decoration:none}
+.nav a.on{color:var(--gold);background:var(--panel2);box-shadow:inset 0 0 0 1px #6b5420}
+.more-r{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent)}
+.more-l{-webkit-mask-image:linear-gradient(to right,transparent,#000 32px);mask-image:linear-gradient(to right,transparent,#000 32px)}
+.more-l.more-r{-webkit-mask-image:linear-gradient(to right,transparent,#000 32px,#000 calc(100% - 32px),transparent);
+mask-image:linear-gradient(to right,transparent,#000 32px,#000 calc(100% - 32px),transparent)}
 .nav-me{flex:none;display:flex;align-items:baseline;gap:6px;max-width:60vw;
   font:inherit;font-size:13px;color:var(--text);background:var(--panel2);border:1px solid #6b5420;border-radius:999px;
   padding:4px 12px;cursor:pointer}
@@ -2879,14 +2923,20 @@ background:#0003;border:1px solid #ffffff10;border-radius:10px;padding:8px 12px}
 .lt-who{font-size:12px;padding:1px 8px;border-radius:999px;color:var(--ok);background:color-mix(in srgb,var(--cls) 12%,transparent);
 border:1px solid color-mix(in srgb,var(--cls) 40%,transparent)}
 .lt-who b{color:var(--cls);font-weight:600}.lt-who small{color:var(--warn)}
-.lt-who.lt-no{color:var(--muted);opacity:.6;background:transparent}.lt-who.lt-maybe{color:var(--warn)}
-.lt-who.lt-small{color:var(--text);opacity:.85;background:transparent}
+.lt-who.lt-no{color:var(--muted);background:transparent;border-color:var(--line)}.lt-who.lt-maybe{color:var(--warn)}
+.lt-who.lt-small{color:var(--text);background:transparent}
 .lt-none{font-size:12px;color:var(--muted)}
 .lt-flag{font-size:12px;padding:1px 8px;border-radius:999px;background:#4a3a14;color:var(--warn);font-weight:600}
-.lt-who.dim{opacity:.25}.lt-altc{display:none}.lt-altc.lt-me{display:inline-block}
+.lt-who.dim{color:var(--muted);background:transparent;border-color:var(--line)}
+.lt-who.dim b{color:color-mix(in srgb,var(--cls) 60%,var(--muted))}.lt-who.dim small{color:var(--muted)}.lt-altc{display:none}.lt-altc.lt-me{display:inline-block}
 .craft[hidden],.craft-none[hidden],.loot-empty[hidden]{display:none}.lt-whos:has(.lt-me) .lt-none{display:none}#loot.loot-mine .lt-off{display:none}.loot-dg[hidden]{display:none}
 .loot-all{font:600 13px Inter,system-ui,sans-serif;color:var(--gold);background:none;border:0;padding:0;cursor:pointer}
-.lt-who.lt-second{opacity:.6;background:transparent;border-style:dashed;color:var(--muted)}
+.lt-who.lt-second{background:transparent;border-style:dashed;color:var(--muted)}
+.legend summary{cursor:pointer;list-style:none}.legend summary::-webkit-details-marker{display:none}
+.lg-q{display:inline-grid;place-items:center;width:22px;height:22px;margin-left:4px;border-radius:50%;border:1px solid var(--gold);
+color:var(--gold);font-weight:700;font-size:13px;vertical-align:1px}.legend[open] .lg-q{background:var(--gold);color:var(--bg)}
+.lg{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:6px 20px}
+.lg li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center}.lg li>:first-child{justify-self:start}.lg li>span:last-child{color:var(--muted)}
 .lt-set{font-size:11px;padding:0 7px;border-radius:999px;background:#2b2440;color:#c9b2ff;border:1px solid #4a3d70;cursor:help}
 .boss-trash{border-style:dashed}
 .set-box{margin-top:12px;background:var(--panel);border:1px solid #4a3d70;border-radius:12px;padding:12px 14px}
@@ -2912,6 +2962,20 @@ background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:
 .pg-h{font-weight:600;font-size:12px;line-height:18px}.pg-name{color:var(--text);line-height:18px}.pg-sec{color:var(--muted)}
 .pg-cell{display:grid;gap:3px}.pg-cell b{font-weight:600;font-size:12px;line-height:18px}
 .pg-none b{color:var(--line)}.pg-cell b{color:var(--cls)}.pg-none b{color:var(--line)}
+.prof-list{display:none;list-style:none;margin:0;padding:4px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:13px}
+.prof-list li{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;padding:8px 0;border-top:1px solid #ffffff10}
+.prof-list li:first-child{border-top:0}.pl-who{font-weight:600;overflow-wrap:anywhere}
+.pl-ps{display:flex;flex-wrap:wrap;gap:4px 12px}.pl-p b{color:var(--cls);font-weight:600}
+@media(max-width:600px){.prof-grid2{display:none}.prof-list{display:block}}
+/* cíle pro prst: na mobilu aspoň 36 px na výšku */
+@media(max-width:600px){
+.nav a{min-height:36px;display:inline-flex;align-items:center}.nav-me{min-height:36px;align-items:center}
+.sheet-armory,.me-swap:not([hidden]),.loot-all:not([hidden]),.rc-source a,.k-more a{display:inline-flex;align-items:center;min-height:36px;padding:0 4px}
+footer a{display:inline-block;padding:8px 2px}
+.lt-who:not(.lt-altc),.lt-altc.lt-me,.lt-flag{display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:2px 10px}
+.lt-item a.item,a.ql{display:inline-flex;align-items:center;min-height:36px}
+.counters-box>summary,.nw-more>summary,.all-dungeons>summary,.legend>summary{min-height:36px;padding-top:6px;padding-bottom:6px}
+.lg-q{width:32px;height:32px}}
 """
 
 JS = """
@@ -2948,7 +3012,7 @@ function syncLoot(){const t=selOpts.find(o=>o.value===sel?.value)?.dataset.title
   const match=!!viewer&&dgs.some(d=>d.dataset.title===t);
   dgs.forEach(d=>d.hidden=viewer?d.dataset.title!==t:d.dataset.past!==undefined);
   document.querySelector('.loot-empty')?.toggleAttribute('hidden',!viewer||match);
-  document.querySelectorAll('.lt-who').forEach(c=>{const on=c.dataset.slug===viewer;c.classList.toggle('lt-me',on);c.classList.toggle('dim',!!viewer&&!on)});
+  document.querySelectorAll('.lt-who[data-slug]').forEach(c=>{const on=c.dataset.slug===viewer;c.classList.toggle('lt-me',on);c.classList.toggle('dim',!!viewer&&!on)});
   document.querySelectorAll('.lt').forEach(l=>l.classList.toggle('lt-off',!!viewer&&!l.querySelector('.lt-me')));
   lootBox?.classList.toggle('loot-mine',!!viewer&&!lootAll);
   if(lootBtn){lootBtn.hidden=!viewer;lootBtn.textContent=lootAll?'jen kusy pro mou postavu':'ukázat i kusy pro ostatní'}}
@@ -3015,6 +3079,24 @@ addEventListener('keydown',ev=>{if(ev.key==='Escape'&&openNow)openSheet('')});
  if(start&&hasSheet(start)&&(h.startsWith('#char-')||!narrow.matches)) openSheet(start,h.startsWith('#char-'));}
 addEventListener('hashchange',()=>{const h=decodeURIComponent(location.hash);
   if(h.startsWith('#char-')&&hasSheet(h.slice(6))) openSheet(h.slice(6),true)});
+// posuvné řady (lišta, postavy v ready checku): ztmavení u okraje, za kterým ještě něco je
+function edges(el){const l=el.scrollLeft>2,r=el.scrollLeft+el.clientWidth<el.scrollWidth-2;
+  el.classList.toggle('more-l',l);el.classList.toggle('more-r',r)}
+document.querySelectorAll('.nav-links,.me-chars').forEach(el=>{el.addEventListener('scroll',()=>edges(el),{passive:true});
+  new ResizeObserver(()=>edges(el)).observe(el);edges(el)});
+// odkaz sekce, ve které právě jsem
+{const links=[...document.querySelectorAll('.nav-links a')],bar=document.querySelector('.nav-links');
+ const secs=links.map(a=>document.getElementById(a.hash.slice(1))).filter(Boolean);
+ let cur=null;
+ function mark(){const y=(document.querySelector('.nav')?.offsetHeight||0)+24;
+   let on=secs.filter(s=>s.getBoundingClientRect().top<=y).pop()||null;
+   if(innerHeight+scrollY>=document.documentElement.scrollHeight-2)on=secs[secs.length-1];
+   if(on===cur)return;cur=on;
+   links.forEach(a=>{const it=on&&a.hash==='#'+on.id;a.classList.toggle('on',!!it);it?a.setAttribute('aria-current','true'):a.removeAttribute('aria-current')});
+   const a=links.find(a=>a.classList.contains('on'));
+   if(a&&bar)bar.scrollTo({left:a.offsetLeft-bar.offsetLeft-bar.clientWidth/2+a.offsetWidth/2,behavior:'smooth'})}
+ if(secs.length){const io=new IntersectionObserver(mark,{threshold:[0,.25,.5,.75,1]});secs.forEach(s=>io.observe(s));
+   addEventListener('scroll',mark,{passive:true});mark()}}
 const rtf=new Intl.RelativeTimeFormat('cs',{numeric:'auto'});
 for(const t of document.querySelectorAll('time[data-ts]')){
   const d=new Date(t.dataset.ts); if(isNaN(d)) continue;

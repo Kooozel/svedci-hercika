@@ -28,9 +28,10 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   `_explore` (objevená místa z achievementů Explore, `{zone}`).
   Nový člen party dostane první den uvítací titul z `newcomers`.
   Titul za statistiku dostane jen ten, kdo v ní vede (nebo má aspoň 75 % nejlepšího, `LEAD`); kdo hrál,
-  ale v ničem nevedl, dostane titul z `busy`.
+  ale v ničem nevedl, dostane titul z `busy`. Stejný titul u víc lidí je jedna karta se všemi jmény („Kozel, Zrza, Hora“).
 - **Pořadí stránky:** hlavička, lišta, Příští výprava, skupinová fotka, tituly, novinky, ready check, loot, kronika, řemesla.
-  Lišta má odkazy ve stejném pořadí. Na mobilu je výprava i se souhrnem ready checku na první obrazovce.
+  Lišta má odkazy ve stejném pořadí a zvýrazní sekci, ve které právě jsi. Posuvné řady (lišta, postavy v ready checku)
+  ztmavnou u okraje, za kterým ještě něco je. Na mobilu mají odkazy a štítky aspoň 36 px na výšku. Na mobilu je výprava i se souhrnem ready checku na první obrazovce.
 - **Příští výprava:** dungeon, rozsah levelů a souhrn ready checku. Souhrn má za každého hráče, co jeho postavě chybí („Johnie ✋ 1× dojít“).
   S vybranou postavou začíná „Ty (jméno): …“ a ukazuje jen ty ostatní, kteří ještě něco potřebují; když se vybraná postava
   do dungeonu nevejde, mluví o postavě, kterou za hráče bere výprava. Odkaz vede na celý ready check. Pod tím mřížka „Kam dál“: dungeony začínající
@@ -57,7 +58,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Řemesla:** „Dílna“ nabídne nejvýš tři kusy (`CRAFT_MAX`), které někdo z party umí vyrobit a jinému nebo sobě
   výrazně pomůžou (velký upgrade nebo prázdný slot, class je unese, level stačí), u nich kdo co přinese
   (kůže od skinnera, Copper Rod od kováře…), kdo umí třpytky (enchanty, bez jmen, komu chybí) a kdo je na stropu
-  skillu. Pod tím je přehled se skillem číslem (strop v tooltipu),
+  skillu. Pod tím je přehled se skillem číslem (strop v tooltipu; na mobilu řádek = hráč a jeho profese),
   hlášky k vedlejším profesím skoro na nule a jedna věta o profesích, které nikdo nemá. Detaily receptů a předmětů se ukládají do `cache/static.json`, takže se
   z API stahuje jen to nové (ranní běh cache commitne). Smazáním souboru se stáhne znovu.
   Nové recepty se ukážou v novinkách.
@@ -93,7 +94,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Bossové a loot:** `bosses.json`, ručně přepsané (s Claudem) pro dungeony, ke kterým se parta blíží. U bosse je krátká
   hláška (`quip`), taktika a loot, u kusu jsou jen ti, kdo ho unesou a komu sedí hlavní stat (`stat`: Caster, Spirit, Agility, Strength…),
   s hláškou místo velký / malý upgrade (🎲 = hodí se víc lidem, domluvit se před rollem). Vzácné BoE kusy z trashe
-  (`"boe": true`) se nevypisují, jen věta. Item level se u kusu neukazuje. Pod tím odměny z questů. Forever bossy ani většinu jejich lootu v API zatím nemá, takže typ (`inv`, `sub`), `level` a `req` se píšou ručně
+  (`"boe": true`) se nevypisují, jen věta. Co který štítek znamená, ukážou vzorové štítky pod „?“ pod lootem. Item level se u kusu neukazuje. Pod tím odměny z questů. Forever bossy ani většinu jejich lootu v API zatím nemá, takže typ (`inv`, `sub`), `level` a `req` se píšou ručně
   ze zdrojů (Warcraft Wiki, Method). Když API předmět zná (třeba questová odměna), stačí `id`.
   Číselné staty kusů (armor, DPS, Str, spell power…) se berou z Wowhead tooltipu podle `id` a ukládají do
   `cache/static.json` (stahuje se jen nové, klíče k tomu nejsou potřeba). Ručně zapsané `values` u kusu mají přednost,

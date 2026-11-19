@@ -276,6 +276,36 @@ class ManyAlts(unittest.TestCase):
         self.assertIn('<details class="counters-box">', html)
         self.assertIn("🎉 questů přes 500", html.split("</summary>")[0])
 
+    def test_same_title_is_one_card_with_all_names(self):
+        quiet = {"emoji": "🛠️", "title": "Tichý tahoun", "detail": "Odmakal svoje."}
+        chars = [self.char("a", "a"), self.char("b", "b"), self.char("c", "c"), self.char("d", "d")]
+        titles = {"a": quiet, "b": dict(quiet), "c": {**quiet, "char": "C Nemrtvý"},
+                  "d": {"emoji": "🎉", "title": "Rostoucí legenda", "detail": "+2 levely."}}
+        html = build.title_cards(chars, titles)
+        self.assertEqual(html.count('<li class="title"'), 2)
+        self.assertEqual(html.count("Tichý tahoun"), 1)
+        who = re.sub(r"<[^>]+>", "", html.split('class="t-who">')[1].split("</span><b")[0])
+        self.assertEqual(who, "A, B, C Nemrtvý")  # jméno postavy začíná přezdívkou: bez „C · “
+
+    def test_title_names_alt_with_player_only_when_names_differ(self):
+        m = self.char("a", "kozel")
+        self.assertEqual(build.title_who(m, {"char": "Kozel Rohatý"}), "Kozel Rohatý")
+        self.assertEqual(build.title_who(m, {"char": "Cildac Velky"}), "Kozel · Cildac Velky")
+        self.assertEqual(build.title_who(m, {}), "Kozel")
+
+    def test_profession_overview_on_mobile_has_row_per_player(self):
+        chars = [{**self.char("a", "a"), "professions": [{"name": "Mining", "skill": 60, "max": 75, "primary": True},
+                                                         {"name": "Cooking", "skill": 30, "max": 75, "primary": False}]},
+                 {**self.char("b", "b"), "professions": [{"name": "Herbalism", "skill": 12, "max": 75, "primary": True}]}]
+        build.Q = build.Quips({}, TODAY)
+        rows = build.professions_box(chars).split('<ul class="prof-list">')[1].split("</ul>")[0].split("<li>")[1:]
+        self.assertEqual(len(rows), 2)
+        self.assertIn(">A</b>", rows[0])
+        self.assertIn("Mining <b>60</b>", rows[0])
+        self.assertIn('pg-sec', rows[0])  # vedlejší profese tlumeně
+        self.assertNotIn("Herbalism", rows[0])
+        self.assertIn("Herbalism <b>12</b>", rows[1])
+
     def test_profession_overview_has_one_column_per_player(self):
         chars = [{**self.char("a", "a"), "professions": [{"name": "Mining", "skill": 10, "max": 75, "primary": True}]},
                  {**self.char("a2", "a"), "professions": [{"name": "Mining", "skill": 60, "max": 75, "primary": True}]}]
