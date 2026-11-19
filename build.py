@@ -1644,8 +1644,19 @@ def days_ago(day, today):
     return "dnes" if n <= 0 else "včera" if n == 1 else f"před {pl(n, ('{n} dnem', '{n} dny', '{n} dny'))}"
 
 
-def sheet(m, today):
-    """Karta postavy, která se otevře pod skupinovkou po kliknutí na postavu."""
+def char_tabs(m, group):
+    """Přepínač postav hráče v kartě: celé jméno a level každé postavy."""
+    if len(group) < 2:
+        return ""
+    tabs = "".join(f'<button type="button" data-open="{e(c["slug"])}" aria-pressed="{str(c is m).lower()}" '
+                   f'style="--cls:{cls_color(c)}" title="{e(c["class"])}"><b>{e(c["name"])}</b> <i>{c["level"]}</i></button>'
+                   for c in group)
+    return f'<nav class="sheet-alts" aria-label="Postavy hráče {e(nick(m))}">{tabs}</nav>'
+
+
+def sheet(m, today, group=()):
+    """Karta postavy, která se otevře pod skupinovkou po kliknutí na postavu (na mobilu jako panel zespodu).
+    group = všechny postavy hráče, mezi nimi se v kartě přepíná."""
     spec = e(m["spec"]) if m["spec"] else ""
     cls_icon = f'<img class="ic ic-cls" src="{e(m["class_icon"])}" alt="">' if m.get("class_icon") else ""
     return f'''<article class="sheet" id="char-{e(m["slug"])}" data-slug="{e(m["slug"])}" style="--cls:{cls_color(m)}" hidden>
@@ -1657,6 +1668,7 @@ def sheet(m, today):
     <div class="lvl">{m["level"]}</div>
     <button type="button" class="sheet-close" aria-label="Zavřít">×</button>
   </header>
+  {char_tabs(m, group)}
   {xp_bar(m, big=True)}
   <div class="sheet-body">{doll(m)}{sheet_side(m)}</div>
   <p class="updated">{e(m["updated_label"])}: {days_ago(m.get("updated"), today)}</p>
@@ -1906,24 +1918,20 @@ def evening_box(members, base, titles, counters):
 
 
 def pc_figure(m, group, shown):
-    """Místo hráče ve skupinovce: přezdívka, postava a řádky všech jeho postav (jméno, level, classa)."""
+    """Místo hráče ve skupinovce: přezdívka, postava a poznámka, kolik má hráč dalších postav.
+    Přepínají se v kartě postavy. Na mobilu je z fotky řádek seznamu s hlavou místo renderu."""
     img = (f'<div class="pc-img" style="background-image:url(\'{e(m["render"])}\')"></div>' if m.get("render")
            else f'<div class="pc-img pc-noimg">{avatar(m, "pc-avatar")}</div>')
     role = "/".join(ROLE_LABEL[r] for r in m["roles"]) or "bez specu"
-    switch = ""
     others = [c for c in group if c is not m]
-    if others:
-        rows = "".join(f'<button type="button" data-show="{e(c["slug"])}" style="--cls:{cls_color(c)}" '
-                       f'title="{e(c["name"])} · {c["level"]} · {e(c["class"])}"><b>{e(c["name"])}</b>'
-                       f'<i>{c["level"]}</i><span>{e(c["class"])}</span></button>' for c in others)
-        switch = (f'<details class="pc-more"><summary>Další postavy ({len(others)})</summary>'
-                  f'<div class="pc-sw" role="group" aria-label="Postavy hráče {e(nick(m))}">{rows}</div></details>')
+    more = (f'<small class="pc-alts" title="{e(", ".join(c["name"] for c in others))}">'
+            f'+{pl(len(others), ("{n} postava", "{n} postavy", "{n} postav"))}</small>' if others else "")
     hidden = "" if m is shown else " hidden"
     return (f'<figure class="pc" data-slug="{e(m["slug"])}" data-player="{e(m.get("player", m["slug"]))}" style="--cls:{cls_color(m)}"{hidden}>'
             f'<a href="#char-{e(m["slug"])}" aria-label="Karta postavy {e(m["name"])}" aria-expanded="false">'
-            f'{img}</a><figcaption><span class="pc-nick">{e(nick(m))}</span>'
+            f'{avatar(m, "pc-head")}{img}</a><figcaption><span class="pc-nick">{e(nick(m))}{more}</span>'
             f'<span class="pc-name"><span>{e(m["name"])}</span><b>{m["level"]}</b></span>{xp_bar(m)}'
-            f'<span class="pc-sub">{e(m["class"])} · {e(role)}</span>{switch}</figcaption></figure>')
+            f'<span class="pc-sub">{e(m["class"])} · {e(role)}</span></figcaption></figure>')
 
 
 def waiting_players(party):
@@ -1934,7 +1942,7 @@ def waiting_players(party):
 def squad(members, size, today, alts=(), waiting=()):
     """Skupinová fotka: celotělové rendery vedle sebe a jmenovky. Klik na postavu otevře pod ní její kartu.
     Alt nemá vlastní místo, přepíná se na místě svého hráče."""
-    out, slots = [], 0
+    out, slots, groups = [], 0, {}
     for m in members:
         slots += 1
         if not m["ok"]:
@@ -1942,15 +1950,17 @@ def squad(members, size, today, alts=(), waiting=()):
                        f'<span class="pc-name">{e(m["slug"])}</span><span class="pc-sub">nenačteno</span></figcaption></figure>')
             continue
         group = [m, *(a for a in alts if a.get("player") == m["slug"])]
+        groups.update((c["slug"], group) for c in group)
         out += [pc_figure(c, group, shown_char(group)) for c in group]
     free = max(0, size - slots)
     for i in range(free):
         name, sub = (waiting[i], "bez postavy") if i < len(waiting) else ("volné místo", "hledá se parťák")
         out.append(f'<figure class="pc pc-empty"><div class="pc-img"><span>?</span></div><figcaption>'
                    f'<span class="pc-name">{e(name)}</span><span class="pc-sub">{sub}</span></figcaption></figure>')
-    sheets = "".join(sheet(m, today) for m in [*members, *alts] if m["ok"])
+    sheets = "".join(sheet(m, today, groups.get(m["slug"], ())) for m in [*members, *alts] if m["ok"])
     return (f'<section id="postavy"><div class="squad" style="--n:{slots + free}">{"".join(out)}</div>'
-            f'<p class="sheet-hint">Klikni na postavu a uvidíš, v čem chodí.</p>{sheets}</section>')
+            f'<p class="sheet-hint">Klikni na postavu a uvidíš, v čem chodí.</p>'
+            f'<div class="sheet-dim" hidden></div>{sheets}</section>')
 
 
 # ---------- ready check ----------
@@ -2675,16 +2685,19 @@ summary.ot-row{cursor:pointer;list-style:none}summary.ot-row::-webkit-details-ma
 .pc[hidden]{display:none}
 .pc-nick{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .pc[data-player] .pc-name{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:start;min-height:2.7em;line-height:1.35}
-.pc-more{margin-top:6px;border-top:1px solid var(--line);padding-top:5px}
-.pc-more summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--gold)}
-.pc-sw{display:grid;gap:1px;margin:5px -6px 0}
-.pc-sw button{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:6px;align-items:baseline;width:100%;padding:4px 6px;text-align:left;
-font:12px/1.3 Inter,system-ui,sans-serif;color:var(--muted);background:none;border:0;border-radius:6px;cursor:pointer}
-.pc-sw button:hover{background:var(--panel2)}
-.pc-sw button[aria-pressed=true]{background:color-mix(in srgb,var(--cls) 16%,transparent)}
-.pc-sw b{color:var(--cls);font-weight:600}
-.pc-sw i{font-style:normal;font-weight:600;color:var(--gold)}
-.pc-sw span{grid-column:1/-1;font-size:11px}
+.pc-alts{margin-left:6px;font-size:11px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted);opacity:.8}
+.pc-head{display:none}
+@media(max-width:600px){
+.squad{grid-template-columns:minmax(0,1fr);gap:6px}
+.pc{flex-direction:row;align-items:center;border-radius:12px}
+.pc>a{position:static;flex:none;padding:8px 0 8px 10px}.pc>a::after{content:"";position:absolute;inset:0}
+.pc-img{display:none}
+.pc-head{display:block;width:44px;height:44px;border-radius:10px;border:2px solid var(--cls);background:var(--panel2)}
+.pc figcaption{flex:1;min-width:0;border-top:0;padding:8px 12px}
+.pc[data-player] .pc-name{min-height:0}
+.pc-err{padding:8px 0}.pc-err figcaption{border-left:3px solid var(--bad)}
+.squad.has-open .pc:not(.open){opacity:1}
+}
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}
 .dungeons th,.dungeons td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
@@ -2756,6 +2769,22 @@ cursor:pointer;flex:none;line-height:1}.sheet-close:hover{color:var(--text);bord
 .st-group li b{font-weight:600}
 .st-body li{justify-content:flex-start}.st-body li span{flex:0 0 58px;color:var(--muted)}.st-bonus{color:var(--ok);font-weight:600}.st-malus{color:var(--bad);font-weight:600}
 .st-sick{margin:0;padding:8px 10px;border:1px solid #6b2a24;background:#3b1612;border-radius:10px;color:#ffb3a8}
+.sheet-alts{display:flex;flex-wrap:wrap;gap:6px}
+.sheet-alts button{display:inline-flex;align-items:baseline;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;
+background:var(--panel2);color:var(--text);font:13px/1.3 Inter,system-ui,sans-serif;cursor:pointer;text-align:left}
+.sheet-alts button:hover{border-color:var(--cls)}
+.sheet-alts b{color:var(--cls);font-weight:600}.sheet-alts i{font-style:normal;font-weight:600;color:var(--gold)}
+.sheet-alts button[aria-pressed=true]{background:color-mix(in srgb,var(--cls) 18%,var(--panel2));border-color:var(--cls)}
+.sheet-dim{display:none}
+.sheet .cls{display:flex;flex-wrap:wrap;align-items:center;gap:4px}.sheet .cls .chip{margin-left:0;white-space:nowrap}
+@media(max-width:600px){
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:60;margin:0;max-height:88vh;overflow-y:auto;overscroll-behavior:contain;
+border-radius:16px 16px 0 0;border-bottom:0;box-shadow:0 -12px 40px rgba(0,0,0,.6);padding-top:0}
+.sheet .card-head{position:sticky;top:0;z-index:2;background:var(--panel);padding:12px 0 8px;align-items:flex-start}
+.sheet .who h3{font-size:19px}.sheet .lvl{font-size:26px}
+.sheet-dim:not([hidden]){display:block;position:fixed;inset:0;z-index:59;background:rgba(0,0,0,.6)}
+body.sheet-on{overflow:hidden}
+}
 .sheet-hint{margin:8px 0 0;font-size:12px;color:var(--muted);text-align:center}
 .squad.has-open .pc:not(.open){opacity:.55}.squad.has-open .pc:not(.open):hover{opacity:.85}
 .pc.open{border-color:var(--cls);box-shadow:0 0 0 1px var(--cls),0 6px 20px -8px var(--cls)}
@@ -2961,22 +2990,29 @@ if(sel)sel.addEventListener('change',()=>pick(+sel.value));
 const pcs=[...document.querySelectorAll('.pc[data-slug]')];
 const hasSheet=s=>[...document.querySelectorAll('.sheet')].some(x=>x.dataset.slug===s);
 let openNow='';
+const narrow=matchMedia('(max-width:600px)'),dim=document.querySelector('.sheet-dim');
 function openSheet(slug,scroll){
   document.querySelectorAll('.sheet').forEach(x=>x.hidden=x.dataset.slug!==slug);
-  openNow=slug;if(slug)showFig(slug);
+  const was=openNow;openNow=slug;if(slug)showFig(slug);
+  if(dim)dim.hidden=!slug;document.body.classList.toggle('sheet-on',!!slug);
   pcs.forEach(p=>{const on=p.dataset.slug===slug;p.classList.toggle('open',on);p.querySelector('a').setAttribute('aria-expanded',on)});
   document.querySelector('.squad').classList.toggle('has-open',!!slug);
   const hint=document.querySelector('.sheet-hint'); if(hint) hint.hidden=!!slug;
   history.replaceState(null,'',slug?'#char-'+slug:location.pathname+location.search);
-  if(slug&&scroll){const el=document.getElementById('char-'+slug); if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'})}}
+  const el=slug&&document.getElementById('char-'+slug);if(!el)return;
+  // na mobilu panel zespodu, na desktopu posun ke kartě pod fotkou
+  if(narrow.matches){if(!was)el.querySelector('.sheet-close').focus({preventScroll:true})}
+  else if(scroll)el.scrollIntoView({behavior:'smooth',block:'start'})}
 pcs.forEach(p=>p.querySelector('a').addEventListener('click',ev=>{ev.preventDefault();
   openSheet(p.classList.contains('open')?'':p.dataset.slug,true)}));
-document.querySelectorAll('.pc-sw button').forEach(b=>b.addEventListener('click',()=>{const was=openNow&&b.closest('.pc').dataset.slug===openNow;
-  showFig(b.dataset.show);if(was)openSheet(b.dataset.show)}));
+document.querySelectorAll('.sheet-alts button').forEach(b=>b.addEventListener('click',()=>openSheet(b.dataset.open,false)));
 document.querySelectorAll('.sheet-close').forEach(b=>b.addEventListener('click',()=>openSheet('')));
+dim?.addEventListener('click',()=>openSheet(''));
+addEventListener('keydown',ev=>{if(ev.key==='Escape'&&openNow)openSheet('')});
 {const h=decodeURIComponent(location.hash);let start='';
  if(h.startsWith('#char-')) start=h.slice(6); else {try{start=localStorage.getItem('me')||''}catch(e){}}
- if(start&&hasSheet(start)) openSheet(start,h.startsWith('#char-'));}
+ // vybraná postava z „Hraju za“ na mobilu panel sama neotevře
+ if(start&&hasSheet(start)&&(h.startsWith('#char-')||!narrow.matches)) openSheet(start,h.startsWith('#char-'));}
 addEventListener('hashchange',()=>{const h=decodeURIComponent(location.hash);
   if(h.startsWith('#char-')&&hasSheet(h.slice(6))) openSheet(h.slice(6),true)});
 const rtf=new Intl.RelativeTimeFormat('cs',{numeric:'auto'});

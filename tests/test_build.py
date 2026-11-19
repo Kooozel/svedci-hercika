@@ -596,18 +596,32 @@ class Alts(unittest.TestCase):
         m = {**member("a", level=27), "name": "Cildac Velky", "nick": "Fanda", "class": "Warlock", "roles": ["dps"], "player": "a"}
         other = {**member("b", level=17), "name": "Johnie Rotking", "nick": "Fanda", "class": "Paladin", "roles": ["tank"], "player": "a"}
         html = build.pc_figure(m, [m, other], m)
-        self.assertIn('<span class="pc-nick">Fanda</span>', html)
+        self.assertIn('<span class="pc-nick">Fanda<small class="pc-alts" title="Johnie Rotking">+1 postava</small></span>', html)
         self.assertIn('<span class="pc-name"><span>Cildac Velky</span><b>27</b></span>', html)
-        self.assertIn('<b>Johnie Rotking</b><i>17</i><span>Paladin</span>', html)
+        self.assertNotIn("<details", html)  # další postavy jen jako poznámka, přepínají se v kartě
         self.assertIn(' hidden>', build.pc_figure(other, [m, other], m))
+        self.assertNotIn("pc-alts", build.pc_figure(m, [m], m))
 
     def test_rows_of_same_named_characters_differ(self):
         chars = [{**member(s), "ok": True, "name": n, "nick": "Kozel", "class": "Mage", "roles": [], "player": "k"}
                  for s, n in (("a", "Kozel Mourningale"), ("b", "Kozel Bezrohý"))]
         html = build.pc_figure(chars[0], chars, chars[0])
-        self.assertIn("<span>Kozel Mourningale</span>", html)  # vybraná postava je nahoře
-        self.assertIn("<b>Kozel Bezrohý</b>", html)
-        self.assertIn("Další postavy (1)", html)
+        self.assertIn("<span>Kozel Mourningale</span>", html)
+        tabs = build.char_tabs(chars[1], chars)
+        self.assertIn('data-open="a" aria-pressed="false" style="--cls:#F0F0F0" title="Mage"><b>Kozel Mourningale</b> <i>18</i>', tabs)
+        self.assertIn('data-open="b" aria-pressed="true"', tabs)
+        self.assertIn("<b>Kozel Bezrohý</b>", tabs)
+
+    def test_sheet_switches_between_players_characters(self):
+        chars = [{**member(s, level=lv), "ok": True, "name": n, "nick": "Kozel", "class": "Mage", "roles": ["heal"], "player": "a",
+                  "race": "Human", "spec": "", "url": "u", "updated_label": "Naposledy"}
+                 for s, n, lv in (("a", "Kozel Mourningale", 25), ("b", "Kozel Bezrohý", 12))]
+        chars[1]["alt"] = True
+        html = build.squad(chars[:1], 1, TODAY, alts=chars[1:])
+        self.assertEqual(html.count('class="sheet-alts"'), 2)  # obě karty mají přepínač
+        self.assertIn('<nav class="sheet-alts" aria-label="Postavy hráče Kozel"><button type="button" data-open="a"', html)
+        self.assertIn('<div class="sheet-dim" hidden></div>', html)
+        self.assertNotIn("sheet-alts", build.sheet(chars[0], TODAY))  # jediná postava přepínač nemá
     def test_player_without_character_waits_on_free_slot(self):
         party = {"players": [{"name": "Kozel", "chars": ["a"]}, {"name": "Susak", "chars": []}]}
         self.assertEqual(build.roster(party), [["a"]])

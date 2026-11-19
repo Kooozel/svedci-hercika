@@ -10,7 +10,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   (malými písmeny, diakritika zůstává, třeba `horaes-velký`). `size` je počet míst v partě (prázdná se ukážou jako volná).
 - **Přezdívka hráče:** `name` u hráče v `players`, ukazuje se nad jménem postavy. Bez ní se vezme křestní jméno hlavní postavy. Hráč s prázdným `chars` se ukáže na volném místě.
 - **Alt:** připiš ho hráči do `chars` za hlavní postavu. Hlavní postava (první) drží místo v partě a počítá se z ní plán výpravy,
-  tituly, loot a řemesla. Alt má ready check, kartu postavy a novinky, ve skupinové fotce je sbalený pod „Další postavy“ a přepíná se na místě svého hráče (výchozí je naposledy hraná postava). Alt pod levelem 10 API nevrací, na stránce se objeví sám, až ho přeleze.
+  tituly, loot a řemesla. Alt má ready check, kartu postavy a novinky, ve skupinové fotce je u hráče jen poznámka „+5 postav“. Přepíná se v kartě postavy a přepnutý alt se ukáže i na místě svého hráče ve fotce (výchozí je naposledy hraná postava). Alt pod levelem 10 API nevrací, na stránce se objeví sám, až ho přeleze.
 - **Role:** odhadují se podle specu. Když někdo hraje jinak (Johnie tankuje s body v Holy), přepiš to v `party.json`
   v `roles`, třeba `"johnie-rotking": "tank"` (tank / heal / dps).
 - **Druhý pád jména:** v `genitive` (třeba `"zrza-jegod": "Zrzy"`), aby stránka psala „od Zrzy“.
@@ -41,12 +41,14 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   do `party.json` jako `"next": "Wailing Caverns"`. Odehraný dungeon dostane v `dungeons.json` `"done": "RRRR-MM-DD"` (nebo `true`, když datum
   nevíme) a zmizí z plánu a lootu. V seznamu všech dungeonů zůstane se štítkem odehráno. Dokud se do něj
   někdo levelem vejde (alt), je v ready checku ve výběru „už odehrané“.
-- **Postavy:** klik na postavu ve skupinovce otevře pod ní její kartu: render uprostřed, kolem výbava jako okno
+- **Postavy:** klik na postavu ve skupinovce otevře pod ní její kartu a posune stránku k ní. Na mobilu (do 600 px) je
+  fotka seznam s hlavou, přezdívkou, jménem, levelem, XP a rolí a karta vyjede zespodu (zavírá ji křížek, Escape
+  nebo klik vedle). Nahoře v kartě jsou všechny postavy hráče celým jménem a levelem. Karta: render uprostřed, kolem výbava jako okno
   postavy ve hře (rámeček barvy kvality, 🩴 hadr = nejslabší kus podle item levelu, prázdné sloty čárkovaně), vedle
   hláška, jak je oblečený (průměrný item level proti levelu), co mu chybí („chodí bez čepice“), „Jak na tom je“
   (HP a dva hlavní staty role číslem, `STAT_ROWS` v `build.py`, zbytek je na Armory), stupně řemesel a pet. Kdo se odhlásil s Resurrection
-  Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu, jinak se otevře ta
-  z „Hraju za“ v ready checku.
+  Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu, jinak se na desktopu otevře ta
+  z „Hraju za“ v ready checku (na mobilu je jen na místě svého hráče ve fotce).
 - **Ready check:** stránka se jednou zeptá, kdo jsi, a ukáže karty tvých postav. Vybraná postava je vpravo v liště
   („Hraju za“, klik vede sem) a podle ní se řídí ready check, loot, Dílna a tvoje místo ve skupinové fotce. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
   co si má dojít, co jí může někdo nasdílet a co začíná uvnitř. Nasdílet může postava jiného hráče, která se do dungeonu levelem vejde.
