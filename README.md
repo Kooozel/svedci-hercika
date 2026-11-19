@@ -15,7 +15,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   v `roles`, třeba `"johnie-rotking": "tank"` (tank / heal / dps).
 - **Druhý pád jména:** v `genitive` (třeba `"zrza-jegod": "Zrzy"`), aby stránka psala „od Zrzy“.
   Nová postava bez něj dostane první pád.
-- **Novinky od včerejška:** jeden řádek na člověka, víc aktivních postav je pod sebou a podrobnosti se rozbalí. Porovná levely, XP, profese, výbavu a achievementy s posledním snímkem v `history/`
+- **Novinky od včerejška:** jeden řádek na člověka s postavou, která nahrála nejvíc; ostatní aktivní postavy hráče se rozbalí pod „+N další postavy“. Porovná levely, XP, profese, výbavu a achievementy s posledním snímkem v `history/`
   před dneškem (ranní stav před včerejším večerem). Večerní push ho neposune. Místo čísel XP je hláška podle toho,
   kolik kdo nahrál vůči svému levelu (drobek, kus, level, víc levelů), nikdy vůči ostatním. U profesí nové
   řemeslo a body skillu jedním řádkem (anglické názvy), recepty jednou větou. Bez historie se vezme `party.json`
@@ -23,12 +23,17 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Tituly a počítadla:** ze statistik všech postav hráče dohromady (smrti, jídlo, need rolly, lety…) dostane každý člověk jeden titul za včerejší večer,
   bez žebříčku a stejnou statistiku dostane stejný člověk nejdřív za tři dny (`TITLE_PAUSE`). Kdo nehrál, dostane hezký titul.
   Tituly a jejich varianty jsou v `titles.json` (klidně připiš další), počítadla za partu jsou `COUNTERS` v `build.py`.
+  Počítadla jsou sbalená do jednoho řádku (tři součty a pokořené milníky), dlaždice se ukážou na klik.
   Statistika, kterou `titles.json` nezná, dostane obecný titul „Objevitel“. Vlastní klíče: `_lvl`, `_xp`, `_skill`,
   `_explore` (objevená místa z achievementů Explore, `{zone}`).
   Nový člen party dostane první den uvítací titul z `newcomers`.
   Titul za statistiku dostane jen ten, kdo v ní vede (nebo má aspoň 75 % nejlepšího, `LEAD`); kdo hrál,
   ale v ničem nevedl, dostane titul z `busy`.
-- **Příští výprava:** dungeon, rozsah levelů a souhrn ready checku. Pod tím mřížka „Kam dál“: dungeony začínající
+- **Pořadí stránky:** hlavička, lišta, Příští výprava, skupinová fotka, tituly, novinky, ready check, loot, kronika, řemesla.
+  Lišta má odkazy ve stejném pořadí. Na mobilu je výprava i se souhrnem ready checku na první obrazovce.
+- **Příští výprava:** dungeon, rozsah levelů a souhrn ready checku. Souhrn má za každého hráče, co jeho postavě chybí („Johnie ✋ 1× dojít“).
+  S vybranou postavou začíná „Ty (jméno): …“ a ukazuje jen ty ostatní, kteří ještě něco potřebují; když se vybraná postava
+  do dungeonu nevejde, mluví o postavě, kterou za hráče bere výprava. Odkaz vede na celý ready check. Pod tím mřížka „Kam dál“: dungeony začínající
   pod 40 (`AHEAD_UNTIL`) × hráči, kolik levelů zbývá, než bude dungeon procházka. Za hráče se v každém řádku bere postava,
   která se do dungeonu levelem vejde (z víc naposledy hraná), a když žádná, ta levelem nejbližší. Hranice „do lvl“ je konec
   rozsahu, nebo Wowhead Easy z `difficulty`, co přijde dřív. Dungeon, který je procházka pro všechny, zmizí,

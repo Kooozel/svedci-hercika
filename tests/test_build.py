@@ -1,5 +1,6 @@
 """Testy logiky titulů, výchozího stavu a karty postavy. Bez sítě a bez API klíčů:
 python3 -m unittest discover -s tests"""
+import html as html_lib
 import json
 import re
 import sys
@@ -240,6 +241,40 @@ class ManyAlts(unittest.TestCase):
         build.Q = build.Quips({}, TODAY)
         line = build.loot_line({"item": {"name": "Meč"}, "fits": {"k": {"gain": "big", "lvl": 0}, "z": {"gain": "big", "lvl": 0}}}, by_slug)
         self.assertNotIn("lt-flag", line)
+
+    def test_next_box_sums_up_ready_check_per_player(self):
+        """Výprava nahoře: za každého hráče stav jeho postavy, stav všech vhodných postav pro „Ty“ v data-todo."""
+        party = [self.char("a", "a", active=[1]), self.char("b", "b"), self.char("b2", "b"), self.char("b3", "b", level=12)]
+        check = {**self.check(party), "best": True}
+        best = {"name": "D", "min": 20, "max": 30, "zone": "Z", "status": {"a": ("fit", 0), "b": ("fit", 0)}, "pick": {"b": "b2"}}
+        html = build.next_box([best], best, [party[0], party[1]], [check], party)
+        self.assertIn('id="vyprava"', html)
+        self.assertIn('data-player="a" data-char="A Velký" data-state="✓ připraveno"', html)
+        self.assertIn('data-player="b" data-char="B2 Velký" data-state="↗ 1× nasdílet"', html)
+        todo = json.loads(html_lib.unescape(re.search(r'data-todo="([^"]*)"', html).group(1)))
+        self.assertEqual(todo, {"a": "✓ připraveno", "b": "↗ 1× nasdílet", "b2": "↗ 1× nasdílet"})  # b3 levelem nesedí
+        self.assertIn('href="#ready"', html)
+
+    def test_news_folds_other_characters_of_player(self):
+        olds = [self.char("a", "a"), self.char("a2", "a"), self.char("a3", "a")]
+        now = [{**self.char("a", "a"), "xp": 500}, {**self.char("a2", "a"), "xp": 900}, {**self.char("a3", "a"), "xp": 100}]
+        for m in olds:
+            m["xp"] = 100
+        build.Q = build.Quips({}, TODAY)
+        html = build.news_box(now, base(olds), TODAY)
+        head, more = html.split('<details class="nw-more">')
+        self.assertIn("A2 Velký", head)  # nejvíc nahrála, je vidět rovnou
+        self.assertNotIn("A Velký", head)
+        self.assertIn("<summary>+1 další postava</summary>", more)
+        self.assertIn("A Velký", more)
+
+    def test_counters_stay_folded_even_with_milestone(self):
+        old, now = member("a", stats={"Quests completed": 480}), member("a", stats={"Quests completed": 511})
+        build.Q = build.Quips({}, TODAY)
+        html = build.evening_box([now], base([old]), {"a": {"emoji": "🎉", "title": "T", "detail": ""}},
+                                 build.party_counters([now], base([old])))
+        self.assertIn('<details class="counters-box">', html)
+        self.assertIn("🎉 questů přes 500", html.split("</summary>")[0])
 
     def test_profession_overview_has_one_column_per_player(self):
         chars = [{**self.char("a", "a"), "professions": [{"name": "Mining", "skill": 10, "max": 75, "primary": True}]},

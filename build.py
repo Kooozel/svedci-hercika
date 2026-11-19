@@ -1742,21 +1742,33 @@ def next_box(rows, best, members, checks, chars=None):
         return ""
     by_slug = {c["slug"]: c for c in chars or members}
     check = next((c for c in checks if c["best"]), None)
-    rc = ""
-    if check:
-        bits = []
-        if check["share"]:
-            bits.append(f'<span class="nx-rc-share">↗ {check["share"]}× dostane u vchodu</span>')
-        if check["take"]:
-            bits.append(f'<span class="nx-rc-take">✋ {check["take"]}× musí dojít</span>')
-        rc = (f'<a class="nx-rc" href="#ready">{"".join(bits) or "<span class=nx-rc-ok>✓ questy připravené</span>"}'
-              f'<span class="nx-go">ready check →</span></a>')
+    rc = next_ready(check, best, members, by_slug) if check else ""
     note = f' · {e(best["note"])}' if best.get("note") else ""
-    return (f'<section class="next"><p class="eyebrow">Příští výprava</p>'
+    return (f'<section class="next" id="vyprava"><p class="eyebrow">Příští výprava</p>'
             f'<h2>{e(best["name"])}{"<span class=chip chip-new>nový</span>" if best.get("new") else ""}</h2>'
             f'<p class="next-meta"><span class="nx-range">level {best["min"]}–{best["max"]}</span>'
             f'<span>{e(best["zone"])}{note}</span></p>'
             f'{rc}{ahead_table(rows, best, members, by_slug)}</section>')
+
+
+def next_ready(check, best, members, by_slug):
+    """Souhrn ready checku příští výpravy: za každého hráče, co jeho postavě chybí.
+    Stav všech postav, které se do dungeonu vejdou, je v data-todo, ať stránka napíše i stav vybrané postavy („Ty“)."""
+    fits = [c for c in by_slug.values() if c.get("level") and check["min"] <= c["level"] <= check["max"]
+            and all(c["slug"] in q["status"] for q in check["quests"])]
+    todo = {c["slug"]: todo_state(*char_todo(check, c)) for c in fits}
+    items = []
+    for m in members:
+        c = picked(best, m, by_slug)
+        state = todo.get(c["slug"])
+        if state is None:
+            continue  # hráč, který se do dungeonu nevejde nebo nemá questy z API
+        ok = state == "✓ připraveno"
+        items.append(f'<span class="nx-p {"nx-p-ok" if ok else "nx-p-todo"}" data-player="{e(m.get("player", m["slug"]))}" '
+                     f'data-char="{e(c["name"])}" data-state="{e(state)}" style="--cls:{cls_color(c)}"><b>{e(nick(m))}</b> {e(state)}</span>')
+    data = json.dumps(todo, ensure_ascii=False).replace("<", "\\u003c")
+    return (f'<a class="nx-rc" href="#ready" data-todo="{e(data)}" data-dungeon="{e(check["title"])}">'
+            f'<span class="nx-you" hidden></span>{"".join(items)}<span class="nx-p nx-p-ok nx-rest" hidden>✓ ostatní připravení</span><span class="nx-go">celý ready check ↓</span></a>')
 
 
 def since_label(base, today):
@@ -1819,13 +1831,13 @@ def news_person(chars, log, fresh):
     lead = active[0][0] if active else chars[0]
     body = f'<p class="nw-head"><b class="who-n">{e(nick(lead))}</b></p>'
     if active:
-        body += f'<div class="nw-lines">{"".join(news_row(m, ch) for m, ch in active)}</div>'
-    if len(active) == 1:
-        body += news_extra(*active[0])
-    else:
-        more = "".join(f'<div class="nw-det" style="--cls:{cls_color(m)}"><b>{e(m["name"])}</b>{x}</div>'
-                       for m, ch in active if (x := news_extra(m, ch)))
-        body += f'<details class="nw-more"><summary>Podrobnosti</summary>{more}</details>' if more else ""
+        body += f'<div class="nw-lines">{news_row(*active[0])}</div>{news_extra(*active[0])}'
+    if len(active) > 1:
+        rest = active[1:]
+        more = "".join(f'<div class="nw-det" style="--cls:{cls_color(m)}"><div class="nw-lines">{news_row(m, ch)}</div>'
+                       f'{news_extra(m, ch)}</div>' for m, ch in rest)
+        label = pl(len(rest), ("+{n} další postava", "+{n} další postavy", "+{n} dalších postav"))
+        body += f'<details class="nw-more"><summary>{label}</summary>{more}</details>'
     body += "".join(f'<p class="nw-profs">🆕 Nová postava: {e(m["name"])}, level {m["level"]}</p>' for m in fresh)
     return f'<li style="--cls:{cls_color(lead)}">{avatar(lead, "nw-av")}<div class="nw-main">{body}</div></li>'
 
@@ -1851,7 +1863,7 @@ def news_box(members, base, today):
         rows.append(f'<li class="nw-quiet"><span class="nw-avs">{"".join(avatar(m, "nw-av") for m in quiet)}</span>'
                     f'<span>{e(names)}: nic nového</span></li>')
     body = f'<ul class="nw">{"".join(rows)}</ul>' if rows else '<p class="muted">Nic nového, nikdo nehrál.</p>'
-    return f'<section class="news"><p class="eyebrow">Novinky {since_label(base, today)}</p>{body}</section>'
+    return f'<section class="news" id="novinky"><p class="eyebrow">Novinky {since_label(base, today)}</p>{body}</section>'
 
 
 def title_who(m, t):
@@ -1878,13 +1890,17 @@ def evening_box(members, base, titles, counters):
             foot = f'<small class="c-hit">🎉 přes {num(c["crossed"])}!</small>{foot}'
         tiles.append(f'<li class="ctr{" ctr-hit" if c["crossed"] else ""}"><span class="c-emoji">{c["emoji"]}</span>'
                      f'<b>{num(c["total"])}</b><span>{e(c["label"])}</span>{foot}</li>')
-    hit = any(c["crossed"] for c in counters)
-    summary = " · ".join(f'<b>{num(c["total"])}</b> {e(c["label"])}' for c in counters[:3])
+    hit = [c for c in counters if c["crossed"]]
+    summary = "".join(f'<span class="c-s"> · <b>{num(c["total"])}</b> {e(c["label"])}</span>' for c in counters[:3])
+    if hit:
+        text = (f'{hit[0]["label"]} přes {num(hit[0]["crossed"])}' if len(hit) == 1
+                else pl(len(hit), ("{n} milník", "{n} milníky", "{n} milníků")))
+        summary += f' · <span class="c-hit">🎉 {e(text)}</span>'
     head = "Tituly za včerejší večer" if daily else "Tituly za celou dobu"
     note = (Q.line("titles_note", "note", "Není to žebříček.")
             if daily else "Od zítřka se tituly budou dávat za včerejší večer.")
     return (f'<section id="tituly"><h2 class="sec">{head}</h2><ul class="titles">{cards}</ul>'
-            f'<details class="counters-box"{" open" if hit else ""}><summary>Parta dohromady · {summary}</summary>'
+            f'<details class="counters-box"><summary>Parta dohromady{summary} <span class="c-more">ukázat všech {len(tiles)}</span></summary>'
             f'<ul class="counters">{"".join(tiles)}</ul></details>'
             f'<p class="note" title="Počítá se ze statistik Blizzard API, které se aktualizují, když se postava odhlásí.">{e(note)}</p></section>')
 
@@ -2500,7 +2516,9 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
     desc = " · ".join(f'{nick(by_slug[s])}: {t["title"]}' for s, t in titles.items() if s in by_slug)
     lead = next(iter(titles), None)
     image = (by_slug.get(lead) or {}).get("render") or next((m.get("render") for m in ok if m.get("render")), "")
-    nav = [("postavy", "Postavy", True), ("tituly", "Tituly", bool(titles)), ("vyprava", "Výprava", True), ("ready", "Ready check", bool(checks)), ("loot", "Loot", bool(loot)),
+    # pořadí lišty kopíruje pořadí sekcí
+    nav = [("vyprava", "Výprava", bool(best)), ("postavy", "Postavy", True), ("tituly", "Tituly", bool(titles)),
+           ("novinky", "Novinky", bool(base)), ("ready", "Ready check", bool(checks)), ("loot", "Loot", bool(loot)),
            ("kronika", "Kronika", bool(chronicle)), ("profese", "Řemesla", True)]
     nav_html = "".join(f'<a href="#{i}">{t}</a>' for i, t, show in nav if show)
     return f'''{page_head(party["title"], desc, image, party.get("site_url", ""))}
@@ -2515,10 +2533,11 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
       <p class="built">Natočeno <time data-ts="{built}">{built}</time></p>
     </div>
   </header>
-  {squad(members, party.get("size", len(members)), today, [m for m in chars if m.get("alt")], waiting_players(party))}
   <nav class="nav"><div class="nav-links">{nav_html}</div>{'<button type="button" class="nav-me" hidden><span>Hraju za</span><b>Kdo jsi?</b><small></small></button>' if checks else ""}</nav>
+  {next_box(rows, best, ok, checks, chars)}
+  {squad(members, party.get("size", len(members)), today, [m for m in chars if m.get("alt")], waiting_players(party))}
   {evening_box(ok, base, titles, counters)}
-  <div class="hero" id="vyprava">{next_box(rows, best, ok, checks, chars)}{news_box(chars, base, today) if base else ""}</div>
+  {news_box(chars, base, today) if base else ""}
   {ready_section(checks, chars)}
   {loot_section(loot, chars)}
   {chronicle_box(chronicle, ok)}
@@ -2611,11 +2630,9 @@ border-bottom:2px solid color-mix(in srgb,var(--cls) 45%,transparent);filter:sat
 .rc-sel select{width:100%;max-width:460px;font:600 16px Inter,system-ui,sans-serif;color:var(--gold);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer}
 .rc-sel option,.rc-sel optgroup{color:var(--text);background:var(--panel)}
 .item-ic img{width:26px;height:26px;border-radius:5px;border:2px solid var(--line);vertical-align:middle}
-.hero{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:14px;margin-bottom:8px}
-@media(max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}}
 .next{background:linear-gradient(135deg,#3b1612,#22140f);border:1px solid #6b2a24;border-radius:14px;padding:18px 20px}
 .next h2{font-size:clamp(22px,4vw,30px)}.next-meta{margin:4px 0 12px;color:var(--text)}
-.news{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.news{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-top:30px}
 .news .who-n{color:var(--cls);margin-right:4px}.news small{color:var(--muted)}
 .sec{font-size:20px;color:var(--gold);margin:30px 0 12px}
 .card{flex:1;background:var(--panel);border:1px solid var(--line);border-top:3px solid var(--cls);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
@@ -2703,6 +2720,8 @@ display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center}
 .ctr-hit{border-color:var(--gold);background:#2c2014}.c-hit{color:var(--gold)!important;font-weight:600}
 .counters-box{margin-top:14px}.counters-box summary{cursor:pointer;color:var(--muted);font-size:14px;margin-bottom:10px}
 .counters-box summary b{color:var(--text)}
+.c-more{color:var(--gold);white-space:nowrap}
+@media(max-width:600px){.c-s~.c-s,.c-more{display:none}}.counters-box[open] .c-more{display:none}
 .k-latest,.k-entry{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;padding:16px 20px}
 .k-latest .k-entry{background:none;border:0;padding:0}
 .k-list{display:grid;gap:14px;margin-top:20px}
@@ -2765,7 +2784,9 @@ box-shadow:0 0 0 2px var(--panel);z-index:1}
 .nx-rc{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:13px;color:var(--text);
 background:#0003;border:1px solid #ffffff10;border-radius:10px;padding:8px 12px}
 .nx-rc:hover{text-decoration:none;border-color:var(--gold)}
-.nx-rc-share{color:var(--share)}.nx-rc-take{color:var(--warn)}.nx-rc-ok{color:var(--ok)}
+.nx-p{white-space:nowrap;color:var(--warn)}.nx-p b{color:var(--cls);font-weight:600}.nx-p-ok{color:var(--ok)}
+.nx-you{color:var(--text);font-weight:600}.nx-you[hidden]{display:none}.nx-you.nx-you-ok{color:var(--ok)}
+.nx-rc.has-you .nx-p-ok:not(.nx-rest){display:none}.nx-p[hidden]{display:none}
 .nx-go{margin-left:auto;color:var(--gold);font-weight:600}
 .ah-wrap{overflow-x:auto;margin-top:-6px}
 .ahead{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
@@ -2786,6 +2807,7 @@ background:#0003;border:1px solid #ffffff10;border-radius:10px;padding:8px 12px}
 .nw{list-style:none;margin:0;padding:0;display:grid}
 .nw>li{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:10px 0;border-top:1px solid #ffffff10}
 .nw>li:first-child{border-top:0;padding-top:4px}
+@media(min-width:761px){.nw{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));column-gap:32px}.nw>li:first-child{border-top:1px solid #ffffff10;padding-top:10px}}
 .nw-av{width:34px;height:34px;border-radius:50%;border:2px solid var(--cls,var(--line));background:var(--panel2)}
 .nw-main{min-width:0;display:grid;gap:4px}.nw-main p{margin:0}
 .nw-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
@@ -2869,7 +2891,17 @@ const NAMES=JSON.parse(document.getElementById('rc-names')?.textContent||'{}');
 const navMe=document.querySelector('.nav-me');
 function syncMe(){if(navMe){const n=NAMES[viewer],same=n&&n[1].split(' ')[0]===n[0];navMe.hidden=!whoStrip;
   navMe.querySelector('b').textContent=n?(same?n[1]:n[0]):'Kdo jsi?';navMe.querySelector('small').textContent=n&&!same?n[1]:'';navMe.title=n?'Hraju za '+n[1]+': změnit postavu':'Vyber, za koho hraješ'}
-  document.querySelectorAll('.nx-m').forEach(x=>x.classList.toggle('nx-me',!!viewer&&x.dataset.player===OWNER[viewer]))}
+  document.querySelectorAll('.nx-m').forEach(x=>x.classList.toggle('nx-me',!!viewer&&x.dataset.player===OWNER[viewer]));
+  syncNext()}
+function syncNext(){const rc=document.querySelector('.nx-rc');if(!rc)return;const you=rc.querySelector('.nx-you'),n=NAMES[viewer];
+  let todo={};try{todo=JSON.parse(rc.dataset.todo||'{}')}catch(e){}
+  const ps=[...rc.querySelectorAll('.nx-p[data-player]')],mine=ps.find(p=>p.dataset.player===OWNER[viewer]),rest=rc.querySelector('.nx-rest');
+  ps.forEach(p=>p.hidden=!!viewer&&p===mine);
+  rc.classList.toggle('has-you',!!viewer);you.hidden=!viewer;
+  rest.hidden=!viewer||!ps.some(p=>p!==mine)||ps.some(p=>p!==mine&&p.classList.contains('nx-p-todo'));if(!viewer)return;
+  // vybraná postava, když se do dungeonu vejde, jinak ta, kterou za hráče bere výprava
+  const [who,st]=todo[viewer]?[n[1],todo[viewer]]:mine?[mine.dataset.char,mine.dataset.state]:[n[1],''];
+  you.textContent='Ty ('+who+'): '+(st||'do '+rc.dataset.dungeon+' se levelem nevejdeš');you.classList.toggle('nx-you-ok',st==='✓ připraveno')}
 const panels=[...document.querySelectorAll('.rc')];
 const sel=document.querySelector('.rc-sel select');
 const selOpts=sel?[...sel.options]:[];
