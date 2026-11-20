@@ -8,14 +8,16 @@
     "zrza-jegod",
     "johnie-rotking",
     "horaes-velký",
-    "cildac-velky"
+    "cildac-velky",
+    "cripling-susi"
   ],
   "genitive": {
     "kozel-mourningale": "Kozla",
     "zrza-jegod": "Zrzy",
     "johnie-rotking": "Johnieho",
     "horaes-velký": "Horaese",
-    "cildac-velky": "Cildy"
+    "cildac-velky": "Cildy",
+    "cripling-susi": "Susi"
   },
   "roles": {
     "johnie-rotking": "tank",

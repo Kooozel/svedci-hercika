@@ -13,6 +13,15 @@
    {"name": "Věčný návrat", "line": "{v} priestem. Healer už si vede čárky."},
    {"name": "Zachráněná duše", "line": "{v} priestem. Poděkování v podobě piva se nosí."}
   ]},
+  "Resurrected by soulstones": {"emoji": "🪨", "min": 1, "bonus": 0.85, "forms": ["{n}× ze soulstonu", "{n}× ze soulstonu", "{n}× ze soulstonu"], "titles": [
+   {"name": "Vstal z kamene", "line": "{v}. Warlock si to připíše na účet."},
+   {"name": "Druhá šance", "line": "{v}. Co s ní udělal, statistika neříká."},
+   {"name": "Kamenná pojistka", "line": "{v}. Sklenička pro warlocka se nosí."}
+  ]},
+  "Mounts owned": {"emoji": "🐎", "min": 1, "bonus": 0.6, "forms": ["{n} nový mount", "{n} noví mounti", "{n} nových mountů"], "titles": [
+   {"name": "V sedle", "line": "{v}. Pěšky už jen do hospody."},
+   {"name": "Majitel stáje", "line": "{v}. Flight master přišel o zákazníka."}
+  ]},
   "Total waves": {"emoji": "👋", "min": 1, "bonus": 0.8, "forms": ["{n}× zamával", "{n}× zamával", "{n}× zamával"], "titles": [
    {"name": "Přátelská duše", "line": "{v}. Azeroth je hned vlídnější."},
    {"name": "Uvítací výbor", "line": "{v}. Každý NPC si zaslouží pozdrav."},
@@ -44,7 +53,8 @@
    {"name": "Žíznivý poutník", "line": "{v}. Hydratace je základ."},
    {"name": "Sommelier z Orgrimmaru", "line": "{v}. Rozezná ročník podle mana regenu."},
    {"name": "Velbloud", "line": "{v}. A pořád má žízeň."},
-   {"name": "Čerpací stanice", "line": "{v}. Mág bez vody je jen chodící róba."}
+   {"name": "Čerpací stanice", "line": "{v}. Mág bez vody je jen chodící róba."},
+   {"name": "Pitný režim", "line": "{v}. Doktor by měl radost."}
   ]},
   "Food eaten": {"emoji": "🍗", "min": 3, "bonus": 0.4, "forms": ["{n} jídlo", "{n} jídla", "{n} jídel"], "titles": [
    {"name": "Hodovník", "line": "{v}. Svačina je taky taktika."},
@@ -157,7 +167,8 @@
   ]},
   "Deaths from fatigue": {"emoji": "🌊", "min": 1, "bonus": 0.95, "forms": ["{n}× vyčerpáním", "{n}× vyčerpáním", "{n}× vyčerpáním"], "titles": [
    {"name": "Mořeplavec", "line": "Smrt {v}. Moře je velké."},
-   {"name": "Ztracen na moři", "line": "Smrt {v}. Kompas by se hodil."}
+   {"name": "Ztracen na moři", "line": "Smrt {v}. Kompas by se hodil."},
+   {"name": "Plavec na dlouhou trať", "line": "Smrt {v}. Doplaval, kam se neplave."}
   ]},
   "Total deaths from other players": {"emoji": "🗡️", "min": 1, "bonus": 1.0, "forms": ["{n}× zabit hráčem", "{n}× zabit hráčem", "{n}× zabit hráčem"], "titles": [
    {"name": "Oběť Aliance", "line": "{v}. Pomsta bude sladká."},
@@ -184,9 +195,22 @@
    {"name": "Nosič vlajky", "line": "{v}. Vlajku aspoň jednou viděl zblízka."},
    {"name": "Válečný turista", "line": "{v}. Questy počkají, Aliance ne."}
   ]},
+  "Warsong Gulch battles": {"emoji": "🚩", "min": 1, "bonus": 0.6, "forms": ["{n}× Warsong Gulch", "{n}× Warsong Gulch", "{n}× Warsong Gulch"], "titles": [
+   {"name": "Lesní válečník", "line": "{v}. Vlajka chvíli tam, chvíli zpátky."},
+   {"name": "Strážce rokle", "line": "{v}. Vlajka se nenese sama."}
+  ]},
+  "Deaths in Warsong Gulch": {"emoji": "⚔️", "min": 1, "bonus": 0.8, "forms": ["{n} smrt ve Warsongu", "{n} smrti ve Warsongu", "{n} smrtí ve Warsongu"], "titles": [
+   {"name": "Kanonenfutr", "line": "{v}. Spirit healer už ho zná jménem."},
+   {"name": "Padlý za vlajku", "line": "{v}. Za Hordu!"}
+  ]},
   "Archmage Arugal kills (Shadowfang Keep)": {"emoji": "🐺", "min": 1, "bonus": 0.5, "forms": ["{n}× Arugal", "{n}× Arugal", "{n}× Arugal"], "titles": [
    {"name": "Lovec vlkodlaků", "line": "{v}. „Jsem tvým nejhorším snem“ už neplatí."},
    {"name": "Konec pro arcimága", "line": "{v}. Teleport mu tentokrát nepomohl."}
+  ]},
+  "Aku'mai kills (Blackfathom Deeps)": {"emoji": "🐉", "min": 1, "bonus": 0.5, "forms": ["{n}× Aku'mai", "{n}× Aku'mai", "{n}× Aku'mai"], "titles": [
+   {"name": "Krotitel hydry", "line": "{v}. Čtyři brazíry, čtyři vlny, jedna hydra."},
+   {"name": "Potápěč", "line": "{v}. Na samém dně a zase zpátky."},
+   {"name": "Lovec ze dna", "line": "{v}. Ashenvale má o jednu hydru méně."}
   ]},
   "Bazzalan kills (Ragefire Chasm)": {"emoji": "😈", "min": 1, "bonus": 0.5, "forms": ["{n}× Bazzalan", "{n}× Bazzalan", "{n}× Bazzalan"], "titles": [
    {"name": "Deratizátor", "line": "{v}. Pod Orgrimmarem je zas klid."},
@@ -197,7 +221,8 @@
    {"name": "Pull magnet", "line": "{v}. Moby ho prostě milují."},
    {"name": "Obětní beránek", "line": "{v}. Pro dobro party."},
    {"name": "Suvenýr podzemí", "line": "{v}. Dungeon si chtěl něco nechat."},
-   {"name": "Zvěd", "line": "{v}. Někdo musí zjistit, co je za rohem."}
+   {"name": "Zvěd", "line": "{v}. Někdo musí zjistit, co je za rohem."},
+   {"name": "Běžec od hřbitova", "line": "{v}. Cestu zpátky zná nazpaměť."}
   ]},
   "_skill": {"emoji": "🔨", "min": 10, "bonus": 0.45, "forms": ["+{n} bod", "+{n} body", "+{n} bodů"], "titles": [
    {"name": "Mistr řemesla", "line": "{skill} {v}. Kovadlina ještě dýmá."},
@@ -221,7 +246,7 @@
   {"name": "Objevitel", "line": "Nová statistika: {stat} ({n}×)."},
   {"name": "Průkopník", "line": "Jako první v partě: {stat} ({n}×)."}
  ]},
- "discovery_skip": ["Highest", "Most ", "Continent", "Creature type", "Different", "learned", "known", "maximum", "skill", "Average", "used most", "that grant", "Killing Blows", "factions", "Total kills", "Materials produced", "opposite faction", "raid and dungeon deaths", "other things"],
+ "discovery_skip": ["Highest", "Most ", "Continent", "Creature type", "Different", "learned", "known", "maximum", "skill", "Average", "used most", "that grant", "Killing Blows", "factions", "Total kills", "Materials produced", "opposite faction", "raid and dungeon deaths", "other things", "Honorable Kills"],
  "first": {"emoji": "🎬", "min": 1, "bonus": 0.85, "titles": [
   {"name": "Premiéra", "line": "Poprvé v životě: {v}."},
   {"name": "Konečně!", "line": "Poprvé v životě: {v}. Historický okamžik."},
