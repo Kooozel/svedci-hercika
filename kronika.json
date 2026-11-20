@@ -2,6 +2,49 @@
  "_info": "Kronika výprav, nejnovější nahoře se řadí sám. Pole zápisu: date (RRRR-MM-DD), title, dungeon (nepovinné), party (slugy postav z party.json), text (seznam odstavců), facts (krátká čísla a fakta pod zápisem), titles (nepovinné: ruční tituly za ten večer, slug → emoji, title, detail; přebijí ty ze statistik, platí jen den po výpravě). Na hlavní stránce je jen první odstavec posledního zápisu, celý text je na kronika.html.",
  "entries": [
   {
+   "date": "2026-11-19",
+   "title": "Hydra na dně, šípy nikde",
+   "dungeon": "Blackfathom Deeps",
+   "party": [
+    "kozel-mourningale",
+    "zrza-jegod",
+    "johnie-rotking",
+    "horaes-velký",
+    "cildac-velky"
+   ],
+   "text": [
+    "Ashenvale, jeskyně pod vodou a na samém dně Aku'mai. Šel k zemi, i když jsme si cestou lehli dvanáctkrát: Kozel s Cildou po třech, Zrza, Johnie a Horaes po dvou. Healer tentokrát umíral nejvíc. Kozel +2, Zrza, Horaes a Cilda +1, Johnie zůstal na 28.",
+    "Poprvé s námi šel Cilda, a rovnou do prvního dungeonu v životě. Na levelu 19, do jeskyně od 24. Tři smrti a jeden soulstone: Kozla jím zvedl, jenže to bylo jedno, za chvíli jsme stejně všichni pěkně v řadě běželi od hřbitova. Domů odešel s dvacítkou a prvním Aku'maiem na kontě. Vítej v partě!",
+    "A teď to, co ve statistikách není. Kozel neumí skákat, což v jeskyni plné vody a kamenů není ideální vlastnost healera. Johnie zapomněl vylootit quest, takže se pro něj bude chodit znova. A Zrzovi těsně před Aku'maiem došly šípy, takže na hydru šel hunter bez munice. Padla stejně. Na zdraví!"
+   ],
+   "facts": [
+    "Aku'mai ⚰️",
+    "+5 levelů",
+    "12 smrtí, Kozel a Cilda po třech",
+    "Cilda: první dungeon 🎉",
+    "Kozel: neumí skákat 🦘",
+    "Johnie: quest zůstal ležet 📜",
+    "Zrza: bez šípů na hydru 🏹"
+   ],
+   "titles": {
+    "cildac-velky": {
+     "emoji": "🎉",
+     "title": "Křest v hlubinách",
+     "detail": "První dungeon v životě, a hned pět levelů pod čarou."
+    },
+    "kozel-mourningale": {
+     "emoji": "🦘",
+     "title": "Skokan",
+     "detail": "Léčit umí, skákat ne. Ani soulstone ho nezachránil."
+    },
+    "zrza-jegod": {
+     "emoji": "🏹",
+     "title": "Prázdný toulec",
+     "detail": "Nový luk, šípy došly před Aku'maiem."
+    }
+   }
+  },
+  {
    "date": "2026-11-15",
    "title": "Arugal ve věži, želva v kůlně",
    "dungeon": "Shadowfang Keep",
