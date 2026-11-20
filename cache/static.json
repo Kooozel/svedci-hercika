@@ -3573,19 +3573,19 @@
 },
 "tooltips": {
 "10045": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 12
 }
 },
 "10046": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 11
 }
 },
 "10047": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 24,
 "SPELL_POWER": 2,
@@ -3626,7 +3626,7 @@
 }
 },
 "10421": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 108,
 "STAMINA": 1
@@ -3639,14 +3639,14 @@
 }
 },
 "11287": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 11.3,
 "SPELL_POWER": 1
 }
 },
 "11288": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 17.5,
 "SPELL_POWER": 2
@@ -3815,33 +3815,34 @@
 }
 },
 "2300": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 62,
 "STAMINA": 2
 }
 },
 "2302": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 31
 }
 },
 "2303": {
-"v": 1,
+"v": 2,
 "values": {
 "AGILITY": 1,
 "ARMOR": 48
 }
 },
 "247789": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 4.0
 }
 },
 "250510": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 115,
 "DEFENSE_SKILL_RATING": 3,
@@ -3850,7 +3851,8 @@
 }
 },
 "250515": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 98,
 "DEFENSE_SKILL_RATING": 2,
@@ -3859,7 +3861,8 @@
 }
 },
 "250528": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 163,
 "STAMINA": 9,
@@ -3867,7 +3870,8 @@
 }
 },
 "250620": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 109,
 "STAMINA": 4,
@@ -3907,7 +3911,8 @@
 }
 },
 "251963": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 5,
 "ARMOR": 71,
@@ -3916,7 +3921,8 @@
 }
 },
 "251965": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 95,
 "INTELLECT": 3,
@@ -3925,7 +3931,8 @@
 }
 },
 "253885": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 17,
 "INTELLECT": 3,
@@ -3934,7 +3941,8 @@
 }
 },
 "253887": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 17,
 "INTELLECT": 3,
@@ -3944,7 +3952,8 @@
 }
 },
 "253907": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 37,
 "INTELLECT": 5,
@@ -3963,26 +3972,26 @@
 }
 },
 "2568": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 15
 }
 },
 "2569": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 17,
 "STAMINA": 2
 }
 },
 "2570": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 6
 }
 },
 "2578": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 26,
 "SPELL_POWER": 2,
@@ -3990,14 +3999,14 @@
 }
 },
 "2580": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 11,
 "SPELL_POWER": 1
 }
 },
 "2582": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 30,
 "SPELL_POWER": 4,
@@ -4005,7 +4014,7 @@
 }
 },
 "2583": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 22,
 "INTELLECT": 2,
@@ -4014,7 +4023,7 @@
 }
 },
 "2584": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 15,
 "SPELL_POWER": 1,
@@ -4214,7 +4223,8 @@
 }
 },
 "271719": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 25,
 "INTELLECT": 5,
@@ -4223,7 +4233,8 @@
 }
 },
 "271732": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 43,
 "ATTACK_POWER": 10,
@@ -4231,7 +4242,8 @@
 }
 },
 "271740": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 20,
 "SPELL_POWER": 6,
@@ -4239,7 +4251,8 @@
 }
 },
 "271766": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 60,
 "ATTACK_POWER": 32,
@@ -4247,7 +4260,8 @@
 }
 },
 "271767": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 20.8,
 "MANA_REGEN": 5,
@@ -4257,7 +4271,8 @@
 }
 },
 "273022": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 92,
 "STAMINA": 14,
@@ -4265,7 +4280,8 @@
 }
 },
 "273023": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 124,
 "INTELLECT": 9,
@@ -4273,7 +4289,8 @@
 }
 },
 "273024": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 33,
 "SPELL_POWER": 7,
@@ -4282,7 +4299,8 @@
 }
 },
 "273025": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 152,
 "INTELLECT": 6,
@@ -4291,7 +4309,8 @@
 }
 },
 "273026": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 9,
 "ARMOR": 105,
@@ -4299,7 +4318,8 @@
 }
 },
 "273027": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "INTELLECT": 4,
 "SPELL_POWER": 8,
@@ -4307,28 +4327,32 @@
 }
 },
 "273028": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 171,
 "STAMINA": 12
 }
 },
 "273029": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 6,
 "DPS": 16.6
 }
 },
 "273030": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "MANA_REGEN": 3,
 "SPELL_POWER": 6
 }
 },
 "273031": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "INTELLECT": 6,
 "SPELL_DAMAGE_DONE": 3,
@@ -4337,7 +4361,8 @@
 }
 },
 "273032": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 40,
 "SPIRIT": 6,
@@ -4345,14 +4370,16 @@
 }
 },
 "273033": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ATTACK_POWER": 8,
 "DPS": 15.4
 }
 },
 "273034": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARCANE_SPELL_DAMAGE": 9,
 "ARMOR": 31,
@@ -4362,7 +4389,8 @@
 }
 },
 "273035": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 225,
 "MANA_REGEN": 3,
@@ -4371,7 +4399,8 @@
 }
 },
 "273036": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 21,
 "MANA_REGEN": 2,
@@ -4380,7 +4409,8 @@
 }
 },
 "273037": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 10,
 "DPS": 28.8,
@@ -4388,7 +4418,8 @@
 }
 },
 "273038": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 9,
 "ARMOR": 110,
@@ -4397,7 +4428,8 @@
 }
 },
 "273039": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 28,
 "HEALTH_REGEN": 5,
@@ -4406,7 +4438,8 @@
 }
 },
 "273040": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 20.7,
 "SPELL_POWER": 36,
@@ -4414,7 +4447,8 @@
 }
 },
 "273041": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 9,
 "ARMOR": 61,
@@ -4422,7 +4456,8 @@
 }
 },
 "273042": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 157,
 "INTELLECT": 7,
@@ -4430,7 +4465,8 @@
 }
 },
 "273043": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 31.2,
 "INTELLECT": 4,
@@ -4438,7 +4474,8 @@
 }
 },
 "273044": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 49,
 "INTELLECT": 15,
@@ -4446,7 +4483,8 @@
 }
 },
 "273045": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 24,
 "ATTACK_POWER": 12,
@@ -4454,13 +4492,15 @@
 }
 },
 "273046": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 27.9
 }
 },
 "273047": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 9,
 "ARMOR": 81,
@@ -4469,7 +4509,8 @@
 }
 },
 "273048": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARCANE_RESISTANCE": 5,
 "ARMOR": 299,
@@ -4477,21 +4518,24 @@
 }
 },
 "273049": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ATTACK_POWER": 12,
 "INTELLECT": 6
 }
 },
 "273051": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 38,
 "INTELLECT": 9
 }
 },
 "273052": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "INTELLECT": 2,
 "SPELL_DAMAGE_DONE": 4,
@@ -4500,7 +4544,8 @@
 }
 },
 "273053": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 14.4,
 "HEALTH_REGEN": 8,
@@ -4509,7 +4554,8 @@
 }
 },
 "273054": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 9,
 "ARMOR": 68,
@@ -4517,7 +4563,8 @@
 }
 },
 "273055": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 718,
 "BLOCK": 15,
@@ -4634,7 +4681,8 @@
 }
 },
 "279842": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 178,
 "SPIRIT": 7,
@@ -4643,7 +4691,8 @@
 }
 },
 "279843": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 86,
 "SPELL_POWER": 9,
@@ -4651,7 +4700,8 @@
 }
 },
 "279844": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 31.3,
 "INTELLECT": 14,
@@ -4660,7 +4710,8 @@
 }
 },
 "279845": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "SPELL_DAMAGE_DONE": 4,
 "SPELL_HEALING_DONE": 11,
@@ -4668,7 +4719,8 @@
 }
 },
 "279846": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 6,
 "ARMOR": 58,
@@ -4676,14 +4728,16 @@
 }
 },
 "279847": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 29.7,
 "STAMINA": 4
 }
 },
 "279848": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 24,
 "SPIRIT": 5,
@@ -4753,11 +4807,13 @@
 }
 },
 "280766": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {}
 },
 "280805": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 3,
 "ATTACK_POWER": 6,
@@ -4765,20 +4821,20 @@
 }
 },
 "2848": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 11.2,
 "STAMINA": 3
 }
 },
 "2853": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 35
 }
 },
 "2854": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 72,
 "STAMINA": 2,
@@ -4786,7 +4842,7 @@
 }
 },
 "2857": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 91,
 "STAMINA": 2,
@@ -4794,7 +4850,7 @@
 }
 },
 "2865": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 149,
 "SPIRIT": 4,
@@ -4802,14 +4858,14 @@
 }
 },
 "2866": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 177,
 "STAMINA": 8
 }
 },
 "2868": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 80,
 "STRENGTH": 5
@@ -4924,7 +4980,7 @@
 }
 },
 "3480": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 130,
 "STAMINA": 4,
@@ -4941,14 +4997,14 @@
 }
 },
 "4237": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 31,
 "STRENGTH": 1
 }
 },
 "4243": {
-"v": 1,
+"v": 2,
 "values": {
 "AGILITY": 4,
 "ARMOR": 73,
@@ -4956,7 +5012,7 @@
 }
 },
 "4246": {
-"v": 1,
+"v": 2,
 "values": {
 "AGILITY": 2,
 "ARMOR": 40,
@@ -4964,21 +5020,21 @@
 }
 },
 "4307": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 12,
 "SPELL_POWER": 1
 }
 },
 "4308": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 10,
 "SPIRIT": 1
 }
 },
 "4309": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 23,
 "INTELLECT": 2,
@@ -4986,7 +5042,7 @@
 }
 },
 "4310": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 19,
 "INTELLECT": 2,
@@ -4994,7 +5050,7 @@
 }
 },
 "4312": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 20,
 "SPELL_POWER": 2,
@@ -5002,7 +5058,7 @@
 }
 },
 "4314": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 27,
 "SPELL_POWER": 4,
@@ -5010,7 +5066,7 @@
 }
 },
 "4316": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 31,
 "SPELL_POWER": 3,
@@ -5018,7 +5074,7 @@
 }
 },
 "4343": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 17,
 "SPELL_POWER": 1
@@ -5058,7 +5114,7 @@
 }
 },
 "5542": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 16,
 "INTELLECT": 3,
@@ -5066,7 +5122,7 @@
 }
 },
 "5766": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 41,
 "INTELLECT": 8,
@@ -5074,14 +5130,14 @@
 }
 },
 "5957": {
-"v": 1,
+"v": 2,
 "values": {
 "AGILITY": 1,
 "ARMOR": 55
 }
 },
 "5961": {
-"v": 1,
+"v": 2,
 "values": {
 "AGILITY": 8,
 "ARMOR": 72
@@ -5096,7 +5152,7 @@
 }
 },
 "6214": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 10.8,
 "STRENGTH": 4
@@ -5119,7 +5175,7 @@
 }
 },
 "6238": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 19,
 "SPIRIT": 1
@@ -5203,7 +5259,7 @@
 }
 },
 "6350": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 111,
 "STAMINA": 3,
@@ -5487,19 +5543,19 @@
 }
 },
 "7026": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 9
 }
 },
 "7276": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 8
 }
 },
 "7277": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 21
 }

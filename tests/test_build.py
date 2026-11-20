@@ -582,6 +582,16 @@ class Scoring(unittest.TestCase):
         up = build.crafting([smith], static)["ups"]
         self.assertEqual([(u["item"]["name"], u["upgrade"]) for u in up], [("Boots", "big")])
 
+    def test_crafting_bop_only_for_crafter(self):
+        tailor = armed("mage", ["dps"], [worn("CHEST", {"ARMOR": 10}, level=10)])
+        friend = armed("priest", ["healer"], [worn("CHEST", {"ARMOR": 10}, level=10)])
+        static = FakeStatic({1: {"item": 10, "reagents": []}}, {10: {"name": "Gown", "inv": "CHEST", "level": 20,
+                                                                  "req": 15, "kind": "Armor", "sub": "Cloth"}})
+        static.tooltips = {10: {"values": {"ARMOR": 37, "INTELLECT": 5}, "bop": True}}
+        tailor["recipes"] = [{"id": 1, "name": "Gown", "prof": "Tailoring"}]
+        up = build.crafting([tailor, friend], static)["ups"]
+        self.assertEqual([u["target"] for u in up], [tailor["slug"]])
+
 
 SCHOOLS = ("SHADOW", "FROST", "FIRE", "ARCANE", "NATURE", "HOLY")
 CASTER_KEYS = {"INTELLECT", "SPIRIT", "SPELL_POWER", "SPELL_DAMAGE_DONE", "SPELL_HEALING_DONE", "MANA_REGEN"} | {

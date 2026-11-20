@@ -121,7 +121,7 @@ def gear_entry(i):
 
 # Wowhead tooltip pro Forever: staty lootu, který Blizzard API nezná (docs/staty-forever.md, kap. 1 a 4)
 WOWHEAD_TOOLTIP = "https://nether.wowhead.com/forever/tooltip/item/{id}"
-TOOLTIP_V = 1  # zvýšit při změně parseru, cache se pak stáhne znovu
+TOOLTIP_V = 2  # zvýšit při změně parseru, cache se pak stáhne znovu
 TOOLTIP_RULES = [  # (regex na řádek, klíče skupin); klíče jsou jako enum statů v Blizzard API, kde ho API má
     (r"(\d+) Armor", ["ARMOR"]),
     (r"([+-]\d+) Armor", ["ARMOR"]),  # bonusový armor
@@ -602,7 +602,9 @@ class Static:
             print(f"tooltip {iid}: {exc}", file=sys.stderr)
             return hit
         values, random = tooltip_values(d.get("tooltip") or "")
-        store[str(iid)] = hit = {"v": TOOLTIP_V, "values": values, **({"random": True} if random else {})}
+        bop = "Binds when picked up" in tooltip_lines(d.get("tooltip") or "")
+        store[str(iid)] = hit = {"v": TOOLTIP_V, "values": values, **({"random": True} if random else {}),
+                                 **({"bop": True} if bop else {})}
         self.dirty = True
         time.sleep(0.2)  # ohleduplně k Wowheadu, stahuje se jen nové
         return hit
@@ -875,9 +877,13 @@ def crafting(members, static):
             it = static.item(rec["item"])
             if not it:
                 continue
-            if it.get("inv") in ITEM_SLOTS and (tip := static.tooltip(rec["item"])) and tip.get("values"):
+            tip = static.tooltip(rec["item"]) if it.get("inv") in ITEM_SLOTS else None
+            if tip and tip.get("values"):
                 it = {**it, "values": tip["values"]}  # API staty receptových kusů nemá, bere se Wowhead
+            bop = bool(tip and tip.get("bop"))  # Binds when picked up: jen pro výrobce, předat nejde
             for t in members:
+                if bop and t["slug"] != m["slug"]:
+                    continue
                 d = upgrade(it, t)
                 if d is None:
                     continue
