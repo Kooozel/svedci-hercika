@@ -120,6 +120,16 @@
 "req": 5,
 "sub": "Other"
 },
+"2300": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132724.jpg",
+"inv": "CHEST",
+"kind": "Armor",
+"level": 12,
+"name": "Embossed Leather Vest",
+"quality": "UNCOMMON",
+"req": 7,
+"sub": "Leather"
+},
 "2302": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132538.jpg",
 "inv": "FEET",
@@ -128,6 +138,16 @@
 "name": "Handstitched Leather Boots",
 "quality": "COMMON",
 "req": 3,
+"sub": "Leather"
+},
+"2303": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134706.jpg",
+"inv": "LEGS",
+"kind": "Armor",
+"level": 10,
+"name": "Handstitched Leather Pants",
+"quality": "UNCOMMON",
+"req": 5,
 "sub": "Leather"
 },
 "2304": {
@@ -930,6 +950,16 @@
 "req": 0,
 "sub": "Leather"
 },
+"4237": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132493.jpg",
+"inv": "WAIST",
+"kind": "Armor",
+"level": 10,
+"name": "Handstitched Leather Belt",
+"quality": "UNCOMMON",
+"req": 5,
+"sub": "Leather"
+},
 "4238": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133622.jpg",
 "inv": "BAG",
@@ -1408,6 +1438,20 @@
 ]
 ]
 },
+"1355": {
+"item": 2303,
+"name": "Handstitched Leather Pants",
+"reagents": [
+[
+2318,
+4
+],
+[
+2320,
+1
+]
+]
+},
 "1356": {
 "item": 2304,
 "name": "Light Armor Kit",
@@ -1415,6 +1459,20 @@
 [
 2318,
 1
+]
+]
+},
+"1362": {
+"item": 2300,
+"name": "Embossed Leather Vest",
+"reagents": [
+[
+2318,
+8
+],
+[
+2320,
+4
 ]
 ]
 },
@@ -1835,6 +1893,20 @@
 ],
 [
 2692,
+1
+]
+]
+},
+"2162": {
+"item": 4237,
+"name": "Handstitched Leather Belt",
+"reagents": [
+[
+2318,
+6
+],
+[
+2320,
 1
 ]
 ]
@@ -3562,10 +3634,24 @@
 "STAMINA": 3
 }
 },
+"2300": {
+"v": 1,
+"values": {
+"ARMOR": 62,
+"STAMINA": 2
+}
+},
 "2302": {
 "v": 1,
 "values": {
 "ARMOR": 31
+}
+},
+"2303": {
+"v": 1,
+"values": {
+"AGILITY": 1,
+"ARMOR": 48
 }
 },
 "247789": {
@@ -4672,6 +4758,13 @@
 "ARMOR": 34,
 "INTELLECT": 8,
 "SPELL_POWER": 4
+}
+},
+"4237": {
+"v": 1,
+"values": {
+"ARMOR": 31,
+"STRENGTH": 1
 }
 },
 "4243": {
