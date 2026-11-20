@@ -1,24 +1,19 @@
 name: Stránka party
 
 on:
-  schedule:
-    # GitHub plánované běhy v celou hodinu často zpozdí nebo zahodí, proto necelé minuty a záložní běh.
-    # 4:17 UTC = 5:17 v zimě (SEČ), 6:17 v létě (SELČ); záloha o hodinu později.
-    # Historii uloží jen první běh dne, druhý jen obnoví stránku.
-    - cron: "17 4 * * *"
-    - cron: "23 5 * * *"
+  # Bez cronu: GitHub plánované běhy chodily o 7–9 hodin později (14.–19. 11. 2026), 11.–13. 11. vůbec.
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: write  # ranní běh commitne denní historii do history/
+  contents: write  # první běh dne commitne denní historii do history/
   pages: write
   id-token: write
 
 concurrency:
   group: pages
-  cancel-in-progress: false  # push nesmí zrušit ranní běh dřív, než uloží historii
+  cancel-in-progress: false  # push nesmí zrušit běh dřív, než uloží historii
 
 jobs:
   build:
@@ -31,9 +26,8 @@ jobs:
           BNET_CLIENT_ID: ${{ secrets.BNET_CLIENT_ID }}
           BNET_CLIENT_SECRET: ${{ secrets.BNET_CLIENT_SECRET }}
       - name: Uložit denní historii a cache receptů
-        # Historii uloží první běh dne, pozdější ji nepřepíšou. GitHub plánované běhy někdy úplně
-        # zahodí (13. 11. oba), proto ji uloží i push nebo ruční běh, ale jen do 16:00 českého času,
-        # aby se jako "ranní stav" neuložil stav po večerním hraní.
+        # Historii uloží první push nebo ruční běh dne, pozdější ji nepřepíšou. Jen do 16:00 českého
+        # času, aby se jako "ranní stav" neuložil stav po večerním hraní.
         # cache/static.json (recepty a předměty z API) se commitne, když přibylo něco nového.
         run: |
           day=$(python3 -c "import json; print(json.load(open('site/snapshot.json'))['date'])")
