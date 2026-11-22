@@ -1510,6 +1510,16 @@
 "req": 13,
 "sub": "Mail"
 },
+"6370": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132799.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 15,
+"name": "Blackmouth Oil",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
 "6385": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135024.jpg",
 "inv": "BODY",
@@ -2107,6 +2117,24 @@
 "reagents": [
 [
 2836,
+1
+]
+]
+},
+"1814": {
+"item": 3383,
+"name": "Elixir of Wisdom",
+"reagents": [
+[
+785,
+1
+],
+[
+2450,
+2
+],
+[
+3371,
 1
 ]
 ]
@@ -3196,6 +3224,20 @@
 "reagents": [
 [
 6361,
+1
+]
+]
+},
+"4393": {
+"item": 6370,
+"name": "Blackmouth Oil",
+"reagents": [
+[
+6358,
+2
+],
+[
+3371,
 1
 ]
 ]
