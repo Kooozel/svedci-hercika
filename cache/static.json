@@ -340,6 +340,16 @@
 "req": 0,
 "sub": "Leather"
 },
+"249430": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/237071.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 45,
+"name": "Magenta Dye",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Other"
+},
 "250079": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134024.jpg",
 "inv": "NON_EQUIP",
@@ -469,6 +479,16 @@
 "quality": "RARE",
 "req": 15,
 "sub": "Cloth"
+},
+"255716": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/4554333.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 16,
+"name": "Simple Poultice",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
 },
 "2568": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135009.jpg",
@@ -970,6 +990,36 @@
 "req": 10,
 "sub": "Elixirs"
 },
+"3385": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134851.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 24,
+"name": "Lesser Mana Potion",
+"quality": "COMMON",
+"req": 14,
+"sub": "Potions"
+},
+"3388": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134859.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 25,
+"name": "Lesser Troll's Blood Elixir",
+"quality": "COMMON",
+"req": 15,
+"sub": "Elixirs"
+},
+"3389": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134844.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 26,
+"name": "Elixir of Lesser Defense",
+"quality": "COMMON",
+"req": 16,
+"sub": "Elixirs"
+},
 "3470": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135243.jpg",
 "inv": "NON_EQUIP",
@@ -1410,6 +1460,16 @@
 "req": 18,
 "sub": "Leather"
 },
+"5996": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134797.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 18,
+"name": "Draught of Water Breathing",
+"quality": "COMMON",
+"req": 8,
+"sub": "Elixirs"
+},
 "5997": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134843.jpg",
 "inv": "NON_EQUIP",
@@ -1519,6 +1579,16 @@
 "quality": "COMMON",
 "req": 0,
 "sub": "Other"
+},
+"6372": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134754.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 20,
+"name": "Swim Speed Potion",
+"quality": "COMMON",
+"req": 10,
+"sub": "Potions"
 },
 "6385": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135024.jpg",
@@ -2135,6 +2205,60 @@
 ],
 [
 3371,
+1
+]
+]
+},
+"1816": {
+"item": 3385,
+"name": "Lesser Mana Potion",
+"reagents": [
+[
+785,
+1
+],
+[
+3820,
+1
+],
+[
+3371,
+1
+]
+]
+},
+"1819": {
+"item": 3388,
+"name": "Lesser Troll's Blood Elixir",
+"reagents": [
+[
+2453,
+2
+],
+[
+2450,
+2
+],
+[
+3372,
+1
+]
+]
+},
+"1820": {
+"item": 3389,
+"name": "Elixir of Lesser Defense",
+"reagents": [
+[
+3355,
+1
+],
+[
+3820,
+1
+],
+[
+3372,
 1
 ]
 ]
@@ -2905,6 +3029,24 @@
 ]
 ]
 },
+"4176": {
+"item": 5996,
+"name": "Draught of Water Breathing",
+"reagents": [
+[
+3820,
+1
+],
+[
+6370,
+2
+],
+[
+3371,
+1
+]
+]
+},
 "4178": {
 "item": 5997,
 "name": "Elixir of Minor Defense",
@@ -3235,6 +3377,24 @@
 [
 6358,
 2
+],
+[
+3371,
+1
+]
+]
+},
+"4395": {
+"item": 6372,
+"name": "Swim Speed Potion",
+"reagents": [
+[
+2452,
+1
+],
+[
+6370,
+1
 ],
 [
 3371,
@@ -3709,6 +3869,20 @@
 ]
 ]
 },
+"54454": {
+"item": 249430,
+"name": "Magenta Dye",
+"reagents": [
+[
+249424,
+2
+],
+[
+3372,
+1
+]
+]
+},
 "54456": {
 "item": 249410,
 "name": "Sulfuric Acid",
@@ -3934,6 +4108,24 @@
 [
 1210,
 2
+]
+]
+},
+"55747": {
+"item": 255716,
+"name": "Simple Poultice",
+"reagents": [
+[
+3174,
+1
+],
+[
+2678,
+1
+],
+[
+2723,
+1
 ]
 ]
 },
