@@ -632,7 +632,9 @@ STAT_NEEDS = {
 
 # štítek je správně, ale ze statů to vidět není
 LABEL_OK = {"Deep Fathom Ring": "spell penetrace (jen pro castery), staty jen Stamina",
-            "Tortoise Armor": "+40 bonusového armoru, v datech splyne s armorem"}
+            "Tortoise Armor": "+40 bonusového armoru, v datech splyne s armorem",
+            "Heart of the Primeval": "spell power jen na použití, staty jen frost res",
+            "Knucklebone Ring": "+2 weapon dmg (melee), staty jen Stamina"}
 
 
 class LootLabels(unittest.TestCase):
