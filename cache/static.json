@@ -50,6 +50,16 @@
 "req": 0,
 "sub": "Enchanting"
 },
+"11082": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132862.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 25,
+"name": "Greater Astral Essence",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Enchanting"
+},
 "11287": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135139.jpg",
 "inv": "RANGEDRIGHT",
@@ -480,6 +490,16 @@
 "req": 15,
 "sub": "Cloth"
 },
+"253995": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134590.jpg",
+"inv": "LEGS",
+"kind": "Armor",
+"level": 30,
+"name": "Pearly Leggings",
+"quality": "RARE",
+"req": 25,
+"sub": "Cloth"
+},
 "255716": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/4554333.jpg",
 "inv": "NON_EQUIP",
@@ -726,6 +746,16 @@
 "kind": "Consumable",
 "level": 4,
 "name": "First Aid Kit",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
+"279970": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/3566827.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 28,
+"name": "Fermenter",
 "quality": "COMMON",
 "req": 0,
 "sub": "Other"
@@ -1580,6 +1610,16 @@
 "req": 0,
 "sub": "Other"
 },
+"6371": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134818.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 25,
+"name": "Fire Oil",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
 "6372": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134754.jpg",
 "inv": "NON_EQUIP",
@@ -1609,6 +1649,36 @@
 "quality": "COMMON",
 "req": 0,
 "sub": "Other"
+},
+"6468": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132498.jpg",
+"inv": "WAIST",
+"kind": "Armor",
+"level": 23,
+"name": "Deviate Scale Belt",
+"quality": "RARE",
+"req": 18,
+"sub": "Leather"
+},
+"6470": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134304.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 1,
+"name": "Deviate Scale",
+"quality": "COMMON",
+"req": 0,
+"sub": "Leather"
+},
+"6471": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134303.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 1,
+"name": "Perfect Deviate Scale",
+"quality": "COMMON",
+"req": 0,
+"sub": "Leather"
 },
 "6888": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132834.jpg",
@@ -3384,6 +3454,20 @@
 ]
 ]
 },
+"4394": {
+"item": 6371,
+"name": "Fire Oil",
+"reagents": [
+[
+6359,
+2
+],
+[
+3371,
+1
+]
+]
+},
 "4395": {
 "item": 6372,
 "name": "Swim Speed Potion",
@@ -3469,6 +3553,24 @@
 [
 1475,
 1
+]
+]
+},
+"4419": {
+"item": 6468,
+"name": "Deviate Scale Belt",
+"reagents": [
+[
+6471,
+10
+],
+[
+6470,
+10
+],
+[
+2321,
+2
 ]
 ]
 },
@@ -4111,6 +4213,36 @@
 ]
 ]
 },
+"55478": {
+"item": 253995,
+"name": "Pearly Leggings",
+"reagents": [
+[
+4305,
+14
+],
+[
+2321,
+3
+],
+[
+249409,
+8
+],
+[
+5498,
+8
+],
+[
+2842,
+2
+],
+[
+11082,
+3
+]
+]
+},
 "55747": {
 "item": 255716,
 "name": "Simple Poultice",
@@ -4125,6 +4257,24 @@
 ],
 [
 2723,
+1
+]
+]
+},
+"57006": {
+"item": 279970,
+"name": "Fermenter",
+"reagents": [
+[
+3372,
+1
+],
+[
+3356,
+1
+],
+[
+2452,
 1
 ]
 ]
@@ -4675,6 +4825,17 @@
 "SHADOW_SPELL_DAMAGE": 9,
 "SPIRIT": 3,
 "STAMINA": 4
+}
+},
+"253995": {
+"bop": true,
+"v": 2,
+"values": {
+"ARCANE_SPELL_DAMAGE": 14,
+"ARMOR": 41,
+"INTELLECT": 7,
+"SPIRIT": 5,
+"STAMINA": 7
 }
 },
 "2567": {
@@ -6076,6 +6237,15 @@
 "SPELL_DAMAGE_DONE": 3,
 "SPELL_HEALING_DONE": 9,
 "SPIRIT": 10,
+"STRENGTH": 3
+}
+},
+"6468": {
+"v": 2,
+"values": {
+"AGILITY": 5,
+"ARMOR": 51,
+"STAMINA": 6,
 "STRENGTH": 3
 }
 },
