@@ -135,6 +135,30 @@ class Dungeons(unittest.TestCase):
         rows[0]["done"] = True
         self.assertIn("✓ odehráno<", build.dungeon_table(rows, best, [member("a", level=20)]))
 
+    def test_walk_level_easy_or_max(self):
+        self.assertEqual(build.walk_level({"min": 26, "max": 32, "difficulty": [22, 24, 26, 29]}), 29)
+        self.assertEqual(build.walk_level({"min": 28, "max": 33, "difficulty": [26, 29, 31, 34]}), 33)
+        self.assertEqual(build.walk_level({"min": 28, "max": 38}), 38)
+
+    def test_ahead_rows_drop_walks_and_far_dungeons(self):
+        ds = [{"name": "RFC", "zone": "z", "min": 13, "max": 18, "done": True},
+              {"name": "WC", "zone": "z", "min": 15, "max": 25, "difficulty": [15, 17, 19, 24], "done": True},
+              {"name": "RFK", "zone": "z", "min": 30, "max": 40, "difficulty": [25, 28, 31, 34]},
+              {"name": "SM", "zone": "z", "min": 28, "max": 38},
+              {"name": "RFD", "zone": "z", "min": 40, "max": 50}]
+        team = [member("a", level=29), member("alt", level=24)]
+        rows, _ = build.plan_dungeons(team, ds)
+        # RFC je procházka pro všechny, RFD začíná až na 40; řazení podle toho, co uteče dřív
+        self.assertEqual([r["name"] for r in build.ahead_rows(rows, team)], ["WC", "RFK", "SM"])
+
+    def test_ahead_cell(self):
+        rfk = {"name": "RFK", "min": 30, "max": 40, "difficulty": [25, 28, 31, 34]}
+        self.assertEqual(build.ahead_cell(rfk, member("a", level=24))[:2], ("low", "za 6"))
+        self.assertEqual(build.ahead_cell(rfk, member("a", level=30))[:2], ("ok", "4"))
+        self.assertEqual(build.ahead_cell(rfk, member("a", level=33))[:2], ("soon", "1"))
+        self.assertEqual(build.ahead_cell(rfk, member("a", level=34))[:2], ("last", "0"))
+        self.assertEqual(build.ahead_cell(rfk, member("a", level=35))[:2], ("late", "pozdě"))
+
     def test_done_dungeon_past_while_someone_fits(self):
         ds = [{"name": "RFC", "zone": "z", "min": 13, "max": 18, "done": "2026-11-07"}]
         rows, _ = build.plan_dungeons([member("a", level=25), member("alt", level=14)], ds)

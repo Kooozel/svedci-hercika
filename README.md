@@ -25,8 +25,10 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Nový člen party dostane první den uvítací titul z `newcomers`.
   Titul za statistiku dostane jen ten, kdo v ní vede (nebo má aspoň 75 % nejlepšího, `LEAD`); kdo hrál,
   ale v ničem nevedl, dostane titul z `busy`.
-- **Příští výprava:** dungeon jako pásmo na stupnici levelů, postavy jako tečky (vybledlé = mimo rozsah),
-  pod tím další dva dungeony a souhrn ready checku. Vybírá se podle levelů, domluvený dungeon se dá napsat
+- **Příští výprava:** dungeon, rozsah levelů a souhrn ready checku. Pod tím mřížka „Kam dál“: dungeony začínající
+  pod 40 (`AHEAD_UNTIL`) × postavy, kolik levelů každé zbývá, než bude dungeon procházka. Hranice „do lvl“ je konec
+  rozsahu, nebo Wowhead Easy z `difficulty`, co přijde dřív. Dungeon, který je procházka pro všechny, zmizí,
+  nahoře je, co uteče nejdřív. Vybírá se podle levelů, domluvený dungeon se dá napsat
   do `party.json` jako `"next": "Wailing Caverns"`. Odehraný dungeon dostane v `dungeons.json` `"done": "RRRR-MM-DD"` (nebo `true`, když datum
   nevíme) a zmizí z plánu a lootu. V seznamu všech dungeonů zůstane se štítkem odehráno. Dokud se do něj
   někdo levelem vejde (alt), je v ready checku ve výběru „už odehrané“.

@@ -1540,34 +1540,72 @@ def sheet(m, today):
 
 # ---------- hlavička ----------
 
-def short_status(r, members):
-    under = [f"{e(first(m))} −{r['status'][m['slug']][1]}" for m in members if r["status"][m["slug"]][0] == "under"]
-    over = [e(first(m)) for m in members if r["status"][m["slug"]][0] == "over"]
-    bits = []
-    if under:
-        bits.append("chybí lvl: " + ", ".join(under))
-    if over:
-        bits.append("přerostli: " + ", ".join(over))
-    return " · ".join(bits) or "sedí všem levelem"
+AHEAD_UNTIL = 40  # Příští výprava ukazuje dungeony, které začínají pod tímhle levelem
 
 
-def fit_mark(st):
-    kind, n = st
-    return ("✓", "fit") if kind == "fit" else (f"−{n}", "under") if kind == "under" else (f"+{n}", "over")
+def walk_level(r):
+    """Poslední level, kdy dungeon ještě není procházka: konec rozsahu, nebo Wowhead Easy, co přijde dřív."""
+    diff = r.get("difficulty")
+    return min(r["max"], diff[3]) if diff else r["max"]
+
+
+def ahead_rows(rows, members):
+    """Dungeony začínající pod AHEAD_UNTIL, které aspoň pro jednu postavu ještě nejsou procházka, nejdřív ty, co utečou."""
+    keep = [r for r in rows if r["min"] < AHEAD_UNTIL and any(m["level"] <= walk_level(r) for m in members)]
+    return sorted(keep, key=lambda r: (walk_level(r), r["min"]))
+
+
+def ahead_cell(r, m):
+    """(css třída, text, tooltip) pro jednu postavu: kolik levelů zbývá do procházky."""
+    lvl, cap, who = m["level"], walk_level(r), first(m)
+    if lvl < r["min"]:
+        return "low", f"za {r['min'] - lvl}", f"{who}: dungeon od levelu {r['min']}"
+    if lvl > cap:
+        return "late", "pozdě", f"{who}: od levelu {cap + 1} už procházka"
+    left = cap - lvl
+    kind = "last" if left == 0 else "soon" if left <= 2 else "ok"
+    return kind, str(left), f"{who}: ještě {left} lvl, pak procházka" if left else f"{who}: poslední level, pak procházka"
+
+
+def ahead_text(t):
+    """Na mobilu krátce: 'za 3' -> '3' (čárkovaný okraj zůstane), 'pozdě' -> '–'."""
+    if t == "pozdě":
+        return '<span class="ah-long">pozdě</span><span class="ah-short">–</span>'
+    if t.startswith("za "):
+        return f'<span class="ah-long">za </span>{e(t[3:])}'
+    return e(t)
+
+
+def short_dungeon(name):
+    return name.replace("Scarlet Monastery:", "SM:").replace("Excavation Site: ", "")
+
+
+def ahead_table(rows, best, members):
+    head = "".join(f'<th style="--cls:{cls_color(m)}" title="{e(first(m))}"><span class="ah-long">{e(first(m))}</span>'
+                   f'<span class="ah-short">{e(first(m)[:3])}</span></th>' for m in members)
+    body = []
+    for r in ahead_rows(rows, members):
+        cls = " class=ah-best" if r is best else " class=ah-done" if r.get("done") else ""
+        cells = "".join(f'<td><span class="ah ah-{k}" title="{e(tip)}">{ahead_text(t)}</span></td>'
+                        for k, t, tip in (ahead_cell(r, m) for m in members))
+        mark = "✓ " if r.get("done") else ""
+        body.append(f'<tr{cls}><th scope="row" title="{e(r["name"])}, level {r["min"]}–{r["max"]}, {e(r["zone"])}">'
+                    f'{mark}{e(short_dungeon(r["name"]))}</th><td class="ah-cap">{walk_level(r)}</td>{cells}</tr>')
+    if not body:
+        return ""
+    return (f'<p class="eyebrow">Kam dál · levely do procházky</p>'
+            f'<div class="ah-wrap"><table class="ahead"><thead><tr><th>Dungeon</th>'
+            f'<th title="poslední level, kdy to ještě není procházka (konec rozsahu nebo Wowhead Easy)">do lvl</th>{head}</tr></thead>'
+            f'<tbody>{"".join(body)}</tbody></table></div>'
+            f'<p class="ah-legend"><span class="ah ah-ok">5</span> rezerva <span class="ah ah-soon">2</span> brzy uteče '
+            f'<span class="ah ah-last">0</span> poslední level <span class="ah ah-low">za 3</span> ještě nízko '
+            f'<span class="ah ah-late">pozdě</span> procházka</p>')
 
 
 def next_box(rows, best, members, checks):
-    """Příští výprava: dungeon, kdo do něj levelem sedí, souhrn ready checku a co přijde pak."""
+    """Příští výprava: dungeon, souhrn ready checku a kam dál, než dungeony přelevlíme."""
     if not best:
         return ""
-    later = sorted((r for r in rows if r is not best and not r.get("done") and r["min"] >= best["min"] and r["max"] > best["max"]),
-                   key=lambda r: (r["min"], r["max"]))[:2]
-    party = []
-    for m in members:
-        mark, kind = fit_mark(best["status"][m["slug"]])
-        party.append(f'<li class="nx-m nx-{kind}" style="--cls:{cls_color(m)}">{avatar(m, "nx-av")}'
-                     f'<span class="nx-name">{e(first(m))}</span><span class="nx-lvl">{m["level"]}</span>'
-                     f'<span class="nx-mark" title="{e(short_status(best, [m]))}">{mark}</span></li>')
     check = next((c for c in checks if c["best"]), None)
     rc = ""
     if check:
@@ -1578,22 +1616,12 @@ def next_box(rows, best, members, checks):
             bits.append(f'<span class="nx-rc-take">✋ {check["take"]}× musí dojít</span>')
         rc = (f'<a class="nx-rc" href="#ready">{"".join(bits) or "<span class=nx-rc-ok>✓ questy připravené</span>"}'
               f'<span class="nx-go">ready check →</span></a>')
-    pak = "".join(
-        f'<li><span class="pk-name">{e(r["name"])}</span><span class="pk-range">{r["min"]}–{r["max"]}</span>'
-        f'<span class="pk-dots">{"".join(pak_dot(r, m) for m in members)}</span></li>' for r in later)
     note = f' · {e(best["note"])}' if best.get("note") else ""
     return (f'<section class="next"><p class="eyebrow">Příští výprava</p>'
             f'<h2>{e(best["name"])}{"<span class=chip chip-new>nový</span>" if best.get("new") else ""}</h2>'
             f'<p class="next-meta"><span class="nx-range">level {best["min"]}–{best["max"]}</span>'
             f'<span>{e(best["zone"])}{note}</span></p>'
-            f'<ul class="nx-party">{"".join(party)}</ul>{rc}'
-            f'{f"<p class=eyebrow>Pak</p><ul class=pak>{pak}</ul>" if later else ""}</section>')
-
-
-def pak_dot(r, m):
-    mark, kind = fit_mark(r["status"][m["slug"]])
-    return (f'<span class="pk-dot pk-{kind}" style="--cls:{cls_color(m)}" '
-            f'title="{e(first(m))}: {"sedí" if kind == "fit" else mark + " lvl"}">{"✓" if kind == "fit" else mark}</span>')
+            f'{rc}{ahead_table(rows, best, members)}</section>')
 
 
 def since_label(base, today):
@@ -2461,26 +2489,27 @@ box-shadow:0 0 0 2px var(--panel);z-index:1}
 .next h2 .chip{font-family:Inter,system-ui,sans-serif}
 .next-meta{margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;color:var(--muted);font-size:14px}
 .nx-range{color:var(--gold);font-weight:600;border:1px solid #6b5420;background:#2c2014;border-radius:999px;padding:1px 10px}
-.nx-party{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
-.nx-m{display:grid;grid-template-columns:30px 1fr auto;grid-template-rows:auto auto;column-gap:8px;align-items:center;
-background:#0003;border:1px solid #ffffff10;border-left:3px solid var(--cls);border-radius:10px;padding:6px 10px 6px 8px}
-.nx-av{grid-row:1/3;width:30px;height:30px;border-radius:50%;background:var(--panel2)}
-.nx-name{font-weight:600;font-size:13px;color:var(--cls)}.nx-lvl{grid-column:2;font-size:12px;color:var(--muted)}
-.nx-mark{grid-row:1/3;grid-column:3;font-weight:700;font-size:14px}
-.nx-fit .nx-mark{color:var(--ok)}.nx-under .nx-mark{color:var(--warn)}.nx-over .nx-mark{color:var(--muted)}
-.nx-under,.nx-over{opacity:.75}
 .nx-rc{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:13px;color:var(--text);
 background:#0003;border:1px solid #ffffff10;border-radius:10px;padding:8px 12px}
 .nx-rc:hover{text-decoration:none;border-color:var(--gold)}
 .nx-rc-share{color:var(--share)}.nx-rc-take{color:var(--warn)}.nx-rc-ok{color:var(--ok)}
 .nx-go{margin-left:auto;color:var(--gold);font-weight:600}
-.pak{list-style:none;margin:-8px 0 0;padding:0;display:grid;gap:2px;font-size:14px}
-.pak li{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:5px 0;border-top:1px solid #ffffff10}
-.pk-name{font-weight:600}.pk-range{color:var(--gold);font-size:13px}
-.pk-dots{display:flex;gap:4px}
-.pk-dot{min-width:22px;height:22px;border-radius:999px;display:grid;place-items:center;font-size:10px;font-weight:700;
-background:var(--cls);color:#1a120c;padding:0 4px}
-.pk-under,.pk-over{background:transparent;border:1.5px solid var(--cls);color:var(--cls)}
+.ah-wrap{overflow-x:auto;margin-top:-6px}
+.ahead{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.ahead th,.ahead td{padding:4px 2px;text-align:center;border-top:1px solid #ffffff10}
+.ahead thead th{border-top:0;font-size:12px;font-weight:600;color:var(--cls,var(--muted));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ahead th:first-child{width:34%;text-align:left}.ahead th:nth-child(2){width:9%}
+.ahead tbody th{text-align:left;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ah-cap{color:var(--gold);font-size:12px}
+.ah-best td,.ah-best th{background:#e8b85c14}.ah-best th{color:var(--gold)}
+.ah-done th{color:var(--muted);font-weight:400}
+.ah{display:inline-block;min-width:30px;padding:1px 5px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.5;white-space:nowrap}
+.ah-short{display:none}
+.ah-ok{background:#6fbf7326;color:var(--ok)}.ah-soon{background:#e8a13c26;color:var(--warn)}.ah-last{background:#e0574b2e;color:var(--bad)}
+.ah-low{color:var(--muted);border:1px dashed #ffffff30;font-weight:400}.ah-late{color:var(--muted);font-weight:400}
+.ah-legend{margin:-6px 0 0;font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+@media(max-width:480px){.ahead{font-size:12px}.ahead th:first-child{width:36%}.ahead th:nth-child(2){width:8%}
+.ah{min-width:22px;padding:0 3px;font-size:11px}.ah-long{display:none}.ah-short{display:inline}.ah-legend .ah-long{display:inline}}
 .nw{list-style:none;margin:0;padding:0;display:grid}
 .nw>li{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:10px 0;border-top:1px solid #ffffff10}
 .nw>li:first-child{border-top:0;padding-top:4px}
