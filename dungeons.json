@@ -14,7 +14,7 @@
   {"name": "Gnomeregan", "zone": "Dun Morogh", "min": 29, "max": 38, "difficulty": [25, 30, 33, 38]},
   {"name": "Razorfen Kraul", "zone": "The Barrens", "min": 30, "max": 40, "difficulty": [25, 28, 31, 34]},
   {"name": "Scarlet Monastery: Armory", "zone": "Tirisfal Glades", "min": 32, "max": 42},
-  {"name": "The Drowned City", "zone": "Stranglethorn Vale", "min": 35, "max": 40, "new": true, "note": "vstup pod vodou u pobřeží"},
+  {"name": "The Drowned City", "zone": "Stranglethorn Vale", "min": 35, "max": 40, "new": true, "note": "vstup pod vodou u pobřeží", "difficulty": [30, 37, 40, 43]},
   {"name": "Scarlet Monastery: Cathedral", "zone": "Tirisfal Glades", "min": 35, "max": 45, "difficulty": [35, 37, 39, 45]},
   {"name": "Krol'dok Stronghold", "zone": "Riverglades", "min": 40, "max": 45, "new": true},
   {"name": "Razorfen Downs", "zone": "The Barrens", "min": 40, "max": 50, "difficulty": [35, 37, 39, 41]},

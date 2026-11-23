@@ -169,9 +169,9 @@
     {"id": 1049, "name": "Compendium of the Fallen", "req": 28, "sharable": true,
      "start": "Sage Truthseeker (Thunder Bluff)",
      "note": "Library: kniha na polici v rohové místnosti mezi posledními chodbami. Undead ho vzít nemůžou"},
-    {"id": 1160, "name": "Test of Lore", "req": 25, "sharable": false,
+    {"id": 1160, "name": "Test of Lore", "req": 26, "sharable": true,
      "start": "Parqual Fintallas (Apothecarium, Undercity)",
-     "pre": {"name": "6 questů od Test of Faith po Test of Lore (Dorn Plainstalker, Thousand Needles; Braug Dimspirit, Stonetalon; kniha v Dor'Danil Barrow, odpověď Neltharion)", "ids": [1149, 1152, 1154, 1159]},
+     "pre": {"name": "6 questů od Test of Faith po Test of Lore (Dorn Plainstalker, Thousand Needles; Braug Dimspirit, Stonetalon; kniha v Dor'Danil Barrow, odpověď Neltharion)", "ids": [1149, 1150, 1151, 1152, 1154, 6627, 1159]},
      "note": "Library: Beginnings of the Undead Threat na stole v místnůstce u chodby s červeným kobercem za nádvořím"},
     {"id": 1113, "name": "Hearts of Zeal", "req": 30, "sharable": true,
      "start": "Master Apothecary Faranell (Apothecarium, Undercity)",
@@ -222,6 +222,30 @@
      "start": "Thun'grim Firegaze (kopce východně od Crossroads, The Barrens)",
      "pre": {"name": "řetěz od warrior trenéra Sorek v Orgrimmaru", "ids": [1825]},
      "note": "Vial of Phlogiston z Roogug uvnitř, zbytek se shání venku"}
+   ]
+  },
+  "The Drowned City": {
+   "source": "https://www.wowhead.com/forever/guide/the-drowned-city-dungeon-overview-location-rewards",
+   "tavern": "https://www.warcrafttavern.com/forever/guides/the-drowned-city/",
+   "checked": "2026-11-23",
+   "quests": [
+    {"id": 95775, "name": "The Drowned City", "req": 30, "sharable": true,
+     "start": "Kin'weelay (Grom'gol, Stranglethorn Vale 32.2 27.8)",
+     "pre": {"name": "The Vile Reef → The Gurubashi Legends of Old → Locating the Lost City (Kin'weelay); Tablet Shard leží pod vodou na 24.8 22.9", "ids": [629, 95748, 95770]},
+     "note": "hide a charcoal od Kin'weelay, uvnitř obkreslit 4 Tablets of I'lalai"},
+    {"id": 95776, "name": "The Only Good Brinescale...", "req": 30, "sharable": true,
+     "start": "Commander Aggro'gosh (Grom'gol, Stranglethorn Vale 32.2 28.8)",
+     "pre": {"name": "řetěz od Kin'weelay po Locating the Lost City a Enemies in the Water (10 Brinescale Trident pod vodou, nízký drop)", "ids": [629, 95748, 95770, 95773]},
+     "note": "zabít Var'Taka, nagu se dvěma kněžkami. Po něm kliknout na Glowing Pearl, ať spadne bariéra"},
+    {"id": 96774, "name": "Ancient Gurubashi Idol", "req": 30, "sharable": true,
+     "start": "Mazu'kon (Skywatcher Plateau, Mulgore, cesta nahoru od 40.2 17.4)",
+     "note": "Ancient Gurubashi Idol padá z Deathless Marrow, předposledního bosse v Eternal Amphitheater na západě"},
+    {"id": 95789, "name": "Shady Saltseers", "req": 34, "sharable": true,
+     "start": "Krazek (Booty Bay, horní patro hostince u flightmastera, 27.0 77.2)",
+     "note": "10 Voodoo-Infused Artifact z pirátů Saltseer uvnitř"},
+    {"id": 95791, "name": "The Saltseer Captain", "req": 34, "sharable": true,
+     "start": "Krazek (Booty Bay, horní patro hostince u flightmastera, 27.0 77.2)",
+     "note": "3 Saltseer Coroner a Captain Dreadrise, hlídkuje na severní straně jezírka uprostřed. Po něm druhá Glowing Pearl"}
    ]
   }
  }
