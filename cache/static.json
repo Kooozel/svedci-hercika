@@ -100,6 +100,16 @@
 "req": 0,
 "sub": "Other"
 },
+"12224": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134002.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 10,
+"name": "Crispy Bat Wing",
+"quality": "COMMON",
+"req": 1,
+"sub": "Food & Drink"
+},
 "1251": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133685.jpg",
 "inv": "NON_EQUIP",
@@ -129,6 +139,16 @@
 "quality": "COMMON",
 "req": 5,
 "sub": "Other"
+},
+"21072": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133906.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 20,
+"name": "Smoked Sagefish",
+"quality": "COMMON",
+"req": 10,
+"sub": "Food & Drink"
 },
 "2300": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132724.jpg",
@@ -440,6 +460,16 @@
 "req": 0,
 "sub": "Cloth"
 },
+"252437": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133609.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Forceful Medium Armor Kit",
+"quality": "UNCOMMON",
+"req": 15,
+"sub": "Permanent"
+},
 "253664": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/348520.jpg",
 "inv": "BAG",
@@ -488,6 +518,26 @@
 "name": "Filigreed Shadow Gown",
 "quality": "RARE",
 "req": 15,
+"sub": "Cloth"
+},
+"253949": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132767.jpg",
+"inv": "HEAD",
+"kind": "Armor",
+"level": 25,
+"name": "Pristine Circlet",
+"quality": "RARE",
+"req": 20,
+"sub": "Cloth"
+},
+"253987": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134581.jpg",
+"inv": "LEGS",
+"kind": "Armor",
+"level": 30,
+"name": "Pristine Leggings",
+"quality": "RARE",
+"req": 25,
 "sub": "Cloth"
 },
 "253995": {
@@ -1150,6 +1200,36 @@
 "req": 15,
 "sub": "Food & Drink"
 },
+"3823": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134798.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 33,
+"name": "Lesser Invisibility Potion",
+"quality": "COMMON",
+"req": 23,
+"sub": "Potions"
+},
+"3825": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134823.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 35,
+"name": "Elixir of Lesser Fortitude",
+"quality": "COMMON",
+"req": 25,
+"sub": "Elixirs"
+},
+"3827": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134852.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 32,
+"name": "Mana Potion",
+"quality": "COMMON",
+"req": 22,
+"sub": "Potions"
+},
 "4231": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134366.jpg",
 "inv": "NON_EQUIP",
@@ -1630,6 +1710,16 @@
 "req": 10,
 "sub": "Potions"
 },
+"6373": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134835.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 28,
+"name": "Elixir of Fire Power",
+"quality": "COMMON",
+"req": 18,
+"sub": "Elixirs"
+},
 "6385": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135024.jpg",
 "inv": "BODY",
@@ -1686,6 +1776,16 @@
 "kind": "Consumable",
 "level": 10,
 "name": "Herb Baked Egg",
+"quality": "COMMON",
+"req": 1,
+"sub": "Food & Drink"
+},
+"6890": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133969.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 10,
+"name": "Smoked Bear Meat",
 "quality": "COMMON",
 "req": 1,
 "sub": "Food & Drink"
@@ -1770,6 +1870,16 @@
 "req": 9,
 "sub": "Leather"
 },
+"787": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133910.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 10,
+"name": "Slitherskin Mackerel",
+"quality": "COMMON",
+"req": 1,
+"sub": "Food & Drink"
+},
 "818": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134118.jpg",
 "inv": "NON_EQUIP",
@@ -1820,6 +1930,20 @@
 ],
 [
 3371,
+1
+]
+]
+},
+"13344": {
+"item": 21072,
+"name": "Smoked Sagefish",
+"reagents": [
+[
+21071,
+1
+],
+[
+2678,
 1
 ]
 ]
@@ -2483,6 +2607,60 @@
 ],
 [
 2692,
+1
+]
+]
+},
+"1931": {
+"item": 3823,
+"name": "Lesser Invisibility Potion",
+"reagents": [
+[
+3818,
+1
+],
+[
+3355,
+1
+],
+[
+3372,
+1
+]
+]
+},
+"1933": {
+"item": 3825,
+"name": "Elixir of Lesser Fortitude",
+"reagents": [
+[
+3355,
+1
+],
+[
+3821,
+1
+],
+[
+3372,
+1
+]
+]
+},
+"1935": {
+"item": 3827,
+"name": "Mana Potion",
+"reagents": [
+[
+3820,
+1
+],
+[
+3356,
+1
+],
+[
+3372,
 1
 ]
 ]
@@ -3284,6 +3462,16 @@
 ]
 ]
 },
+"4354": {
+"item": 787,
+"name": "Slitherskin Mackerel",
+"reagents": [
+[
+6303,
+1
+]
+]
+},
 "4355": {
 "item": 4592,
 "name": "Longjaw Mud Snapper",
@@ -3486,6 +3674,24 @@
 ]
 ]
 },
+"4396": {
+"item": 6373,
+"name": "Elixir of Fire Power",
+"reagents": [
+[
+6371,
+2
+],
+[
+3356,
+1
+],
+[
+3372,
+1
+]
+]
+},
 "4399": {
 "item": null,
 "name": "Enchant Chest - Stamina",
@@ -3589,6 +3795,16 @@
 ],
 [
 2678,
+1
+]
+]
+},
+"4787": {
+"item": 6890,
+"name": "Smoked Bear Meat",
+"reagents": [
+[
+3173,
 1
 ]
 ]
@@ -4123,6 +4339,24 @@
 ]
 ]
 },
+"55184": {
+"item": 252437,
+"name": "Forceful Medium Armor Kit",
+"reagents": [
+[
+2313,
+1
+],
+[
+10940,
+2
+],
+[
+2454,
+2
+]
+]
+},
 "55366": {
 "item": 253664,
 "name": "Linen Reagent Bag",
@@ -4210,6 +4444,66 @@
 [
 1210,
 2
+]
+]
+},
+"55455": {
+"item": 253949,
+"name": "Pristine Circlet",
+"reagents": [
+[
+4305,
+10
+],
+[
+4291,
+2
+],
+[
+249409,
+4
+],
+[
+249427,
+4
+],
+[
+2842,
+1
+],
+[
+11082,
+2
+]
+]
+},
+"55474": {
+"item": 253987,
+"name": "Pristine Leggings",
+"reagents": [
+[
+4305,
+14
+],
+[
+2321,
+3
+],
+[
+249409,
+8
+],
+[
+249427,
+8
+],
+[
+2842,
+2
+],
+[
+11082,
+3
 ]
 ]
 },
@@ -4407,6 +4701,20 @@
 [
 10938,
 2
+]
+]
+},
+"8616": {
+"item": 12224,
+"name": "Crispy Bat Wing",
+"reagents": [
+[
+12223,
+1
+],
+[
+2678,
+1
 ]
 ]
 }
@@ -4908,6 +5216,28 @@
 "SHADOW_SPELL_DAMAGE": 9,
 "SPIRIT": 3,
 "STAMINA": 4
+}
+},
+"253949": {
+"bop": true,
+"v": 2,
+"values": {
+"ARMOR": 35,
+"SPELL_DAMAGE_DONE": 6,
+"SPELL_HEALING_DONE": 18,
+"STAMINA": 10
+}
+},
+"253987": {
+"bop": true,
+"v": 2,
+"values": {
+"ARMOR": 41,
+"INTELLECT": 7,
+"SPELL_DAMAGE_DONE": 7,
+"SPELL_HEALING_DONE": 22,
+"SPIRIT": 5,
+"STAMINA": 7
 }
 },
 "253995": {
