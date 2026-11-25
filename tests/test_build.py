@@ -411,6 +411,14 @@ class Dungeons(unittest.TestCase):
         self.assertIn(f"✓ odehrané ({n})", html)
         self.assertNotIn("ah-old ah-far", html)
 
+    def test_order_chars_main_first_then_alts_by_level(self):
+        chars = [Alts.char("k", 31), Alts.char("k2", 12, "k"), Alts.char("j", 30, "j"), Alts.char("k3", 24, "k"),
+                 Alts.char("j2", 33, "j")]
+        for c in chars[1:]:
+            c["alt"] = c["slug"] not in ("j",)
+        chars[0]["alt"] = False
+        self.assertEqual([c["slug"] for c in build.order_chars(chars)], ["k", "k3", "k2", "j", "j2"])
+
     def test_me_gate_offers_players_with_highest_level_char(self):
         chars = [Alts.char("j", 30, "j"), Alts.char("j2", 12, "j"), Alts.char("k", 31)]
         for c in chars:

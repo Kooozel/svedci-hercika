@@ -10,7 +10,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   (malými písmeny, diakritika zůstává, třeba `horaes-velký`). `size` je počet míst v partě (prázdná se ukážou jako volná).
 - **Přezdívka hráče:** `name` u hráče v `players`, ukazuje se nad jménem postavy. Bez ní se vezme křestní jméno hlavní postavy. Hráč s prázdným `chars` se ukáže na volném místě.
 - **Alt:** připiš ho hráči do `chars` za hlavní postavu. Hlavní postava (první) drží místo v partě a počítá se z ní plán výpravy,
-  tituly, loot a řemesla. Alt má ready check, kartu postavy a novinky, ve skupinové fotce je u hráče jen poznámka „+5 postav“. Přepíná se v kartě postavy a přepnutý alt se ukáže i na místě svého hráče ve fotce (výchozí je naposledy hraná postava). Alt pod levelem 10 API nevrací, na stránce se objeví sám, až ho přeleze.
+  tituly, loot a řemesla. Alt má ready check, kartu postavy a novinky, ve skupinové fotce je u hráče jen poznámka „+5 postav“. Přepíná se v kartě postavy a přepnutý alt se ukáže i na místě svého hráče ve fotce (výchozí je naposledy hraná postava). Alt pod levelem 10 API nevrací, na stránce se objeví sám, až ho přeleze. Všude, kde se vybírá postava, jdou postavy po hráčích: hlavní první, alti od nejvyššího levelu (`order_chars`).
 - **Role:** odhadují se podle specu. Když někdo hraje jinak (Johnie tankuje s body v Holy), přepiš to v `party.json`
   v `roles`, třeba `"johnie-rotking": "tank"` (tank / heal / dps).
 - **Druhý pád jména:** v `genitive` (třeba `"zrza-jegod": "Zrzy"`), aby stránka psala „od Zrzy“.

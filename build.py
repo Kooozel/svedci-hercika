@@ -1408,6 +1408,14 @@ def char_label(m):
     return m["name"] if nick(m) == first(m) else f'{m["name"]} ({nick(m)})'
 
 
+def order_chars(chars):
+    """Postavy po hráčích (v pořadí party), u každého hlavní první a alti od nejvyššího levelu."""
+    seen = {}
+    for m in chars:
+        seen.setdefault(m.get("player", m["slug"]), len(seen))
+    return sorted(chars, key=lambda m: (seen[m.get("player", m["slug"])], bool(m.get("alt")), -(m.get("level") or 0)))
+
+
 def shown_char(group):
     """Koho ukázat za hráče: naposledy hranou postavu, při shodě hlavní."""
     return max(group, key=lambda c: c.get("updated") or "")
@@ -2303,8 +2311,8 @@ def me_menu(chars):
 def ready_section(checks, members):
     if not checks:
         return ""
-    # jeden výběr dungeonu, skupiny podle vybrané postavy skládá stránka; odehrané až za těmi před námi, podle levelu
-    order = sorted(enumerate(checks), key=lambda x: (bool(x[1].get("past")), x[1]["min"] if x[1].get("past") else 0))
+    # jeden výběr dungeonu, skupiny podle vybrané postavy skládá stránka; odehrané až za těmi před námi, obojí podle min. levelu
+    order = sorted(enumerate(checks), key=lambda x: (bool(x[1].get("past")), x[1]["min"]))
     opts = "".join(
         f'<option value="{i}" data-title="{e(c["title"])}"{" data-past=1" if c.get("past") else ""} '
         f'data-fit="{e(" ".join(m["slug"] for m in members if c["min"] <= m.get("level", 0) <= c["max"]))}">'
@@ -3432,7 +3440,7 @@ def main():
     loaded = load_party(party, token)
     members = [m for m in loaded if not m.get("alt")]  # hlavní postavy: místa v partě, plán, tituly, loot, řemesla
     ok = [m for m in members if m["ok"]]
-    chars = [m for m in loaded if m["ok"]]  # navíc alti: ready check, karty, novinky
+    chars = order_chars([m for m in loaded if m["ok"]])  # navíc alti: ready check, karty, novinky
     if not ok:
         sys.exit("Nepodařilo se načíst žádnou postavu, stránku neměním.")
     if token:
