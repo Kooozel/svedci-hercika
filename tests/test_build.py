@@ -357,6 +357,16 @@ class Dungeons(unittest.TestCase):
         self.assertIn("další dungeony (2)", html)
         self.assertIn('data-player="a"', html)
 
+    def test_me_gate_offers_players_with_last_played_char(self):
+        chars = [Alts.char("j", 30, "j"), Alts.char("j2", 12, "j"), Alts.char("k", 31)]
+        for c in chars:
+            c["name"] = c["slug"].upper() + " Velký"
+        chars[1]["updated"] = "2026-11-20"
+        html = build.me_gate(chars)
+        self.assertEqual(html.count('data-who="'), 2)
+        self.assertIn('data-who="j" data-pick="j2"', html)
+        self.assertIn("jen koukám", html)
+
     def test_me_menu_groups_chars_by_player(self):
         chars = [Alts.char("j", 30, "j"), Alts.char("j2", 8, "j"), Alts.char("k", 31)]
         for c in chars:
@@ -732,9 +742,11 @@ class Alts(unittest.TestCase):
         chars = [{**m, "ok": True, "name": m["slug"].title() + " Velký", "class_slug": "mage"} for m in party]
         chars[1]["alt"] = True
         html = build.ready_section([check], chars)
-        self.assertEqual(html.count('data-who="'), 2)  # hráči, ne postavy
-        self.assertIn('<div class="me-strip me-chars" data-player="a" hidden>', html)
-        self.assertIn("<b>A2</b><span>Velký</span>", html)
+        # v ready checku jen čipy postav hráče, hráče vybírá úvodní volba a lišta
+        self.assertIn('<div class="me-chips" data-player="a" hidden>', html)
+        self.assertIn('data-me="a2"', html)
+        self.assertIn('<span class="mc-name">A2 Velký</span>', html)
+        self.assertNotIn('data-who="', html)
         self.assertIn("může nasdílet B", html)
         self.assertNotIn("Kdo jde", html)
 

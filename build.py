@@ -2211,10 +2211,18 @@ def char_card(m, attr, title=None, line=None, small=None, level=True):
             f'<small>{e(small or m.get("class", ""))}</small></span></button>')
 
 
-def player_card(player, chars):
-    m = shown_char(chars)
-    return char_card(m, f'data-who="{e(player)}"', nick(m), m["name"],
-                     pl(len(chars), ("{n} postava", "{n} postavy", "{n} postav")), level=False)
+def me_gate(chars):
+    """Volba hráče při první návštěvě: karty hráčů, za každého jeho naposledy hraná postava (alta přepne „Hraju za“)."""
+    players = {}
+    for m in chars:
+        players.setdefault(m.get("player", m["slug"]), []).append(m)
+    cards = "".join(char_card(shown_char(cs), f'data-who="{e(p)}" data-pick="{e(shown_char(cs)["slug"])}"', nick(shown_char(cs)),
+                              shown_char(cs)["name"], pl(len(cs), ("{n} postava", "{n} postavy", "{n} postav")), level=False)
+                    for p, cs in players.items())
+    return (f'<div class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-h" hidden><div class="gate-box">'
+            f'<h2 id="gate-h">Kdo jsi?</h2><p class="gate-sub">Podle toho ti stránka ukáže tvoje questy, loot a dungeony. Změníš to v liště.</p>'
+            f'<div class="gate-grid">{cards}</div>'
+            f'<button type="button" class="gate-skip">jen koukám</button></div></div>')
 
 
 def me_menu(chars):
@@ -2244,18 +2252,17 @@ def ready_section(checks, members):
     players = {}
     for m in members:
         players.setdefault(m.get("player", m["slug"]), []).append(m)
-    who = "".join(player_card(p, chars) for p, chars in players.items())
-    strips = "".join(f'<div class="me-strip me-chars" data-player="{e(p)}" hidden>'
-                     + "".join(char_card(m, f'data-me="{e(m["slug"])}" aria-pressed="false"') for m in chars) + "</div>"
+    strips = "".join(f'<div class="me-chips" data-player="{e(p)}" hidden>'
+                     + "".join(f'<button type="button" class="mc" data-me="{e(m["slug"])}" aria-pressed="false" style="--cls:{cls_color(m)}">'
+                               f'{avatar(m, "mc-av")}<span class="mc-name">{e(m["name"])}</span><span class="mc-lvl">{m.get("level", "")}</span></button>'
+                               for m in chars) + "</div>"
                      for p, chars in players.items())
     data = json.dumps({m["slug"]: m.get("player", m["slug"]) for m in members}, ensure_ascii=False).replace("<", "\\u003c")
     names = json.dumps({m["slug"]: [nick(m), m["name"]] for m in members}, ensure_ascii=False).replace("<", "\\u003c")
     return (f'<section id="ready"><h2 class="sec">Ready check</h2>'
             f'<script type="application/json" id="rc-chars">{data}</script>'
             f'<script type="application/json" id="rc-names">{names}</script>'
-            f'<div class="me-box"><div class="me-top"><span class="me-title">Kdo jsi?</span>'
-            f'<button type="button" class="me-swap" hidden>změnit hráče</button></div>'
-            f'<div class="me-strip me-who">{who}</div>{strips}</div>'
+            f'<div class="me-box">{strips}<button type="button" class="me-ask" hidden>Vyber, za koho hraješ ▾</button></div>'
             f'<label class="rc-sel"><span>Připravit na dungeon</span><select>{opts}</select></label>'
             f'{"".join(ready_box(c, members, i) for i, c in enumerate(checks))}</section>')
 
@@ -2642,7 +2649,7 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
     lead = next(iter(titles), None)
     image = (by_slug.get(lead) or {}).get("render") or next((m.get("render") for m in ok if m.get("render")), "")
     # pořadí lišty kopíruje pořadí sekcí
-    nav = [("vyprava", "Výprava", bool(best)), ("postavy", "Postavy", True), ("tituly", "Tituly", bool(titles)),
+    nav = [("postavy", "Postavy", True), ("vyprava", "Výprava", bool(best)), ("tituly", "Tituly", bool(titles)),
            ("novinky", "Novinky", bool(base)), ("ready", "Ready check", bool(checks)), ("loot", "Loot", bool(loot)),
            ("kronika", "Kronika", bool(chronicle)), ("profese", "Řemesla", True)]
     nav_html = "".join(f'<a href="#{i}">{t}</a>' for i, t, show in nav if show)
@@ -2659,8 +2666,9 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
     </div>
   </header>
   <nav class="nav"><div class="nav-links">{nav_html}</div>{'<button type="button" class="nav-me" aria-haspopup="dialog" aria-expanded="false" hidden><span>Hraju za</span><b>Kdo jsi?</b><small></small><i class="nav-caret">▾</i></button>' + me_menu(chars) if checks else ""}</nav>
-  {next_box(rows, best, ok, checks, chars)}
+  {me_gate(chars) if checks else ""}
   {squad(members, party.get("size", len(members)), today, [m for m in chars if m.get("alt")], waiting_players(party))}
+  {next_box(rows, best, ok, checks, chars)}
   {evening_box(ok, base, titles, counters)}
   {news_box(chars, base, today) if base else ""}
   {ready_section(checks, chars)}
@@ -2750,17 +2758,32 @@ mask-image:linear-gradient(to right,transparent,#000 32px,#000 calc(100% - 32px)
 section[id],div[id]{scroll-margin-top:56px}
 .sec-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap}
 .me-box{margin:0 0 14px}
-.me-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
-.me-title{font-size:13px;color:var(--muted)}
-.me-swap{font:600 13px Inter,system-ui,sans-serif;color:var(--gold);background:none;border:0;padding:0;cursor:pointer}
-.me-strip{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 8px;scrollbar-width:thin}
-.me-strip[hidden]{display:none}
+.me-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}.me-chips[hidden]{display:none}
+.mc{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:3px 12px 3px 4px;font:600 13px Inter,system-ui,sans-serif;
+  color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:999px;cursor:pointer}
+.mc:hover{border-color:var(--cls)}.mc-av{width:26px;height:26px;border-radius:50%;background:var(--panel2)}
+.mc-name{color:var(--cls)}.mc-lvl{color:var(--muted);font-size:12px;font-weight:400}
+.mc[aria-pressed=true]{border-color:var(--cls);background:color-mix(in srgb,var(--cls) 14%,var(--panel));box-shadow:0 0 0 1px var(--cls)}
+.me-ask{min-height:36px;padding:4px 14px;font:600 13px Inter,system-ui,sans-serif;color:var(--gold);background:var(--panel2);
+  border:1px solid #6b5420;border-radius:999px;cursor:pointer}.me-ask[hidden]{display:none}
+.gate{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;overflow-y:auto;
+  background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(8px)}
+.gate[hidden]{display:none}body.gate-on{overflow:hidden}
+.gate-box{width:min(720px,100%);text-align:center}
+.gate-box h2{font:700 32px Cinzel,serif;color:var(--gold);margin:0 0 6px}
+.gate-sub{color:var(--muted);margin:0 0 18px;font-size:14px}
+.gate-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;text-align:left}
+.gate-grid .ch{flex:none;width:100%}.gate-grid .ch-art{filter:none}
+.gate-skip{margin-top:16px;min-height:36px;padding:4px 16px;font:600 13px Inter,system-ui,sans-serif;color:var(--muted);
+  background:none;border:0;cursor:pointer;text-decoration:underline}
+@media(max-width:600px){.gate{place-items:start center}.gate-box h2{font-size:26px}.gate-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.gate-grid .ch-art{height:84px}}
 .ch{position:relative;flex:0 0 140px;scroll-snap-align:start;padding:0;text-align:left;color:var(--text);background:var(--panel);
 border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;font-family:Inter,system-ui,sans-serif;transition:border-color .15s,transform .15s}
 .ch:hover{border-color:var(--cls);transform:translateY(-2px)}
 .ch-art{display:block;height:104px;background-color:color-mix(in srgb,var(--cls) 16%,var(--panel2));background-repeat:no-repeat;background-size:300%;background-position:50% 33%;
 border-bottom:2px solid color-mix(in srgb,var(--cls) 45%,transparent);filter:saturate(.75) brightness(.8);transition:filter .15s}
-.ch:hover .ch-art,.ch[aria-pressed=true] .ch-art,.me-who .ch-art{filter:none}
+.ch:hover .ch-art,.ch[aria-pressed=true] .ch-art{filter:none}
 .ch-noart{display:flex;align-items:center;justify-content:center}.ch-av{width:64px;height:64px;border-radius:50%}
 .ch-lvl{position:absolute;top:6px;right:6px;min-width:30px;text-align:center;font:700 16px Cinzel,serif;color:var(--gold);background:color-mix(in srgb,var(--bg) 82%,transparent);border-radius:8px;padding:1px 6px}
 .ch-txt{display:grid;padding:7px 10px 9px;line-height:1.25}
@@ -3072,7 +3095,7 @@ background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:
 /* cíle pro prst: na mobilu aspoň 36 px na výšku */
 @media(max-width:600px){
 .nav a{min-height:36px;display:inline-flex;align-items:center}.nav-me{min-height:36px;align-items:center}
-.sheet-armory,.me-swap:not([hidden]),.loot-all:not([hidden]),.rc-source a,.k-more a{display:inline-flex;align-items:center;min-height:36px;padding:0 4px}
+.sheet-armory,.loot-all:not([hidden]),.rc-source a,.k-more a{display:inline-flex;align-items:center;min-height:36px;padding:0 4px}
 footer a{display:inline-block;padding:8px 2px}
 .lt-who:not(.lt-altc),.lt-altc.lt-me,.lt-flag{display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:2px 10px}
 .lt-item a.item,a.ql{display:inline-flex;align-items:center;min-height:36px}
@@ -3084,7 +3107,7 @@ JS = """
 const OWNER=JSON.parse(document.getElementById('rc-chars')?.textContent||'{}');
 const NAMES=JSON.parse(document.getElementById('rc-names')?.textContent||'{}');
 const navMe=document.querySelector('.nav-me');
-function syncMe(){if(navMe){const n=NAMES[viewer],same=n&&n[1].split(' ')[0]===n[0];navMe.hidden=!whoStrip;
+function syncMe(){if(navMe){const n=NAMES[viewer],same=n&&n[1].split(' ')[0]===n[0];navMe.hidden=!document.querySelector('.me-menu');
   navMe.querySelector('b').textContent=n?(same?n[1]:n[0]):'Kdo jsi?';navMe.querySelector('small').textContent=n&&!same?n[1]:'';navMe.title=n?'Hraju za '+n[1]+': změnit postavu':'Vyber, za koho hraješ'}
   document.querySelectorAll('.ahead [data-player]').forEach(x=>x.classList.toggle('ah-me',!!viewer&&x.dataset.player===OWNER[viewer]));
   document.querySelectorAll('.mm-c').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===viewer));
@@ -3101,8 +3124,6 @@ function syncNext(){const rc=document.querySelector('.nx-rc');if(!rc)return;cons
 const panels=[...document.querySelectorAll('.rc')];
 const sel=document.querySelector('.rc-sel select');
 const selOpts=sel?[...sel.options]:[];
-const whoStrip=document.querySelector('.me-who');
-const swap=document.querySelector('.me-swap');
 const lootBox=document.getElementById('loot'),lootBtn=document.querySelector('.loot-all');
 let viewer='',lootAll=false;
 const words=s=>(s||'').split(' ').filter(Boolean);
@@ -3131,26 +3152,21 @@ function fitJump(slug){const rc=panels.find(a=>!a.hidden);if(!slug||(rc&&words(r
   const to=panels.find(a=>words(a.dataset.fit).includes(slug));if(to)pick(+to.id.slice(3))}
 function showFig(slug){const f=document.querySelector(`.pc[data-slug="${CSS.escape(slug)}"]`);if(!f||!f.hidden)return;
   document.querySelectorAll(`.pc[data-player="${CSS.escape(f.dataset.player)}"]`).forEach(x=>x.hidden=x!==f)}
-function choosing(on){if(!whoStrip)return;const p=OWNER[viewer];whoStrip.hidden=!on;
-  document.querySelectorAll('.me-chars').forEach(d=>d.hidden=on||d.dataset.player!==p);
-  document.querySelector('.me-title').textContent=on?'Kdo jsi?':'Moje postavy';swap.hidden=on}
+function syncChips(){const p=OWNER[viewer];document.querySelectorAll('.me-chips').forEach(d=>d.hidden=!viewer||d.dataset.player!==p);
+  const ask=document.querySelector('.me-ask');if(ask)ask.hidden=!!viewer}
 function me(slug){viewer=slug;
-  document.querySelectorAll('.ch[data-me]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));
+  document.querySelectorAll('.mc[data-me]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));
   panels.forEach(rc=>{rc.querySelectorAll('.mine').forEach(c=>c.hidden=c.dataset.slug!==slug);
     const has=!!slug&&!!rc.querySelector(`.rc-table th[data-slug="${CSS.escape(slug)}"]`);
     rc.querySelectorAll('.rc-table [data-player]').forEach(c=>{const mine=has&&c.dataset.player===OWNER[slug];
       c.hidden=mine?c.dataset.slug!==slug:!('def' in c.dataset);c.classList.toggle('me-col',mine)})});
   syncMe();
-  orderSel();if(slug)showFig(slug);choosing(!slug);
-  const on=document.querySelector('.me-chars:not([hidden]) .ch[aria-pressed=true]');
+  orderSel();if(slug)showFig(slug);syncChips();
+  const on=document.querySelector('.me-chips:not([hidden]) .mc[aria-pressed=true]');
   if(on)on.parentElement.scrollLeft=on.offsetLeft-on.parentElement.offsetLeft-2;
   syncLoot();syncCraft();
   try{localStorage.setItem('me',slug)}catch(e){}}
-document.querySelectorAll('.ch[data-me]').forEach(b=>b.addEventListener('click',()=>{me(b.dataset.me);fitJump(b.dataset.me)}));
-document.querySelectorAll('.ch[data-who]').forEach(b=>b.addEventListener('click',()=>{const p=b.dataset.who;
-  if(OWNER[viewer]===p){choosing(false);return}
-  const slug=Object.keys(OWNER).find(s=>OWNER[s]===p);me(slug);fitJump(slug)}));
-swap?.addEventListener('click',()=>choosing(true));
+document.querySelectorAll('.mc[data-me]').forEach(b=>b.addEventListener('click',()=>{me(b.dataset.me);fitJump(b.dataset.me)}));
 const menu=document.querySelector('.me-menu');
 function menuOpen(on){if(!menu)return;menu.hidden=!on;navMe.setAttribute('aria-expanded',on);
   if(on)(menu.querySelector('.mm-c[aria-pressed=true]')||menu.querySelector('.mm-c')).focus({preventScroll:true})}
@@ -3158,6 +3174,17 @@ navMe?.addEventListener('click',ev=>{ev.stopPropagation();menuOpen(menu.hidden)}
 menu?.querySelectorAll('.mm-c').forEach(b=>b.addEventListener('click',()=>{me(b.dataset.me);fitJump(b.dataset.me);menuOpen(false);navMe.focus()}));
 document.addEventListener('click',ev=>{if(menu&&!menu.hidden&&!menu.contains(ev.target))menuOpen(false)});
 addEventListener('keydown',ev=>{if(ev.key==='Escape'&&menu&&!menu.hidden){menuOpen(false);navMe.focus()}});
+document.querySelector('.me-ask')?.addEventListener('click',ev=>{ev.stopPropagation();
+  navMe.scrollIntoView({block:'nearest'});menuOpen(true)});
+// první návštěva: stránka se zeptá, kdo jsi; volba (i „jen koukám“) se pamatuje v prohlížeči
+const gate=document.querySelector('.gate');
+function gateDone(slug){gate.hidden=true;document.body.classList.remove('gate-on');
+  try{localStorage.setItem('me-asked','1')}catch(e){}me(slug);fitJump(slug)}
+gate?.querySelectorAll('.ch[data-pick]').forEach(b=>b.addEventListener('click',()=>gateDone(b.dataset.pick)));
+gate?.querySelector('.gate-skip').addEventListener('click',()=>gateDone(''));
+{let asked=false;try{asked=!!localStorage.getItem('me-asked')||!!localStorage.getItem('me')}catch(e){asked=true}
+ if(gate&&!asked&&!viewer&&!location.hash.startsWith('#char-')){gate.hidden=false;document.body.classList.add('gate-on');
+   gate.querySelector('.ch').focus({preventScroll:true})}}
 document.querySelectorAll('.ah-more').forEach(b=>b.addEventListener('click',()=>{const t=b.previousElementSibling.querySelector('.ahead'),
   on=t.classList.toggle('ah-open');b.textContent=on?'méně dungeonů ▴':'další dungeony ('+b.dataset.n+') ▾'}));
 if(sel)sel.addEventListener('change',()=>pick(+sel.value));
@@ -3185,16 +3212,16 @@ document.querySelectorAll('.sheet-alts button').forEach(b=>b.addEventListener('c
 document.querySelectorAll('.sheet-close').forEach(b=>b.addEventListener('click',()=>openSheet('')));
 dim?.addEventListener('click',()=>openSheet(''));
 addEventListener('keydown',ev=>{if(ev.key==='Escape'&&openNow)openSheet('')});
-{const h=decodeURIComponent(location.hash);let start='';
- if(h.startsWith('#char-')) start=h.slice(6); else {try{start=localStorage.getItem('me')||''}catch(e){}}
- // vybraná postava z „Hraju za“ na mobilu panel sama neotevře
- if(start&&hasSheet(start)&&(h.startsWith('#char-')||!narrow.matches)) openSheet(start,h.startsWith('#char-'));}
+// kartu otevře jen odkaz #char-…; obnovení stránky ji znovu neotevře
+{const h=decodeURIComponent(location.hash),nav=performance.getEntriesByType?.('navigation')[0];
+ if(h.startsWith('#char-')){if(nav?.type!=='reload'&&hasSheet(h.slice(6)))openSheet(h.slice(6),true);
+   else history.replaceState(null,'',location.pathname+location.search)}}
 addEventListener('hashchange',()=>{const h=decodeURIComponent(location.hash);
   if(h.startsWith('#char-')&&hasSheet(h.slice(6))) openSheet(h.slice(6),true)});
 // posuvné řady (lišta, postavy v ready checku): ztmavení u okraje, za kterým ještě něco je
 function edges(el){const l=el.scrollLeft>2,r=el.scrollLeft+el.clientWidth<el.scrollWidth-2;
   el.classList.toggle('more-l',l);el.classList.toggle('more-r',r)}
-document.querySelectorAll('.nav-links,.me-chars').forEach(el=>{el.addEventListener('scroll',()=>edges(el),{passive:true});
+document.querySelectorAll('.nav-links,.me-chips').forEach(el=>{el.addEventListener('scroll',()=>edges(el),{passive:true});
   new ResizeObserver(()=>edges(el)).observe(el);edges(el)});
 // odkaz sekce, ve které právě jsem
 {const links=[...document.querySelectorAll('.nav-links a')],bar=document.querySelector('.nav-links');

@@ -29,9 +29,9 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Nový člen party dostane první den uvítací titul z `newcomers`.
   Titul za statistiku dostane jen ten, kdo v ní vede (nebo má aspoň 75 % nejlepšího, `LEAD`); kdo hrál,
   ale v ničem nevedl, dostane titul z `busy`. Stejný titul u víc lidí je jedna karta se všemi jmény („Kozel, Zrza, Hora“).
-- **Pořadí stránky:** hlavička, lišta, Příští výprava, skupinová fotka, tituly, novinky, ready check, loot, kronika, řemesla.
+- **Pořadí stránky:** hlavička, lišta, skupinová fotka, Příští výprava, tituly, novinky, ready check, loot, kronika, řemesla.
   Lišta má odkazy ve stejném pořadí a zvýrazní sekci, ve které právě jsi. Posuvné řady (lišta, postavy v ready checku)
-  ztmavnou u okraje, za kterým ještě něco je. Na mobilu mají odkazy a štítky aspoň 36 px na výšku. Na mobilu je výprava i se souhrnem ready checku na první obrazovce.
+  ztmavnou u okraje, za kterým ještě něco je. Na mobilu mají odkazy a štítky aspoň 36 px na výšku.
 - **Příští výprava:** dungeon, rozsah levelů a souhrn ready checku. Souhrn má za každého hráče, co jeho postavě chybí („Johnie ✋ 1× dojít“).
   S vybranou postavou začíná „Ty (jméno): …“ a ukazuje jen ty ostatní, kteří ještě něco potřebují; když se vybraná postava
   do dungeonu nevejde, mluví o postavě, kterou za hráče bere výprava. Odkaz vede na celý ready check. Pod tím mřížka „Kam dál“: dungeony začínající
@@ -49,9 +49,11 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   postavy ve hře (rámeček barvy kvality, 🩴 hadr = nejslabší kus podle item levelu, prázdné sloty čárkovaně), vedle
   hláška, jak je oblečený (průměrný item level proti levelu), co mu chybí („chodí bez čepice“), „Jak na tom je“
   (HP a dva hlavní staty role číslem, `STAT_ROWS` v `build.py`, zbytek je na Armory), stupně řemesel a pet. Kdo se odhlásil s Resurrection
-  Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu, jinak se na desktopu otevře ta
-  z „Hraju za“ v ready checku (na mobilu je jen na místě svého hráče ve fotce).
-- **Ready check:** stránka se jednou zeptá, kdo jsi, a ukáže karty tvých postav. Vybraná postava je vpravo v liště
+  Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu; obnovení stránky
+  kartu znovu neotevře a sama od sebe se neotevře žádná.
+- **Kdo jsi:** při první návštěvě stránka ukáže jen volbu hráče (za něj jeho naposledy hraná postava) a „jen koukám“.
+  Volba se pamatuje v prohlížeči (`localStorage`), odkaz `#char-…` volbu přeskočí.
+- **Ready check:** nahoře jsou čipy tvých postav pro přepnutí alta. Vybraná postava je vpravo v liště
   („Hraju za“: klik otevře menu hráčů a jejich postav, stránka nikam neodskočí; „jen koukám“ výběr zruší) a podle ní se řídí ready check, loot, Dílna a tvoje místo ve skupinové fotce. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
   co si má dojít, co jí může někdo nasdílet a co začíná uvnitř. Nasdílet může postava jiného hráče, která se do dungeonu levelem vejde.
   Pod úkoly je tabulka „Celá parta“: řádek = quest, sloupec = hráč s postavou, kterou do dungeonu nejspíš vezme
