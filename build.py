@@ -1408,6 +1408,11 @@ def shown_char(group):
     return max(group, key=lambda c: c.get("updated") or "")
 
 
+def top_char(group):
+    """Výchozí „moje“ postava hráče: nejvyšší level, při shodě naposledy hraná. Jinou si zvolí v liště."""
+    return max(group, key=lambda c: (c.get("level") or 0, c.get("updated") or ""))
+
+
 def first_gen(m):
     """Druhý pád křestního jména (od Zrzy), z party.json; bez něj první pád."""
     return m.get("gen") or nick(m)
@@ -1687,17 +1692,36 @@ def walk_level(r):
     return min(r["max"], diff[3]) if diff else r["max"]
 
 
+def reserve_char(group, r):
+    """Postava hráče pro Kam dál: z těch, co se do dungeonu vejdou, ta s největší rezervou do procházky,
+    jinak nejbližší pod rozsahem, a když jsou všechny nad ním, ta nejnižší."""
+    cap = walk_level(r)
+    inside = [c for c in group if r["min"] <= c["level"] <= cap]
+    below = [c for c in group if c["level"] < r["min"]]
+    if inside:
+        return min(inside, key=lambda c: c["level"])
+    if below:
+        return max(below, key=lambda c: c["level"])
+    return min(group, key=lambda c: c["level"])
+
+
+def player_groups(members, by_slug):
+    """Za každou hlavní postavu (místo v partě) všechny postavy jejího hráče."""
+    chars = list(by_slug.values()) or members
+    return [[c for c in chars if c.get("player", c["slug"]) == m.get("player", m["slug"])] or [m] for m in members]
+
+
 def ahead_rows(rows, members, by_slug=None):
     """Dungeony začínající pod AHEAD_UNTIL, které aspoň pro jednu postavu ještě nejsou procházka, nejdřív ty, co utečou."""
-    by_slug = by_slug or {}
+    groups = player_groups(members, by_slug or {})
     keep = [r for r in rows if r["min"] < AHEAD_UNTIL
-            and any(picked(r, m, by_slug)["level"] <= walk_level(r) for m in members)]
+            and any(reserve_char(g, r)["level"] <= walk_level(r) for g in groups)]
     return sorted(keep, key=lambda r: (walk_level(r), r["min"]))
 
 
 def ahead_cell(r, m):
     """(css třída, text, tooltip) pro jednu postavu: kolik levelů zbývá do procházky."""
-    lvl, cap, who = m["level"], walk_level(r), first(m)
+    lvl, cap, who = m["level"], walk_level(r), m["name"]
     if lvl < r["min"]:
         return "low", f"za {r['min'] - lvl}", f"{who}: dungeon od levelu {r['min']}"
     if lvl > cap:
@@ -1721,8 +1745,10 @@ def short_dungeon(name):
 
 
 def ahead_table(rows, best, members, by_slug=None):
-    """Sloupec za hráče (members = hlavní postavy), v řádku jeho postava, kterou do dungeonu pošle."""
+    """Sloupec za hráče (members = hlavní postavy), v řádku jeho postava s největší rezervou (reserve_char).
+    Stránka do sloupce vybraného hráče (a ručně přepnutých v ready checku) dá jeho zvolenou postavu, proto data-min a data-cap."""
     by_slug = by_slug or {}
+    groups = player_groups(members, by_slug)
     pl = [e(m.get("player", m["slug"])) for m in members]
     head = "".join(f'<th data-player="{p}" style="--cls:{cls_color(m)}" title="{e(nick(m))}"><span class="ah-long">{e(nick(m))}</span>'
                    f'<span class="ah-short">{e(nick(m)[:3])}</span></th>' for p, m in zip(pl, members))
@@ -1736,9 +1762,9 @@ def ahead_table(rows, best, members, by_slug=None):
         classes = " ".join(c for c, on in (("ah-best", r is best), ("ah-done", r.get("done") and r is not best), ("ah-far", hide)) if on)
         cls = f' class="{classes}"' if classes else ""
         cells = "".join(f'<td data-player="{p}"><span class="ah ah-{k}" title="{e(tip)}">{ahead_text(t)}</span></td>'
-                        for p, (k, t, tip) in zip(pl, (ahead_cell(r, picked(r, m, by_slug)) for m in members)))
+                        for p, (k, t, tip) in zip(pl, (ahead_cell(r, reserve_char(g, r)) for g in groups)))
         mark = "✓ " if r.get("done") else ""
-        body.append(f'<tr{cls}><th scope="row" title="{e(r["name"])}, level {r["min"]}–{r["max"]}, {e(r["zone"])}">'
+        body.append(f'<tr{cls} data-min="{r["min"]}" data-cap="{walk_level(r)}"><th scope="row" title="{e(r["name"])}, level {r["min"]}–{r["max"]}, {e(r["zone"])}">'
                     f'{mark}{e(short_dungeon(r["name"]))}</th><td class="ah-cap">{walk_level(r)}</td>{cells}</tr>')
     if not body:
         return ""
@@ -1780,13 +1806,13 @@ def next_ready(check, best, members, by_slug):
     todo = {c["slug"]: todo_state(*char_todo(check, c)) for c in fits}
     items = []
     for m in members:
+        # stránka hráče přepíše postavou z jeho sloupce v ready checku; bez stavu (nevejde se) zůstane skrytý
         c = picked(best, m, by_slug)
         state = todo.get(c["slug"])
-        if state is None:
-            continue  # hráč, který se do dungeonu nevejde nebo nemá questy z API
         ok = state == "✓ připraveno"
         items.append(f'<span class="nx-p {"nx-p-ok" if ok else "nx-p-todo"}" data-player="{e(m.get("player", m["slug"]))}" '
-                     f'data-char="{e(c["name"])}" data-state="{e(state)}" style="--cls:{cls_color(c)}"><b>{e(nick(m))}</b> {e(state)}</span>')
+                     f'data-def="{e(c["slug"])}" style="--cls:{cls_color(c)}"{"" if state else " hidden"}>'
+                     f'<b>{e(nick(m))}</b> {e(state or "")}</span>')
     data = json.dumps(todo, ensure_ascii=False).replace("<", "\\u003c")
     return (f'<a class="nx-rc" href="#ready" data-todo="{e(data)}" data-dungeon="{e(check["title"])}">'
             f'<span class="nx-you" hidden></span>{"".join(items)}<span class="nx-p nx-p-ok nx-rest" hidden>✓ ostatní připravení</span><span class="nx-go">celý ready check ↓</span></a>')
@@ -2016,9 +2042,11 @@ def mine_group(cls, title, items):
 
 
 def mine_card(check, m, by_slug, fit):
-    """Co má udělat vybraná postava, aby byla na dungeon připravená."""
+    """Co má udělat vybraná postava, aby byla na dungeon připravená.
+    U „Můžeš nasdílet“ jsou v data-takers všechny postavy, kterým quest může dát; stránka z nich ukáže jen ty,
+    které jsou zrovna ve sloupcích tabulky, ať se seznam s tabulkou nerozchází."""
     s = m["slug"]
-    take, get, give, inside, low, log = [], [], [], [], [], []
+    take, chain, get, give, inside, low, log = [], [], [], [], [], [], []
     line = lambda q, detail: f'<li><b>{quest_link(q)}</b>{"".join(f"<small>{e(d)}</small>" for d in detail if d)}</li>'
     for q in check["quests"]:
         st = q["status"][s]
@@ -2028,14 +2056,14 @@ def mine_card(check, m, by_slug, fit):
             names = or_list(people_names([by_slug[h] for h in q["holders"][s]]))
             get.append(line(q, [f"může nasdílet {names}", f'jinak {q["start"]}' if q["start"] else None]))
         elif st == "pre":
-            take.append(line(q, [f'dokončit řetěz, nejdřív {q["prev"]}']))
+            chain.append(line(q, [f'předquest máš v logu, nejdřív dokonči {q["prev"]}']))
         elif st == "chain":
             take.append(line(q, [f'nejdřív {q["prev"]}']))
         elif st == "active":
             log.append(q)
-            takers = people_names([by_slug[o] for o, h in q.get("holders", {}).items() if s in h and o in fit])
+            takers = [o for o, h in q.get("holders", {}).items() if s in h and o in by_slug]
             if takers:
-                give.append(line(q, ["potřebuje: " + ", ".join(takers)]))
+                give.append(f'<li data-takers="{e(" ".join(takers))}"><b>{quest_link(q)}</b><small class="m-takers"></small></li>')
         elif st == "inside":
             inside.append(q)
         elif st == "level":
@@ -2043,24 +2071,28 @@ def mine_card(check, m, by_slug, fit):
     off = ""
     if m.get("level") and s not in fit:
         off = f'<p class="m-off">Level {m["level"]}, dungeon je pro {check["min"]}–{check["max"]}.</p>'
-    ready = "" if take else '<p class="m-ok">✓ Nemusíš nikam chodit.</p>'
+    ready = "" if take or chain else '<p class="m-ok">✓ Nemusíš nikam chodit.</p>'
     plain = [("V logu", log, lambda q: q["name"]), ("Začne až uvnitř", inside, lambda q: q["name"]),
              ("Až s levelem", low, lambda q: f'{q["name"]} ({q["req"]})')]
     lines = "".join(f'<p class="m-line"><b>{title}:</b> {e(", ".join(fmt(q) for q in qs))}</p>' for title, qs, fmt in plain if qs)
     return (f'<div class="mine" data-slug="{e(s)}" style="--cls:{cls_color(m)}" hidden>{off}{ready}'
-            f'{mine_group("m-take", "✋ Musíš dojít", take)}{mine_group("m-get", "↗ Můžou ti nasdílet", get)}'
+            f'{mine_group("m-take", "✋ Musíš dojít", take)}{mine_group("m-chain", "⛓ Dokonči řetěz", chain)}'
+            f'{mine_group("m-get", "↗ Můžou ti nasdílet", get)}'
             f'{mine_group("m-give", "↗ Můžeš nasdílet", give)}{lines}</div>')
 
 
 def char_todo(check, m):
-    """Co postavě k dungeonu chybí: questy, pro které si musí dojít, a ty, které může dostat nasdílením."""
+    """Co postavě k dungeonu chybí: questy, pro které si musí dojít, řetězy s předquestem v logu
+    a questy, které může dostat nasdílením."""
     s = m["slug"]
-    return ([q for q in check["quests"] if q["status"][s] in ("missing", "pre", "chain")],
-            [q for q in check["quests"] if q["status"][s] == "share"])
+    return ([q for q in check["quests"] if q["status"][s] in ("missing", "chain")],
+            [q for q in check["quests"] if q["status"][s] == "share"],
+            [q for q in check["quests"] if q["status"][s] == "pre"])
 
 
-def todo_state(go, get):
-    bits = [f"✋ {len(go)}× dojít" if go else "", f"↗ {len(get)}× nasdílet" if get else ""]
+def todo_state(go, get, chain=()):
+    bits = [f"✋ {len(go)}× dojít" if go else "", f"⛓ {len(chain)}× dokončit" if chain else "",
+            f"↗ {len(get)}× nasdílet" if get else ""]
     return " · ".join(b for b in bits if b) or "✓ připraveno"
 
 
@@ -2081,7 +2113,7 @@ def quest_cell(q, st, holders):
     if st == "inside":
         return '<td class="st st-over" title="quest začíná až v dungeonu (předmět nebo postava uvnitř)">uvnitř</td>'
     if st == "pre":
-        return '<td class="st st-pre" title="má v logu předquest, musí dokončit řetěz">⛓ ✓</td>'
+        return '<td class="st st-pre" title="má v logu předquest, musí dokončit řetěz">⛓ dokončit</td>'
     return f'<td class="st st-over" title="nejdřív: {e(q["prev"])}">⛓</td>'
 
 
@@ -2115,7 +2147,7 @@ def share_label(q):
 
 def party_table(check, members, by_slug, crew):
     """Celá parta: řádek = quest, sloupec = hráč. Ve sloupci je postava, kterou by do dungeonu poslal (pick_char),
-    ostatní jeho postavy jsou skryté a stránka do sloupce vybraného hráče dá jeho vybranou postavu."""
+    ostatní jeho postavy jsou skryté a stránka do sloupce dá vybranou postavu (moje volba, ruční přepnutí sloupce)."""
     players = {}
     for s in check["members"]:
         m = by_slug[s]
@@ -2124,6 +2156,7 @@ def party_table(check, members, by_slug, crew):
     for group in players.values():
         default = pick_char(group, check)
         cols += [(m, m is default) for m in group]
+    many = {p for p, g in players.items() if len(g) > 1}
 
     def attrs(m, default):
         return (f'data-player="{e(m.get("player", m["slug"]))}" data-slug="{e(m["slug"])}"'
@@ -2132,7 +2165,9 @@ def party_table(check, members, by_slug, crew):
     def head(m, default):
         kind, n = level_status(m.get("level", 0), check)
         gap = "" if kind == "fit" else f'<small class="gap">{"−" if kind == "under" else "+"}{n} lvl</small>'
-        return (f'<th class="who-col" {attrs(m, default)} style="--cls:{cls_color(m)}"><b>{e(nick(m))}</b>'
+        return (f'<th class="who-col" {attrs(m, default)} style="--cls:{cls_color(m)}">'
+                + (f'<button type="button" class="col-sw" aria-haspopup="menu" title="změnit postavu ve sloupci"><b>{e(nick(m))}</b><i>▾</i></button>'
+                   if m.get("player", m["slug"]) in many else f'<b>{e(nick(m))}</b>') +
                 f'<small><span class="wc-name">{e(m["name"])} · </span>{m.get("level", "")}</small>{gap}</th>')
 
     def cell(q, m, default):
@@ -2157,7 +2192,8 @@ def party_table(check, members, by_slug, crew):
             f'<tbody>{"".join(body)}</tbody></table></div>'
             f'<button type="button" class="rc-fold" aria-expanded="false" hidden></button>'
             f'<p class="note">✓ má v logu · ↗ dostane nasdílet · dojít = musí si ho vzít · ⛓ nejdřív předquest · '
-            f'uvnitř = začne v dungeonu. Sloupec je postava, kterou hráč do dungeonu nejspíš vezme.</p></div>')
+            f'⛓ dokončit = předquest má v logu · uvnitř = začne v dungeonu. U ostatních je odhad: naposledy hraná postava, '
+            f'která se do dungeonu vejde. Jméno nahoře sloupec přepne (jen u tebe, do zavření karty).</p></div>')
 
 
 DIFFICULTY = [("na krev", "Hard"), ("dá se", "Medium"), ("akorát", "At Level"), ("procházka", "Easy")]
@@ -2219,12 +2255,12 @@ def char_card(m, attr, title=None, line=None, small=None, level=True):
 
 
 def me_gate(chars):
-    """Volba hráče při první návštěvě: karty hráčů, za každého jeho naposledy hraná postava (alta přepne „Hraju za“)."""
+    """Volba hráče při první návštěvě: karty hráčů, za každého jeho postava s nejvyšším levelem (alta přepne „Hraju za“)."""
     players = {}
     for m in chars:
         players.setdefault(m.get("player", m["slug"]), []).append(m)
-    cards = "".join(char_card(shown_char(cs), f'data-who="{e(p)}" data-pick="{e(shown_char(cs)["slug"])}"', nick(shown_char(cs)),
-                              shown_char(cs)["name"], pl(len(cs), ("{n} postava", "{n} postavy", "{n} postav")), level=False)
+    cards = "".join(char_card(top_char(cs), f'data-who="{e(p)}" data-pick="{e(top_char(cs)["slug"])}"', nick(top_char(cs)),
+                              top_char(cs)["name"], pl(len(cs), ("{n} postava", "{n} postavy", "{n} postav")), level=False)
                     for p, cs in players.items())
     return (f'<div class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-h" hidden><div class="gate-box">'
             f'<h2 id="gate-h">Kdo jsi?</h2><p class="gate-sub">Podle toho ti stránka ukáže tvoje questy, loot a dungeony. Změníš to v liště.</p>'
@@ -2265,9 +2301,9 @@ def ready_section(checks, members):
                                for m in chars) + "</div>"
                      for p, chars in players.items())
     data = json.dumps({m["slug"]: m.get("player", m["slug"]) for m in members}, ensure_ascii=False).replace("<", "\\u003c")
-    names = json.dumps({m["slug"]: [nick(m), m["name"]] for m in members}, ensure_ascii=False).replace("<", "\\u003c")
-    # pamatuje se jen hráč; po načtení se za něj vezme jeho naposledy hraná postava
-    mains = json.dumps({p: shown_char(cs)["slug"] for p, cs in players.items()}, ensure_ascii=False).replace("<", "\\u003c")
+    names = json.dumps({m["slug"]: [nick(m), m["name"], cls_color(m), m.get("level", 0)] for m in members}, ensure_ascii=False).replace("<", "\\u003c")
+    # pamatuje se zvolená postava; bez ní (nebo když zmizela) se za hráče vezme jeho nejvyšší level
+    mains = json.dumps({p: top_char(cs)["slug"] for p, cs in players.items()}, ensure_ascii=False).replace("<", "\\u003c")
     return (f'<section id="ready"><h2 class="sec">Ready check</h2>'
             f'<script type="application/json" id="rc-chars">{data}</script>'
             f'<script type="application/json" id="rc-names">{names}</script>'
@@ -2358,8 +2394,12 @@ def gain_text(g):
 
 
 def loot_who(fits, by_slug):
-    """Štítky postav, kterým se kus hodí: upgrade barvou classy, ostatní tlumeně."""
+    """Štítky postav, kterým se kus hodí: upgrade barvou classy, ostatní tlumeně.
+    Hráč s víc postavami má na štítku celé jméno postavy, s jednou jen přezdívku."""
     chips = []
+    count = {}
+    for c in by_slug.values():
+        count[c.get("player", c["slug"])] = count.get(c.get("player", c["slug"]), 0) + 1
     rank = {"empty": 0, "big": 1, "small": 2, "?": 4, None: 5}
     order = sorted(fits.items(), key=lambda kv: (kv[1].get("second", False), rank.get(kv[1]["gain"], 3),
                                                  list(by_slug).index(kv[0])))
@@ -2373,11 +2413,11 @@ def loot_who(fits, by_slug):
             cls += " lt-second"
             tip = "druhá volba: heal nebo damage jiné školy nevyužije, " + tip
             text = f'2. volba · {text}'
-        lvl = f' <small>lvl {m["level"] + f["lvl"]}</small>' if f["lvl"] else ""
+        lvl = f' <small>až na {m["level"] + f["lvl"]}</small>' if f["lvl"] else ""
         if f["lvl"]:
             tip += f', nasadí až na levelu {m["level"] + f["lvl"]}'
         chips.append(f'<span class="lt-who{cls}" data-slug="{e(slug)}" style="--cls:{cls_color(m)}" title="{e(tip)}">'
-                     f'<b>{e(m["name"] if m.get("alt") else nick(m))}</b> {e(text)}{lvl}</span>')
+                     f'<b>{e(m["name"] if count.get(m.get("player", slug), 1) > 1 else nick(m))}</b> {e(text)}{lvl}</span>')
     return "".join(chips)
 
 
@@ -2474,11 +2514,11 @@ def loot_legend():
             (chip("", gain_text(3)[0]), "staty neznáme, má vyšší item level"),
             (chip(" lt-maybe", gain_text("?")[0]), "porovnej ve hře"),
             (chip(" lt-no", gain_text(None)[0]), "nosí stejně dobré nebo lepší"),
-            (chip("", gain_text("big")[0], "lvl N"), "nasadí až na tom levelu"),
+            (chip("", gain_text("big")[0], "až na N"), "nasadí, až bude mít level N"),
             (chip(" lt-second", "2. volba · " + gain_text("small")[0]), "využije jen část"),
             (f'<span class="lt-flag">{e(Q.label("loot.fight", "🎲 víc zájemců"))}</span>', "hodí se víc lidem")]
     items = "".join(f'<li>{c}<span>{e(t)}</span></li>' for c, t in rows)
-    return (f'<details class="note legend"><summary>U kusu jsou jen ti, komu se hodí. Bossové jsou schovaní, ať si nikdo '
+    return (f'<details class="note legend"><summary>U kusu jsou ti, kdo ho můžou nosit, „nic moc“ znamená, že mají stejný nebo lepší. Bossové jsou schovaní, ať si nikdo '
             f'nekazí překvapení. <span class="lg-q" title="co znamenají štítky">?</span></summary>'
             f'<ul class="lg">{items}</ul></details>')
 
@@ -2755,6 +2795,13 @@ mask-image:linear-gradient(to right,transparent,#000 32px,#000 calc(100% - 32px)
 .me-menu{position:absolute;right:16px;top:calc(100% - 2px);z-index:30;width:min(340px,calc(100vw - 32px));max-height:min(70vh,520px);overflow-y:auto;
   background:var(--panel);border:1px solid #6b5420;border-radius:14px;padding:8px;box-shadow:0 12px 32px #000a}
 .me-menu[hidden]{display:none}
+.col-menu{position:absolute;z-index:30;width:min(260px,calc(100vw - 32px));max-height:min(60vh,420px);overflow-y:auto;
+  background:var(--panel);border:1px solid #6b5420;border-radius:14px;padding:6px;box-shadow:0 12px 32px #000a}
+.col-menu[hidden]{display:none}.col-menu .mm-c[aria-checked=true]{background:var(--panel2);border-left-color:var(--gold)}
+.col-menu .mm-reset{color:var(--muted);font-size:13px}
+.col-sw{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:baseline;gap:3px}
+.col-sw i{font-style:normal;font-size:10px;color:var(--muted)}.col-sw:hover b{text-decoration:underline}
+th.col-manual .col-sw b::after{content:"•";color:var(--gold);margin-left:3px}
 .mm-p{padding:4px 0}.mm-p[hidden]{display:none}
 .mm-nick{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--cls);padding:4px 6px 2px}
 .mm-c{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:4px 6px;font:inherit;font-size:14px;color:var(--text);
@@ -3137,15 +3184,67 @@ function syncMe(){if(navMe){const n=NAMES[viewer],same=n&&n[1].split(' ')[0]===n
   document.querySelectorAll('.mm-c[data-me]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===viewer));
   document.querySelectorAll('.mm-p').forEach(g=>g.hidden=!viewer||g.dataset.player!==OWNER[viewer]);
   syncNext()}
-function syncNext(){const rc=document.querySelector('.nx-rc');if(!rc)return;const you=rc.querySelector('.nx-you'),n=NAMES[viewer];
+function syncNext(){const rc=document.querySelector('.nx-rc');if(!rc)return;const you=rc.querySelector('.nx-you'),rest=rc.querySelector('.nx-rest');
   let todo={};try{todo=JSON.parse(rc.dataset.todo||'{}')}catch(e){}
-  const ps=[...rc.querySelectorAll('.nx-p[data-player]')],mine=ps.find(p=>p.dataset.player===OWNER[viewer]),rest=rc.querySelector('.nx-rest');
-  ps.forEach(p=>p.hidden=!!viewer&&p===mine);
+  // za hráče postava z jeho sloupce v ready checku (moje volba, ručně přepnutý sloupec), jinak odhad výpravy
+  const others=[];
+  rc.querySelectorAll('.nx-p[data-player]').forEach(p=>{const s=colOf(p.dataset.player)||p.dataset.def,st=todo[s],mine=!!viewer&&p.dataset.player===OWNER[viewer];
+    p.hidden=!st||mine;if(!st)return;if(!mine)others.push(st);
+    p.classList.toggle('nx-p-ok',st==='✓ připraveno');p.classList.toggle('nx-p-todo',st!=='✓ připraveno');
+    if(NAMES[s])p.style.setProperty('--cls',NAMES[s][2]);p.replaceChildren(p.querySelector('b'),' '+st)});
   rc.classList.toggle('has-you',!!viewer);you.hidden=!viewer;
-  rest.hidden=!viewer||!ps.some(p=>p!==mine)||ps.some(p=>p!==mine&&p.classList.contains('nx-p-todo'));if(!viewer)return;
-  // vybraná postava, když se do dungeonu vejde, jinak ta, kterou za hráče bere výprava
-  const [who,st]=todo[viewer]?[n[1],todo[viewer]]:mine?[mine.dataset.char,mine.dataset.state]:[n[1],''];
-  you.textContent='Ty ('+who+'): '+(st||'do '+rc.dataset.dungeon+' se levelem nevejdeš');you.classList.toggle('nx-you-ok',st==='✓ připraveno')}
+  rest.hidden=!viewer||!others.length||others.some(st=>st!=='✓ připraveno');if(!viewer)return;
+  const st=todo[viewer];
+  you.textContent='Ty ('+NAMES[viewer][1]+'): '+(st||'do '+rc.dataset.dungeon+' se levelem nevejdeš');you.classList.toggle('nx-you-ok',st==='✓ připraveno')}
+// sloupce hráčů: můj je vybraná postava, ostatní odhad, nebo co jsem jim ručně přepnul (jen do zavření karty)
+let cols={};try{cols=JSON.parse(sessionStorage.getItem('cols')||'{}')}catch(e){}
+function colOf(p){if(viewer&&OWNER[viewer]===p)return viewer;const c=cols[p];return c&&OWNER[c]===p?c:''}
+function charLabel(s){const n=NAMES[s];return n[1].split(' ')[0]===n[0]?n[1]:n[1]+' ('+n[0]+')'}
+function syncCols(){
+  panels.forEach(rc=>{const t=rc.querySelector('.rc-table');if(!t)return;
+    const byP={},shown=new Set();
+    t.querySelectorAll('thead th[data-player]').forEach(th=>(byP[th.dataset.player]??=[]).push(th));
+    Object.entries(byP).forEach(([p,ths])=>{const want=colOf(p),has=ths.some(th=>th.dataset.slug===want);
+      shown.add(has?want:(ths.find(th=>'def' in th.dataset)||ths[0]).dataset.slug);
+      ths.forEach(th=>th.classList.toggle('col-manual',has&&want!==viewer))});
+    t.querySelectorAll('[data-player]').forEach(c=>{c.hidden=!shown.has(c.dataset.slug);c.classList.toggle('me-col',!!viewer&&c.dataset.slug===viewer)});
+    fold(rc);
+    // „Můžeš nasdílet“ jen těm, kdo jsou zrovna ve sloupcích
+    rc.querySelectorAll('.mine li[data-takers]').forEach(li=>{const who=words(li.dataset.takers).filter(s=>shown.has(s)&&NAMES[s]).map(charLabel);
+      li.hidden=!who.length;li.querySelector('.m-takers').textContent=who.length?'potřebuje: '+who.join(', '):''});
+    rc.querySelectorAll('.mine .m-give').forEach(g=>{const n=g.querySelectorAll('li:not([hidden])').length;g.hidden=!n;g.querySelector('.m-n').textContent='('+n+')'})});
+  syncAhead();syncNext()}
+const AH=new WeakMap();
+function aheadCell(r,s){const [,who,,lvl]=NAMES[s],min=+r.dataset.min,cap=+r.dataset.cap;
+  if(lvl<min)return['low','za '+(min-lvl),who+': dungeon od levelu '+min];
+  if(lvl>cap)return['late','pozdě',who+': od levelu '+(cap+1)+' už procházka'];
+  const left=cap-lvl;return[left===0?'last':left<=2?'soon':'ok',String(left),left?who+': ještě '+left+' lvl, pak procházka':who+': poslední level, pak procházka']}
+function syncAhead(){document.querySelectorAll('.ahead tbody tr[data-min]').forEach(r=>r.querySelectorAll('td[data-player]').forEach(td=>{
+  if(!AH.has(td))AH.set(td,td.innerHTML);const s=colOf(td.dataset.player);
+  if(!s||!NAMES[s]){td.innerHTML=AH.get(td);return}
+  const [k,t,tip]=aheadCell(r,s),sp=document.createElement('span');sp.className='ah ah-'+k;sp.title=tip;
+  sp.innerHTML=t==='pozdě'?'<span class="ah-long">pozdě</span><span class="ah-short">–</span>':t.startsWith('za ')?'<span class="ah-long">za </span>'+t.slice(3):t;
+  td.replaceChildren(sp)}))}
+const colMenu=document.createElement('div');colMenu.className='col-menu';colMenu.setAttribute('role','menu');colMenu.hidden=true;document.body.append(colMenu);
+function setCol(p,s){colMenu.hidden=true;if(viewer&&OWNER[viewer]===p){if(s)me(s);return}
+  if(s)cols[p]=s;else delete cols[p];try{sessionStorage.setItem('cols',JSON.stringify(cols))}catch(e){}syncCols()}
+function openCol(th){const p=th.dataset.player,mineP=!!viewer&&OWNER[viewer]===p,item=(text,lvl,cls,on,go)=>{
+    const b=document.createElement('button');b.type='button';b.className='mm-c'+(cls?'':' mm-reset');b.setAttribute('role','menuitemradio');
+    b.setAttribute('aria-checked',!!on);if(cls)b.style.setProperty('--cls',cls);
+    b.innerHTML='<span class="mm-name"></span><span class="mm-lvl"></span>';b.querySelector('.mm-name').textContent=text;
+    b.querySelector('.mm-lvl').textContent=lvl;b.addEventListener('click',go);colMenu.append(b)};
+  colMenu.textContent='';
+  th.closest('table').querySelectorAll(`thead th[data-player="${CSS.escape(p)}"]`).forEach(h=>{const s=h.dataset.slug;
+    item(NAMES[s][1]+(!mineP&&'def' in h.dataset?' · odhad':''),NAMES[s][3],NAMES[s][2],s===th.dataset.slug,()=>setCol(p,s))});
+  if(!mineP&&colOf(p))item('zpět na odhad','','',false,()=>setCol(p,''));
+  colMenu.hidden=false;const r=th.getBoundingClientRect();
+  colMenu.style.top=(scrollY+r.bottom+4)+'px';colMenu.style.left=Math.max(8,Math.min(scrollX+r.left,scrollX+innerWidth-colMenu.offsetWidth-8))+'px';
+  (colMenu.querySelector('[aria-checked=true]')||colMenu.querySelector('.mm-c')).focus({preventScroll:true})}
+document.addEventListener('click',ev=>{const b=ev.target.closest('.col-sw');
+  if(b){ev.stopPropagation();const th=b.closest('th');if(!colMenu.hidden&&colMenu.dataset.for===th.dataset.slug){colMenu.hidden=true;return}
+    colMenu.dataset.for=th.dataset.slug;openCol(th);return}
+  if(!colMenu.hidden&&!colMenu.contains(ev.target))colMenu.hidden=true});
+addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!colMenu.hidden)colMenu.hidden=true});
 const panels=[...document.querySelectorAll('.rc')];
 const sel=document.querySelector('.rc-sel select');
 const selOpts=sel?[...sel.options]:[];
@@ -3195,16 +3294,13 @@ document.querySelectorAll('.rc-fold').forEach(b=>b.addEventListener('click',()=>
 thin.addEventListener('change',()=>panels.forEach(fold));
 function me(slug){viewer=slug;
   document.querySelectorAll('.mc[data-me]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));
-  panels.forEach(rc=>{rc.querySelectorAll('.mine').forEach(c=>c.hidden=c.dataset.slug!==slug);
-    const has=!!slug&&!!rc.querySelector(`.rc-table th[data-slug="${CSS.escape(slug)}"]`);
-    rc.querySelectorAll('.rc-table [data-player]').forEach(c=>{const mine=has&&c.dataset.player===OWNER[slug];
-      c.hidden=mine?c.dataset.slug!==slug:!('def' in c.dataset);c.classList.toggle('me-col',mine)});fold(rc)});
-  syncMe();
+  panels.forEach(rc=>rc.querySelectorAll('.mine').forEach(c=>c.hidden=c.dataset.slug!==slug));
+  syncMe();syncCols();
   orderSel();if(slug)showFig(slug);syncChips();
   const on=document.querySelector('.me-chips:not([hidden]) .mc[aria-pressed=true]');
   if(on)on.parentElement.scrollLeft=on.offsetLeft-on.parentElement.offsetLeft-2;
   syncLoot();syncCraft();
-  try{localStorage.setItem('player',OWNER[slug]||'');localStorage.removeItem('me')}catch(e){}}
+  try{localStorage.setItem('player',OWNER[slug]||'');if(slug)localStorage.setItem('me',slug);else localStorage.removeItem('me')}catch(e){}}
 document.querySelectorAll('.mc[data-me]').forEach(b=>b.addEventListener('click',()=>{me(b.dataset.me);fitJump(b.dataset.me)}));
 const menu=document.querySelector('.me-menu');
 function menuOpen(on){if(!menu)return;menu.hidden=!on;navMe.setAttribute('aria-expanded',on);
@@ -3231,8 +3327,8 @@ gate?.querySelector('.gate-skip').addEventListener('click',()=>gateDone(''));
 document.querySelectorAll('.ah-more').forEach(b=>b.addEventListener('click',()=>{const t=b.previousElementSibling.querySelector('.ahead'),
   on=t.classList.toggle('ah-open');b.textContent=on?'méně dungeonů ▴':'další dungeony ('+b.dataset.n+') ▾'}));
 if(sel)sel.addEventListener('change',()=>pick(+sel.value));
-{let p='',saved=null;try{p=localStorage.getItem('player')||OWNER[localStorage.getItem('me')]||'';saved=localStorage.getItem('rc-pick')}catch(e){}
-  me(MAINS[p]||'');const o=selOpts.find(o=>o.dataset.title===saved);if(o)pick(+o.value);fitJump(viewer)}
+{let p='',m='',saved=null;try{m=localStorage.getItem('me')||'';p=localStorage.getItem('player')||OWNER[m]||'';saved=localStorage.getItem('rc-pick')}catch(e){}
+  me(OWNER[m]&&OWNER[m]===p?m:MAINS[p]||'');const o=selOpts.find(o=>o.dataset.title===saved);if(o)pick(+o.value);fitJump(viewer)}
 const pcs=[...document.querySelectorAll('.pc[data-slug]')];
 const hasSheet=s=>[...document.querySelectorAll('.sheet')].some(x=>x.dataset.slug===s);
 let openNow='';

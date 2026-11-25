@@ -206,6 +206,28 @@ class ManyAlts(unittest.TestCase):
         finally:
             build.api_get = orig
 
+    def test_give_list_offers_all_takers_and_page_keeps_column_ones(self):
+        """„Můžeš nasdílet“ nese všechny, komu quest dá, i ty mimo level; stránka nechá jen postavy ze sloupců."""
+        party = [self.char("a", "a", active=[1]), self.char("b", "b"), self.char("b2", "b"), self.char("c", "c", level=15)]
+        html = build.ready_box(self.check(party), party, 0)
+        self.assertIn('<li data-takers="b b2 c">', html)
+        self.assertNotIn("potřebuje:", html)  # text doplní stránka podle sloupců
+
+    def test_party_table_header_switch_only_for_player_with_more_chars(self):
+        party = [self.char("a", "a", active=[1]), self.char("b", "b"), self.char("b2", "b")]
+        head = build.ready_box(self.check(party), party, 0).split("<thead>")[1].split("</thead>")[0]
+        self.assertEqual(head.count('class="col-sw"'), 2)  # obě postavy hráče b, hráč a jen jméno
+
+    def test_chain_with_prequest_in_log_is_own_state(self):
+        q = {"id": 1, "name": "Q", "prev": "P", "status": {"a": "pre"}, "start": "", "req": 0}
+        self.assertIn("⛓ dokončit", build.quest_cell(q, "pre", ""))
+        self.assertEqual(build.char_todo({"quests": [q]}, {"slug": "a"}), ([], [], [q]))
+        self.assertEqual(build.todo_state([], [], [q]), "⛓ 1× dokončit")
+        html = build.mine_card({"quests": [q], "min": 1, "max": 60}, {"slug": "a", "level": 20}, {}, ["a"])
+        self.assertIn("⛓ Dokonči řetěz", html)
+        self.assertNotIn("Musíš dojít", html)
+        self.assertNotIn("Nemusíš nikam chodit", html)
+
     def test_party_table_has_one_visible_column_per_player(self):
         party = [self.char("a", "a", active=[1]), self.char("b", "b"), self.char("b2", "b", active=[1]), self.char("b3", "b")]
         html = build.ready_box(self.check(party), party, 0)
@@ -244,13 +266,23 @@ class ManyAlts(unittest.TestCase):
         self.assertEqual(got["members"]["a2"]["level"], 5)
 
     def test_alt_chip_is_marked_and_does_not_make_loot_contested(self):
-        by_slug = {"k": {**member("k"), "nick": "Kozel"}, "z": {**member("z"), "nick": "Zrza", "alt": True, "name": "Zrza Alt"}}
+        by_slug = {"k": {**member("k"), "nick": "Kozel"}, "z": {**member("z"), "nick": "Zrza", "alt": True, "name": "Zrza Alt", "player": "zr"},
+                   "z1": {**member("z1"), "nick": "Zrza", "name": "Zrza Hlavní", "player": "zr"}}
         chips = build.loot_who({"z": {"gain": "big", "lvl": 0}}, by_slug)
         self.assertIn("lt-altc", chips)
         self.assertIn("<b>Zrza Alt</b>", chips)
         build.Q = build.Quips({}, TODAY)
         line = build.loot_line({"item": {"name": "Meč"}, "fits": {"k": {"gain": "big", "lvl": 0}, "z": {"gain": "big", "lvl": 0}}}, by_slug)
         self.assertNotIn("lt-flag", line)
+
+    def test_loot_chip_names_char_of_player_with_more_chars(self):
+        """Hráč s víc postavami má na štítku celé jméno, sám jen přezdívku; level je „až na N“."""
+        by_slug = {"k": {**member("k"), "nick": "Kozel", "name": "Kozel Mourningale"},
+                   "c": {**member("c"), "nick": "Cilda", "name": "Cildac Velky", "player": "ci", "level": 24},
+                   "c2": {**member("c2"), "nick": "Cilda", "name": "Cilda Malý", "player": "ci"}}
+        chips = build.loot_who({"k": {"gain": "big", "lvl": 0}, "c": {"gain": "big", "lvl": 2}}, by_slug)
+        self.assertIn("<b>Kozel</b>", chips)
+        self.assertIn("<b>Cildac Velky</b> velký upgrade <small>až na 26</small>", chips)
 
     def test_next_box_sums_up_ready_check_per_player(self):
         """Výprava nahoře: za každého hráče stav jeho postavy, stav všech vhodných postav pro „Ty“ v data-todo."""
@@ -259,8 +291,8 @@ class ManyAlts(unittest.TestCase):
         best = {"name": "D", "min": 20, "max": 30, "zone": "Z", "status": {"a": ("fit", 0), "b": ("fit", 0)}, "pick": {"b": "b2"}}
         html = build.next_box([best], best, [party[0], party[1]], [check], party)
         self.assertIn('id="vyprava"', html)
-        self.assertIn('data-player="a" data-char="A Velký" data-state="✓ připraveno"', html)
-        self.assertIn('data-player="b" data-char="B2 Velký" data-state="↗ 1× nasdílet"', html)
+        self.assertIn('data-player="a" data-def="a" style="--cls:#3FC7EB"><b>A</b> ✓ připraveno', html)
+        self.assertIn('data-player="b" data-def="b2" style="--cls:#3FC7EB"><b>B</b> ↗ 1× nasdílet', html)
         todo = json.loads(html_lib.unescape(re.search(r'data-todo="([^"]*)"', html).group(1)))
         self.assertEqual(todo, {"a": "✓ připraveno", "b": "↗ 1× nasdílet", "b2": "↗ 1× nasdílet"})  # b3 levelem nesedí
         self.assertIn('href="#ready"', html)
@@ -365,14 +397,14 @@ class Dungeons(unittest.TestCase):
         self.assertIn("další dungeony (2)", html)
         self.assertIn('data-player="a"', html)
 
-    def test_me_gate_offers_players_with_last_played_char(self):
+    def test_me_gate_offers_players_with_highest_level_char(self):
         chars = [Alts.char("j", 30, "j"), Alts.char("j2", 12, "j"), Alts.char("k", 31)]
         for c in chars:
             c["name"] = c["slug"].upper() + " Velký"
         chars[1]["updated"] = "2026-11-20"
         html = build.me_gate(chars)
         self.assertEqual(html.count('data-who="'), 2)
-        self.assertIn('data-who="j" data-pick="j2"', html)
+        self.assertIn('data-who="j" data-pick="j"', html)  # nejvyšší level, i když alt hrál naposledy
         self.assertIn("jen koukám", html)
 
     def test_me_menu_groups_chars_by_player(self):
@@ -1066,6 +1098,19 @@ class Quips(unittest.TestCase):
         self.assertEqual(build.prof_num({"skill": 12, "max": 0}), "12")
 
 
+
+class BossTips(unittest.TestCase):
+    def test_tips_name_roles_not_players(self):
+        """Taktiky a poznámky bossů píšou role a classy, ne jména: rada musí sedět, ať jde kdokoli."""
+        root = Path(__file__).resolve().parent.parent
+        party = json.loads((root / "party.json").read_text(encoding="utf-8"))
+        names = {p["name"] for p in party["players"]} | {c.split("-")[0].title() for p in party["players"] for c in p["chars"]}
+        rx = re.compile(r"\b(" + "|".join(sorted({n[:4] for n in names if len(n) > 3})) + r")\w*", re.I)
+        for title, d in json.loads((root / "bosses.json").read_text(encoding="utf-8"))["dungeons"].items():
+            texts = [d.get("note") or ""] + [b.get("tip") or "" for b in d.get("bosses", [])]
+            for t in texts:
+                self.assertIsNone(rx.search(t), f"{title}: {t}")
+
 if __name__ == "__main__":
     unittest.main()
 
@@ -1191,12 +1236,28 @@ class OneChoice(unittest.TestCase):
         _, best = build.plan_dungeons([main], self.ds, [main, alt])
         self.assertEqual(best["pick"]["k"], "k2")
 
+    def test_ahead_takes_char_with_most_reserve(self):
+        """Kam dál: z postav v rozsahu ta s největší rezervou, ne naposledy hraná."""
+        r = {"name": "SFK", "zone": "z", "min": 22, "max": 28}
+        low, high = self.char("z1", 22, "z", "2026-11-01"), self.char("z2", 29, "z", "2026-11-20")
+        mid = self.char("z3", 26, "z", "2026-11-19")
+        self.assertIs(build.reserve_char([low, mid, high], r), low)
+        self.assertIs(build.reserve_char([self.char("u", 18, "z"), self.char("u2", 20, "z"), high], r)["level"], 20)
+        self.assertEqual(build.reserve_char([high, self.char("h", 31, "z")], r)["level"], 29)
+        html = build.ahead_table([r], r, [high], {c["slug"]: c for c in (low, mid, high)})
+        self.assertIn('title="Z1 Velký: ještě 6 lvl, pak procházka">6<', html)
+        self.assertIn('data-min="22" data-cap="28"', html)
+
+    def test_top_char_is_highest_level(self):
+        a, b = self.char("a", 30, "k", "2026-11-01"), self.char("b", 17, "k", "2026-11-20")
+        self.assertIs(build.top_char([b, a]), a)
+
     def test_next_box_names_picked_character(self):
         main, alt = self.char("s", 20, "s"), self.char("s2", 23, "s")
         rows, best = build.plan_dungeons([main], self.ds, [main, alt])
         html = build.next_box(rows, best, [main], [], [main, alt])
         # sloupec za hráče, buňka za jeho alta, který se do dungeonu vejde nejlíp
-        self.assertIn('title="S2: dungeon od levelu 24"><span class="ah-long">za </span>1</span>', html)
+        self.assertIn('title="S2 Velký: dungeon od levelu 24"><span class="ah-long">za </span>1</span>', html)
 
     def test_party_table_shows_closest_char_of_player_out_of_range(self):
         party = [Alts.char("a", 25), Alts.char("c", 20), Alts.char("c2", 23, "c")]
