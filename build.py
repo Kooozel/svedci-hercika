@@ -2757,7 +2757,7 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
       <h1>{e(party["title"])}</h1>
     </div>
     <div class="top-right">
-      <div class="flags" title="Podle hlavních postav">{flag("Tank", has_tank)}{flag("Healer", has_heal)}<span class="flag">Levely {lvl_range}</span></div>
+      <div class="flags" title="Podle hlavních postav">{flag("Tank", has_tank)}{flag("Healer", has_heal)}<span class="flag">mainy {lvl_range}</span></div>
       <p class="built">Natočeno <time data-ts="{built}">{built}</time></p>
     </div>
   </header>
