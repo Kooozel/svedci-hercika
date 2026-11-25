@@ -327,13 +327,13 @@ class ManyAlts(unittest.TestCase):
         self.assertEqual(html.count('<li class="title"'), 2)
         self.assertEqual(html.count("Tichý tahoun"), 1)
         who = re.sub(r"<[^>]+>", "", html.split('class="t-who">')[1].split("</span><b")[0])
-        self.assertEqual(who, "A, B, C Nemrtvý")  # jméno postavy začíná přezdívkou: bez „C · “
+        self.assertEqual(who, "A · A Velký, B · B Velký, C · C Nemrtvý")  # všude přezdívka · celé jméno
 
-    def test_title_names_alt_with_player_only_when_names_differ(self):
+    def test_title_names_always_nick_and_full_name(self):
         m = self.char("a", "kozel")
-        self.assertEqual(build.title_who(m, {"char": "Kozel Rohatý"}), "Kozel Rohatý")
+        self.assertEqual(build.title_who(m, {"char": "Kozel Rohatý"}), "Kozel · Kozel Rohatý")
         self.assertEqual(build.title_who(m, {"char": "Cildac Velky"}), "Kozel · Cildac Velky")
-        self.assertEqual(build.title_who(m, {}), "Kozel")
+        self.assertEqual(build.title_who(m, {}), f"Kozel · {m['name']}")
 
     def test_profession_overview_on_mobile_has_row_per_player(self):
         chars = [{**self.char("a", "a"), "professions": [{"name": "Mining", "skill": 60, "max": 75, "primary": True},

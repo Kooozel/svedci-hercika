@@ -1949,12 +1949,8 @@ def news_box(members, base, today):
 
 
 def title_who(m, t):
-    """Kdo titul dostal, u hráče s alty i postava, která k němu přispěla nejvíc.
-    Když jméno postavy začíná přezdívkou, stačí celé jméno (Johnie Nemrtvý, ne Johnie · Johnie Nemrtvý)."""
-    char = t.get("char")
-    if not char:
-        return nick(m)
-    return char if char.split()[0] == nick(m) else f'{nick(m)} · {char}'
+    """Kdo titul dostal, vždy „přezdívka · celé jméno postavy“; u hráče s alty postava, která k titulu přispěla nejvíc."""
+    return f'{nick(m)} · {t.get("char") or m["name"]}'
 
 
 def title_cards(members, titles):
