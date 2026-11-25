@@ -1899,6 +1899,16 @@
 "quality": "COMMON",
 "req": 3,
 "sub": "Potions"
+},
+"929": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134831.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 22,
+"name": "Healing Potion",
+"quality": "COMMON",
+"req": 12,
+"sub": "Potions"
 }
 },
 "recipes": {
@@ -4107,6 +4117,24 @@
 ],
 [
 2450,
+1
+]
+]
+},
+"54193": {
+"item": 929,
+"name": "Healing Potion",
+"reagents": [
+[
+3372,
+1
+],
+[
+2692,
+1
+],
+[
+2453,
 1
 ]
 ]
