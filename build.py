@@ -1893,7 +1893,7 @@ def prof_news(m, ch):
 def news_row(m, ch):
     """Řádek postavy ve sloupcích: celé jméno, level nebo podíl levelu, XP."""
     step = (f'<span class="nw-lvl">{ch["from"]} → {ch["to"]}</span>' if ch["to"] > ch["from"]
-            else f'<span class="nw-pct" title="z levelu">{level_share(ch)}</span>')
+            else f'<span class="nw-pct" title="kolik levelu včera nahrál">{f"+{share} levelu" if (share := level_share(ch)) else ""}</span>')
     xp = f'+{num(ch["xp"])} XP' if ch["xp"] else ""
     return (f'<div class="nw-line" style="--cls:{cls_color(m)}"><span class="nw-char">{e(m["name"])}</span>{step}'
             f'<span class="nw-xp">{xp}</span></div>')
@@ -1920,7 +1920,12 @@ def news_person(chars, log, fresh):
                        f'{news_extra(m, ch)}</div>' for m, ch in rest)
         label = pl(len(rest), ("+{n} další postava", "+{n} další postavy", "+{n} dalších postav"))
         body += f'<details class="nw-more"><summary>{label}</summary>{more}</details>'
-    body += "".join(f'<p class="nw-profs">🆕 Nová postava: {e(m["name"])}, level {m["level"]}</p>' for m in fresh)
+    if len(fresh) == 1:
+        body += f'<p class="nw-profs">🆕 Nová postava: {e(fresh[0]["name"])}, level {fresh[0]["level"]}</p>'
+    elif fresh:  # víc nových postav jedním řádkem
+        names = ", ".join(f'{m["name"]} ({m["level"]})' for m in fresh)
+        body += f'<p class="nw-profs">🆕 Nové postavy: {e(names)}</p>'
+
     return f'<li style="--cls:{cls_color(lead)}">{avatar(lead, "nw-av")}<div class="nw-main">{body}</div></li>'
 
 

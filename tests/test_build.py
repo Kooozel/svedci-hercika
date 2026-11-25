@@ -187,6 +187,14 @@ class People(unittest.TestCase):
         now = [self.char("a", "a"), {**self.char("a2", "a", level=11), "name": "Kozel Bezrohý"}]
         self.assertIn("Nová postava: Kozel Bezrohý, level 11", self.news(now, olds))
 
+    def test_news_lists_several_new_alts_in_one_line(self):
+        olds = [self.char("a", "a")]
+        now = [self.char("a", "a"), {**self.char("a2", "a", level=11), "name": "Kozel Bezrohý"},
+               {**self.char("a3", "a", level=24), "name": "Kozel Pivoň"}]
+        html = self.news(now, olds)
+        self.assertEqual(html.count("🆕"), 1)
+        self.assertIn("Nové postavy: Kozel Bezrohý (11), Kozel Pivoň (24)", html)
+
 
 class ManyAlts(unittest.TestCase):
     """Stránka musí zůstat přehledná i s pěti alty na hráče."""
@@ -549,7 +557,7 @@ class Sheet(unittest.TestCase):
 
     def test_news_xp_numbers(self):
         ch = {"from": 20, "to": 20, "xp": 11600}
-        self.assertEqual(build.level_share(ch), "50 %")  # level 20 chce 23 200
+        self.assertEqual(build.level_share(ch), "50 %")  # level 20 chce 23 200; v novinkách „+50 % levelu“
         self.assertEqual(build.level_share({**ch, "to": 21}), "")  # level je vidět zvlášť
 
     def test_prof_news_numbers(self):

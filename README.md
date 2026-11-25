@@ -15,7 +15,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   v `roles`, třeba `"johnie-rotking": "tank"` (tank / heal / dps).
 - **Druhý pád jména:** v `genitive` (třeba `"zrza-jegod": "Zrzy"`), aby stránka psala „od Zrzy“.
   Nová postava bez něj dostane první pád.
-- **Novinky od včerejška:** jeden řádek na člověka s postavou, která nahrála nejvíc; ostatní aktivní postavy hráče se rozbalí pod „+N další postavy“. Porovná levely, XP, profese, výbavu a achievementy s posledním snímkem v `history/`
+- **Novinky od včerejška:** jeden řádek na člověka s postavou, která nahrála nejvíc; ostatní aktivní postavy hráče se rozbalí pod „+N další postavy“. U postavy bez level upu je „+35 % levelu“ (kolik levelu nahrála). Nové postavy hráče jsou jedním řádkem („🆕 Nové postavy: Kozel Pivoň (28), Kozel Smradlák (17)“). Porovná levely, XP, profese, výbavu a achievementy s posledním snímkem v `history/`
   před dneškem (ranní stav před včerejším večerem). Večerní push ho neposune. Místo čísel XP je hláška podle toho,
   kolik kdo nahrál vůči svému levelu (drobek, kus, level, víc levelů), nikdy vůči ostatním. U profesí nové
   řemeslo a body skillu jedním řádkem (anglické názvy), recepty jednou větou. Bez historie se vezme `party.json`
