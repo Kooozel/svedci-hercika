@@ -4817,7 +4817,8 @@
 }
 },
 "10410": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 9,
 "ARMOR": 78,
@@ -4826,7 +4827,8 @@
 }
 },
 "10411": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 6,
 "ARMOR": 61,
@@ -4834,7 +4836,8 @@
 }
 },
 "10412": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 3,
 "ARMOR": 49,
@@ -4842,7 +4845,7 @@
 }
 },
 "10413": {
-"v": 1,
+"v": 2,
 "values": {
 "AGILITY": 6,
 "ARMOR": 52,
@@ -4865,7 +4868,8 @@
 }
 },
 "11121": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 17.1
 }
@@ -4885,7 +4889,8 @@
 }
 },
 "1155": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 17.7,
 "SPELL_POWER": 32,
@@ -4893,7 +4898,8 @@
 }
 },
 "1292": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 2,
 "DPS": 16.2,
@@ -4901,13 +4907,14 @@
 }
 },
 "1318": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 19.7
 }
 },
 "13245": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 528,
 "BLOCK": 10,
@@ -4915,7 +4922,7 @@
 }
 },
 "1454": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 18.3,
 "STAMINA": 4,
@@ -4923,19 +4930,19 @@
 }
 },
 "1481": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 17.2
 }
 },
 "1482": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 15.6
 }
 },
 "1483": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 14.0,
 "STAMINA": 3,
@@ -4943,7 +4950,7 @@
 }
 },
 "1484": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 14.0,
 "INTELLECT": 5,
@@ -4953,14 +4960,14 @@
 }
 },
 "1486": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 104,
 "SPELL_POWER": 13
 }
 },
 "1489": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 94,
 "SPIRIT": 8,
@@ -4969,35 +4976,39 @@
 }
 },
 "1491": {
-"v": 1,
+"v": 2,
 "values": {
 "AGILITY": 6,
 "SPIRIT": 3
 }
 },
 "16886": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ATTACK_POWER": 16,
 "DPS": 20.4
 }
 },
 "16887": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "INTELLECT": 8,
 "STAMINA": 4
 }
 },
 "17694": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 4,
 "STRENGTH": 4
 }
 },
 "17695": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 31,
 "SPELL_POWER": 5,
@@ -5005,7 +5016,7 @@
 }
 },
 "1935": {
-"v": 1,
+"v": 2,
 "values": {
 "AGILITY": 4,
 "DPS": 15.5,
@@ -5040,7 +5051,7 @@
 }
 },
 "1974": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 17,
 "INTELLECT": 5,
@@ -5049,13 +5060,13 @@
 }
 },
 "2205": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 21.0
 }
 },
 "2271": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 15.7,
 "SPELL_POWER": 28,
@@ -5064,7 +5075,7 @@
 }
 },
 "2292": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 43,
 "INTELLECT": 5,
@@ -5280,7 +5291,7 @@
 }
 },
 "2567": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 10.9,
 "INTELLECT": 2,
@@ -5348,7 +5359,8 @@
 }
 },
 "270023": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 67,
 "INTELLECT": 6,
@@ -5356,7 +5368,8 @@
 }
 },
 "270024": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 142,
 "SPIRIT": 5,
@@ -5364,7 +5377,8 @@
 }
 },
 "270030": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 26,
 "SPELL_DAMAGE_DONE": 3,
@@ -5373,7 +5387,8 @@
 }
 },
 "270031": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 88,
 "SPELL_POWER": 14,
@@ -5381,7 +5396,8 @@
 }
 },
 "270032": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 44,
 "ATTACK_POWER": 10,
@@ -5389,7 +5405,8 @@
 }
 },
 "270043": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 106,
 "SPIRIT": 11,
@@ -5900,13 +5917,15 @@
 }
 },
 "273084": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 20
 }
 },
 "273088": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 1,
 "ARCANE_RESISTANCE": 1,
@@ -5921,14 +5940,16 @@
 }
 },
 "273089": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 22,
 "MANA_REGEN": 3
 }
 },
 "273137": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "SPELL_DAMAGE_DONE": 3,
 "SPELL_HEALING_DONE": 10,
@@ -5936,7 +5957,8 @@
 }
 },
 "273456": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 2,
 "ATTACK_POWER": 6,
@@ -5944,14 +5966,16 @@
 }
 },
 "273457": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "INTELLECT": 2,
 "SPIRIT": 2
 }
 },
 "273637": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 10.9,
 "SHADOW_RESISTANCE": 6,
@@ -5959,19 +5983,22 @@
 }
 },
 "273643": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "MANA_REGEN": 2
 }
 },
 "273645": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 35
 }
 },
 "273646": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 43,
 "NATURE_RESISTANCE": 10,
@@ -5979,7 +6006,8 @@
 }
 },
 "273647": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 10,
 "ARMOR": 84,
@@ -5988,17 +6016,20 @@
 }
 },
 "273839": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "STAMINA": 5
 }
 },
 "273840": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {}
 },
 "273846": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 123,
 "BLOCK_VALUE": 6,
@@ -6496,7 +6527,7 @@
 }
 },
 "2807": {
-"v": 1,
+"v": 2,
 "values": {
 "AGILITY": 3,
 "DPS": 15.0,
@@ -6639,13 +6670,15 @@
 }
 },
 "3078": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 13.3
 }
 },
 "3191": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 21.7,
 "STAMINA": 9,
@@ -6653,14 +6686,15 @@
 }
 },
 "3194": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 18.3,
 "SHADOW_RESISTANCE": 2
 }
 },
 "3230": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 63,
 "ATTACK_POWER": 4,
@@ -6668,7 +6702,8 @@
 }
 },
 "3324": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 30,
 "SPELL_DAMAGE_DONE": 2,
@@ -6677,7 +6712,7 @@
 }
 },
 "3413": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 17.3,
 "STAMINA": 3,
@@ -6685,7 +6720,7 @@
 }
 },
 "3414": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 12.1,
 "INTELLECT": 2,
@@ -6694,7 +6729,7 @@
 }
 },
 "3415": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 16.0,
 "INTELLECT": 3,
@@ -6705,7 +6740,7 @@
 }
 },
 "3416": {
-"v": 1,
+"v": 2,
 "values": {
 "ARMOR": 211,
 "STAMINA": 9,
@@ -6713,7 +6748,7 @@
 }
 },
 "3417": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 23.0,
 "SPIRIT": 6,
@@ -6737,7 +6772,8 @@
 }
 },
 "3748": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 2,
 "ARMOR": 34,
@@ -6857,7 +6893,8 @@
 }
 },
 "4534": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 84,
 "SPIRIT": 4,
@@ -6865,13 +6902,15 @@
 }
 },
 "5243": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 23.2
 }
 },
 "5254": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARCANE_RESISTANCE": 2,
 "ARMOR": 87,
@@ -6882,7 +6921,8 @@
 }
 },
 "5404": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 5,
 "ARMOR": 68,
@@ -6920,7 +6960,8 @@
 }
 },
 "5970": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 6,
 "ARMOR": 25,
@@ -6935,14 +6976,16 @@
 }
 },
 "6220": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 17.8,
 "FIRE_RESISTANCE": 3
 }
 },
 "6226": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 42,
 "SPELL_DAMAGE_DONE": 4,
@@ -6958,7 +7001,8 @@
 }
 },
 "6314": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 22,
 "ATTACK_POWER": 10,
@@ -6966,7 +7010,8 @@
 }
 },
 "6318": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 16.0,
 "SPELL_DAMAGE_DONE": 17,
@@ -6976,7 +7021,8 @@
 }
 },
 "6319": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 54,
 "SPELL_POWER": 7,
@@ -6984,7 +7030,8 @@
 }
 },
 "6320": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 585,
 "BLOCK": 12,
@@ -6994,14 +7041,16 @@
 }
 },
 "6321": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "STAMINA": 2,
 "STRENGTH": 5
 }
 },
 "6323": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 16.7,
 "STAMINA": 3,
@@ -7009,7 +7058,8 @@
 }
 },
 "6324": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 46,
 "SHADOW_RESISTANCE": 8,
@@ -7020,14 +7070,16 @@
 }
 },
 "6335": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 82,
 "STAMINA": 7
 }
 },
 "6340": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 4,
 "ARMOR": 22,
@@ -7043,7 +7095,8 @@
 }
 },
 "6392": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 2,
 "ARMOR": 26,
@@ -7053,14 +7106,16 @@
 }
 },
 "6414": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ATTACK_POWER": 6,
 "STAMINA": 8
 }
 },
 "6447": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 530,
 "BLOCK": 9,
@@ -7068,7 +7123,8 @@
 }
 },
 "6448": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 3,
 "DPS": 13.9,
@@ -7076,7 +7132,8 @@
 }
 },
 "6449": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 6,
 "ARMOR": 20,
@@ -7084,7 +7141,8 @@
 }
 },
 "6459": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 134,
 "HEALTH_REGEN": 6,
@@ -7092,7 +7150,8 @@
 }
 },
 "6460": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "AGILITY": 3,
 "ARMOR": 107,
@@ -7100,7 +7159,8 @@
 }
 },
 "6461": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 32,
 "HEALTH_REGEN": 10,
@@ -7108,13 +7168,15 @@
 }
 },
 "6463": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "STAMINA": 3
 }
 },
 "6465": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 40,
 "SPELL_DAMAGE_DONE": 3,
@@ -7133,19 +7195,22 @@
 }
 },
 "6469": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 12.1
 }
 },
 "6472": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 15.5
 }
 },
 "6473": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 91,
 "INTELLECT": 3,
@@ -7161,7 +7226,8 @@
 }
 },
 "6627": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 194,
 "STAMINA": 4,
@@ -7169,14 +7235,16 @@
 }
 },
 "6629": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 20,
 "STAMINA": 6
 }
 },
 "6630": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 547,
 "BLOCK": 11,
@@ -7185,7 +7253,8 @@
 }
 },
 "6631": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 14.7,
 "NATURE_RESISTANCE": 9,
@@ -7196,7 +7265,8 @@
 }
 },
 "6632": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 19,
 "SPELL_POWER": 3,
@@ -7204,7 +7274,8 @@
 }
 },
 "6633": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ATTACK_POWER": 6,
 "DPS": 15.0,
@@ -7212,7 +7283,8 @@
 }
 },
 "6641": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 22.4,
 "SPELL_DAMAGE_DONE": 11,
@@ -7220,7 +7292,8 @@
 }
 },
 "6642": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 208,
 "SPIRIT": 5,
@@ -7409,7 +7482,8 @@
 }
 },
 "6901": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 23,
 "SPELL_DAMAGE_DONE": 3,
@@ -7418,7 +7492,8 @@
 }
 },
 "6902": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 43,
 "STAMINA": 3,
@@ -7426,7 +7501,8 @@
 }
 },
 "6903": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 40,
 "SPELL_POWER": 12,
@@ -7434,14 +7510,16 @@
 }
 },
 "6904": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 17.7,
 "NATURE_RESISTANCE": 2
 }
 },
 "6905": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 22.4,
 "SPELL_DAMAGE_DONE": 8,
@@ -7450,7 +7528,8 @@
 }
 },
 "6906": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 132,
 "NATURE_RESISTANCE": 5,
@@ -7459,13 +7538,15 @@
 }
 },
 "6907": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 248
 }
 },
 "6908": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 25,
 "SPELL_POWER": 8,
@@ -7473,13 +7554,15 @@
 }
 },
 "6909": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 25.6
 }
 },
 "6910": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 41,
 "HEALTH_REGEN": 5,
@@ -7489,7 +7572,8 @@
 }
 },
 "6911": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 58,
 "SPELL_DAMAGE_DONE": 12,
@@ -7497,7 +7581,8 @@
 }
 },
 "7001": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "DPS": 29.0,
 "SHADOW_SPELL_DAMAGE": 6,
@@ -7505,7 +7590,8 @@
 }
 },
 "7002": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 642,
 "BLOCK": 13,
@@ -7815,7 +7901,8 @@
 }
 },
 "888": {
-"v": 1,
+"bop": true,
+"v": 2,
 "values": {
 "ARMOR": 61,
 "SPELL_DAMAGE_DONE": 5,
@@ -7825,7 +7912,7 @@
 }
 },
 "935": {
-"v": 1,
+"v": 2,
 "values": {
 "DPS": 13.5,
 "STAMINA": 4
