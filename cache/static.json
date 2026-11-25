@@ -1410,6 +1410,16 @@
 "req": 20,
 "sub": "Cloth"
 },
+"4324": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132678.jpg",
+"inv": "CHEST",
+"kind": "Armor",
+"level": 30,
+"name": "Azure Silk Vest",
+"quality": "UNCOMMON",
+"req": 25,
+"sub": "Cloth"
+},
 "4330": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135029.jpg",
 "inv": "BODY",
@@ -3071,6 +3081,20 @@
 ]
 ]
 },
+"2395": {
+"item": 4324,
+"name": "Azure Silk Vest",
+"reagents": [
+[
+4305,
+5
+],
+[
+6260,
+4
+]
+]
+},
 "2401": {
 "item": 4330,
 "name": "Stylish Red Shirt",
@@ -4700,6 +4724,16 @@
 ],
 [
 10978,
+1
+]
+]
+},
+"7496": {
+"item": null,
+"name": "Enchant Chest - Intellect",
+"reagents": [
+[
+11082,
 1
 ]
 ]
@@ -6883,6 +6917,14 @@
 "INTELLECT": 4,
 "SPELL_POWER": 7,
 "STAMINA": 4
+}
+},
+"4324": {
+"v": 2,
+"values": {
+"ARMOR": 43,
+"FROST_SPELL_DAMAGE": 7,
+"INTELLECT": 9
 }
 },
 "4343": {
