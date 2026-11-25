@@ -1780,12 +1780,13 @@ def ahead_table(rows, best, members, by_slug=None):
         return ""
     return (f'<p class="eyebrow">Kam dál · levely do procházky</p>'
             f'<div class="ah-wrap"><table class="ahead"><thead><tr><th>Dungeon</th>'
-            f'<th title="poslední level, kdy to ještě není procházka (konec rozsahu nebo Wowhead Easy)">do lvl</th>{head}</tr></thead>'
+            f'<th title="poslední level, kdy to ještě není procházka (konec rozsahu nebo Wowhead Easy)"><span class="ah-long">do lvl</span><span class="ah-short">lvl</span></th>{head}</tr></thead>'
             f'<tbody>{"".join(body)}</tbody></table></div>'
             f'{f"<button type=button class=ah-more data-n={far}>další dungeony ({far}) ▾</button>" if far else ""}'
             f'<p class="ah-legend"><span class="ah ah-ok">5</span> rezerva <span class="ah ah-soon">2</span> brzy uteče '
             f'<span class="ah ah-last">0</span> poslední level <span class="ah ah-low">za 3</span> ještě nízko '
-            f'<span class="ah ah-late">pozdě</span> procházka <span class="ah ah-ok ah-alt" style="--alt:var(--muted)">5</span> jde alt (tečka = barva povolání)</p>')
+            f'<span class="ah ah-late">pozdě</span> procházka <span class="ah ah-ok ah-alt" style="--alt:var(--muted)">5</span> jde alt (tečka = barva povolání)</p>'
+            f'<p class="ah-note"><b>do lvl</b> = poslední level, kdy dungeon ještě není procházka (konec rozsahu, nebo dřív podle Wowhead Easy)</p>')
 
 
 def picked(r, m, by_slug):
@@ -3080,6 +3081,7 @@ background:#0003;border:1px solid #ffffff10;border-radius:10px;padding:8px 12px}
 .ah-ok{background:#6fbf7326;color:var(--ok)}.ah-soon{background:#e8a13c26;color:var(--warn)}.ah-last{background:#e0574b2e;color:var(--bad)}
 .ah-low{color:var(--muted);border:1px dashed #ffffff30;font-weight:400}
 .ah-alt::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--alt);margin-right:3px;vertical-align:1px}.ah-late{color:var(--muted);font-weight:400}
+.ah-note{margin:4px 0 0;font-size:11px;color:var(--muted)}
 .ah-legend{margin:8px 0 0;font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
 @media(max-width:480px){.ahead{font-size:12px}.ahead th:first-child{width:36%}.ahead th:nth-child(2){width:8%}
 .ah{min-width:22px;padding:0 3px;font-size:11px}.ah-long{display:none}.ah-short{display:inline}.ah-legend .ah-long{display:inline}
