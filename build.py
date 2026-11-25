@@ -1498,7 +1498,8 @@ def doll_slot(slot, worn, weakest, m):
         inner = f'<span class="sl-txt">{e(g["name"][:2])}</span>' + (
             f'<img src="{e(g["icon"])}" alt="" loading="lazy" onerror="this.remove()">' if g.get("icon") else "")
         weak = " sl-weak" if g is weakest else ""
-        tip = f'{g["name"]} · {label}' + (f' · 🩴 hadr, {Q.label("weak", "tohle by chtělo vyměnit")}' if weak else "")
+        ilvl = f' · ilvl {g["level"]}' if g.get("level") else ""
+        tip = f'{g["name"]} · {label}{ilvl}' + (" · 🩴 nejslabší kus" if weak else "")
         return (f'<a class="sl{weak}" style="--q:{color}" href="https://www.wowhead.com/forever/item={g["id"]}" '
                 f'target="_blank" rel="noopener" title="{e(tip)}">{inner}</a>')
     two_hand = (worn.get("MAIN_HAND") or {}).get("inv") == "TWOHWEAPON"
@@ -1533,7 +1534,7 @@ def prof_bars(m):
 
 def doll(m):
     """Výbava kolem renderu postavy jako okno postavy ve hře: ikony v rámečku barvy kvality,
-    prázdné sloty čárkovaně, nejslabší kus označený 🩴 (hadr)."""
+    prázdné sloty čárkovaně, nejslabší kus označený 🩴."""
     worn = {g["slot"]: g for g in gear_info(m)["gear"]} if "gear" in m else {}
     weakest = gear_info(m)["weakest"] if "gear" in m else None
     col = lambda slots: "".join(doll_slot(s, worn, weakest, m) for s in slots)  # noqa: E731
@@ -1570,14 +1571,58 @@ def stat_values(m):
     return [(label, round(x)) for label, x in rows if x]
 
 
+# všechny staty z /statistics po skupinách: (štítek, klíč, formát); nuly se vynechají
+STAT_GROUPS = [
+    ("Základ", [("HP", "health", "n"), ("power", "power", "n"), ("Armor", "armor", "n")]),
+    ("Atributy", [("Strength", "strength", "a"), ("Agility", "agility", "a"), ("Stamina", "stamina", "a"),
+                  ("Intellect", "intellect", "a"), ("Spirit", "spirit", "a")]),
+    ("Útok", [("Attack Power", "attack_power", "n"), ("Ranged AP", "ranged_attack_power", "n"),
+              ("DPS zbraně", "main_hand_dps", "f"), ("Crit", "melee_crit", "%"), ("Ranged crit", "ranged_crit", "%")]),
+    ("Kouzla", [("Spell Power", "spell_power", "n"), ("Healing", "spell_healing", "n"),
+                ("Spell crit", "spell_crit", "%"), ("Mana regen", "mana_regen", "n")]),
+    ("Obrana", [("Defense", "defense", "n"), ("Dodge", "dodge", "%"), ("Parry", "parry", "%"),
+                ("Block", "block", "%")]),
+]
+
+
+def stat_cell(x, fmt):
+    """Hodnota statu do karty; u atributů effective a v závorce, kolik přidává výbava."""
+    if fmt == "a":
+        base, eff = x
+        bonus = f' <small class="st-bonus">+{num(eff - base)}</small>' if eff > base else ""
+        return f"{num(eff)}{bonus}"
+    if isinstance(x, (tuple, list)):
+        x = x[1]
+    if fmt == "%":
+        return f"{x:.1f} %".replace(".", ",")
+    if fmt == "f":
+        return f"{x:.1f}".replace(".", ",")
+    return num(round(x))
+
+
 def stat_rows(m):
-    """HP a hlavní staty role, víc je na Armory."""
+    """Všechny staty po skupinách, hlavní staty role zlatě."""
     if not m.get("cstats"):
         return ""
     if sick(m):
         return sickness(m)
-    rows = "".join(f'<li><span>{label}</span><b>{num(x)}</b></li>' for label, x in stat_values(m))
-    return f'<div class="st-group st-body"><h4>Jak na tom je</h4><ul>{rows}</ul></div>'
+    c = m["cstats"]
+    main = {label for label, _ in stat_values(m)}
+    groups = []
+    for title, rows in STAT_GROUPS:
+        items = []
+        for label, key, fmt in rows:
+            x = c.get(key)
+            v = x[1] if isinstance(x, (tuple, list)) else x
+            if not v:
+                continue
+            if key == "power":
+                label = c.get("power_type") or "Power"
+            cls = ' class="st-main"' if label in main else ""
+            items.append(f'<li{cls}><span>{e(label)}</span><b>{stat_cell(x, fmt)}</b></li>')
+        if items:
+            groups.append(f'<h5>{title}</h5><ul>{"".join(items)}</ul>')
+    return f'<div class="st-group st-body"><h4>Jak na tom je</h4>{"".join(groups)}</div>'
 
 
 def sick(m):
@@ -1596,31 +1641,8 @@ def sickness(m):
             'Spirit Healer pozdravuje a staty se vrátí do deseti minut ve hře.</p>')
 
 
-# co postavě chybí, jak by to řekl hospodský (prsteny a cetky zvlášť, mají dva sloty)
-BARE = {"HEAD": "bez čepice", "NECK": "s holým krkem", "SHOULDER": "s holými rameny", "BACK": "bez pláště",
-        "CHEST": "s holou hrudí", "WRIST": "s holými zápěstími", "HANDS": "bez rukavic", "WAIST": "bez opasku",
-        "LEGS": "bez kalhot", "FEET": "naboso", "MAIN_HAND": "beze zbraně", "OFF_HAND": "s volnou levačkou",
-        "RANGED": "bez střelné zbraně"}
-BARE_PAIR = {"FINGER": ("jen s jedním prstenem", "bez prstenů"), "TRINKET": ("jen s jednou cetkou", "bez cetek")}
-
-
 def and_join(words):
     return " a ".join([", ".join(words[:-1]), words[-1]]) if len(words) > 1 else "".join(words)
-
-
-def bare_line(missing):
-    """„Chodí bez čepice, s holým krkem a bez prstenů.“ ze seznamu prázdných slotů."""
-    words = []
-    for slot in DOLL_LEFT + DOLL_RIGHT + DOLL_BOTTOM:
-        if slot not in missing:
-            continue
-        pair = slot.rsplit("_", 1)[0]
-        if pair in BARE_PAIR:
-            if slot.endswith("_1") or f"{pair}_1" not in missing:
-                words.append(BARE_PAIR[pair][sum(f"{pair}_{i}" in missing for i in (1, 2)) - 1])
-        else:
-            words.append(BARE[slot])
-    return f"Chodí {and_join(words)}." if words else ""
 
 
 def sheet_side(m):
@@ -1631,8 +1653,8 @@ def sheet_side(m):
         two_hand = any(g["slot"] == "MAIN_HAND" and g["inv"] == "TWOHWEAPON" for g in gi["gear"])
         missing = [s for s in DOLL_LEFT + DOLL_RIGHT + DOLL_BOTTOM if s not in worn
                    and not (s == "OFF_HAND" and two_hand) and not (s == "RANGED" and m["class_slug"] in NO_RANGED)]
-        bare = bare_line(missing)
-        gap = f'<p class="d-gap">{e(bare)} {e(Q.line("gap_tail", m["slug"]))}</p>' if bare else ""
+        gap = (f'<p class="d-gap">Prázdné sloty <b>{len(missing)}</b>: {e(", ".join(gi["empty"]))}</p>'
+               if missing else "")
         outfit = f'<p class="d-outfit">Průměrný item level <b>{gi["avg"]}</b></p>' if gi["avg"] else ""
         bits.append(f'<div class="d-sum">{outfit}{gap}</div>')
     bits.append(stat_rows(m))
@@ -2567,7 +2589,7 @@ def loot_legend():
 
 def professions_box(members):
     """Přehled: profese × hráči, u každého nejlepší skill ze všech jeho postav (kdo to je, je v tooltipu);
-    vedlejší profese u nuly s hláškou, chybějící profese jednou větou."""
+    vedlejší profese u nuly číslem, chybějící profese jednou větou."""
     people = {}
     for m in members:
         people.setdefault(m.get("player", m["slug"]), []).append(m)
@@ -2602,10 +2624,11 @@ def professions_box(members):
                        for n in prim + sec if (got := best(chars, n)) for p, m in [got])
         lines.append(f'<li><b class="pl-who" style="color:{cls_color(chars[0])}">{e(nick(chars[0]))}</b>'
                      f'<span class="pl-ps">{bits or "<span class=pg-sec>nic</span>"}</span></li>')
-    # vedlejší profese skoro na nule: hláška místo čísla (jen u hlavních postav, alt začíná od nuly)
-    low = [Q.line(f"prof_low.{p['name']}", m["slug"], who=nick(m))
-           for m in members if not m.get("alt") for p in m.get("professions") or [] if not p["primary"] and p["skill"] <= 5]
-    foot = "".join(f'<p class="note pg-low">{e(x)}</p>' for x in low if x)
+    # vedlejší profese skoro na nule, číslem (jen u hlavních postav, alt začíná od nuly)
+    low = [f'{nick(m)}: ' + ", ".join(f'{p["name"]} {prof_num(p)}' for p in lows)
+           for m in members if not m.get("alt")
+           if (lows := [p for p in m.get("professions") or [] if not p["primary"] and p["skill"] <= 5])]
+    foot = f'<p class="note pg-low">Vedlejší řemesla skoro na nule: {e(" · ".join(low))}</p>' if low else ""
     if any(len(g) > 1 for g in people.values()):  # u hráče s víc postavami říká barva, která to umí
         foot = '<p class="note pg-low">Barva čísla = povolání postavy, která to umí (celé jméno v tooltipu).</p>' + foot
     if nobody:
@@ -3045,7 +3068,7 @@ cursor:pointer;flex:none;line-height:1}.sheet-close:hover{color:var(--text);bord
 .st-group ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
 .st-group li{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted var(--line);padding:1px 0}
 .st-group li b{font-weight:600}
-.st-body li{justify-content:flex-start}.st-body li span{flex:0 0 58px;color:var(--muted)}.st-bonus{color:var(--ok);font-weight:600}.st-malus{color:var(--bad);font-weight:600}
+.st-body ul{grid-template-columns:1fr 1fr;column-gap:14px}.st-body h5{margin:6px 0 1px;font:600 10px Inter,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);opacity:.75}.st-body li span{color:var(--muted)}.st-body li b{white-space:nowrap}.st-body .st-main b{color:var(--gold)}.st-body small{font-size:10px}.st-bonus{color:var(--ok);font-weight:600}.st-malus{color:var(--bad);font-weight:600}
 .st-sick{margin:0;padding:8px 10px;border:1px solid #6b2a24;background:#3b1612;border-radius:10px;color:#ffb3a8}
 .sheet-alts{display:flex;flex-wrap:wrap;gap:6px}
 .sheet-alts button{display:inline-flex;align-items:baseline;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:999px;

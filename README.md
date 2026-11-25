@@ -47,7 +47,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Postavy:** klik na postavu ve skupinovce otevře pod ní její kartu a posune stránku k ní. Na mobilu (do 600 px) je
   fotka seznam s hlavou, přezdívkou, jménem, levelem, XP a rolí a karta vyjede zespodu (zavírá ji křížek, Escape
   nebo klik vedle). Nahoře v kartě jsou všechny postavy hráče celým jménem a levelem. Karta: render uprostřed, kolem výbava jako okno
-  postavy ve hře (rámeček barvy kvality, 🩴 hadr = nejslabší kus podle item levelu, prázdné sloty čárkovaně), vedle
+  postavy ve hře (rámeček barvy kvality, 🩴 = nejslabší kus podle item levelu, prázdné sloty čárkovaně), vedle
   hláška, jak je oblečený (průměrný item level proti levelu), co mu chybí („chodí bez čepice“), „Jak na tom je“
   (HP a dva hlavní staty role číslem, `STAT_ROWS` v `build.py`, zbytek je na Armory), stupně řemesel a pet. Kdo se odhlásil s Resurrection
   Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu; obnovení stránky

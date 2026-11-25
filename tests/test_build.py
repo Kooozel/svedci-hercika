@@ -366,6 +366,13 @@ class ManyAlts(unittest.TestCase):
         self.assertIn("Herbalism <b>12</b>", rows[1])
         self.assertNotIn("Barva čísla", build.professions_box(chars))  # po jedné postavě: je jasné, kdo to umí
 
+    def test_low_secondary_profession_is_a_number(self):
+        chars = [{**self.char("a", "a"), "professions": [{"name": "Cooking", "skill": 1, "max": 75, "primary": False},
+                                                         {"name": "Fishing", "skill": 40, "max": 75, "primary": False}]}]
+        build.Q = build.Quips({}, TODAY)
+        html = build.professions_box(chars)
+        self.assertIn("Vedlejší řemesla skoro na nule: A: Cooking 1/75</p>", html)
+
     def test_profession_overview_has_one_column_per_player(self):
         chars = [{**self.char("a", "a"), "professions": [{"name": "Mining", "skill": 10, "max": 75, "primary": True}]},
                  {**self.char("a2", "a"), "professions": [{"name": "Mining", "skill": 60, "max": 75, "primary": True}]}]
@@ -523,6 +530,17 @@ class Sheet(unittest.TestCase):
         healthy = {k: (20, 30) for k in ("strength", "agility", "stamina", "intellect", "spirit")}
         self.assertFalse(build.sick({"cstats": healthy}))
 
+    def test_gear_summary_is_numbers(self):
+        def g(slot, lvl, q="UNCOMMON"):
+            return {"slot": slot, "name": f"Kus {slot}", "quality": q, "level": lvl, "inv": "WEAPON", "id": 1}
+        slots = ["HEAD", "SHOULDER", "BACK", "CHEST", "WRIST", "HANDS", "WAIST", "LEGS", "FEET",
+                 "TRINKET_1", "MAIN_HAND", "OFF_HAND"]
+        gear = [g(s, 20, "RARE" if s == "HEAD" else "UNCOMMON") for s in slots] + [g("RANGED", 7, "COMMON")]
+        text = re.sub(r"\s+", " ", re.sub("<[^>]+>", " ", build.sheet_side({"gear": gear, "class_slug": "warrior"})))
+        self.assertIn("Průměrný item level 19", text)
+        self.assertNotIn("Nejslabší", text)
+        self.assertIn("Prázdné sloty 4 : krk, 2× prsten, trinket", text)
+
 
     def test_flat_stats_keep_times(self):
         data = {"categories": [{"statistics": [{"name": "Total deaths", "quantity": 23.0,
@@ -540,6 +558,19 @@ class Sheet(unittest.TestCase):
         lock = {"level": 11, "class_slug": "warlock", "roles": ["dps"],
                 "cstats": {"health": 300, "spell_power": 0, "intellect": (20, 25)}}
         self.assertEqual(build.stat_values(lock), [("HP", 300), ("Intellect", 25)])  # nulový spell power pryč
+
+    def test_card_shows_all_stats(self):
+        m = {"slug": "a", "level": 31, "class_slug": "priest", "roles": ["heal"],
+             "cstats": {"health": 947, "power": 1810, "power_type": "Mana", "armor": (0, 315),
+                        "stamina": (33, 71), "intellect": (61, 95), "spirit": (70, 106),
+                        "strength": (25, 25), "agility": (26, 26), "main_hand_dps": 21.84, "spell_crit": 4.21,
+                        "spell_healing": 129, "parry": 0.0, "defense": (144, 144)}}
+        text = re.sub(r"\s+", " ", re.sub("<[^>]+>", " ", build.stat_rows(m)))
+        for bit in ("Mana 1 810", "Stamina 71 +38", "Strength 25 Agility", "DPS zbraně 21,8",
+                    "Spell crit 4,2 %", "Defense 144"):
+            self.assertIn(bit, text)
+        self.assertNotIn("Parry", text)  # nula se nevypisuje
+        self.assertIn('<li class="st-main"><span>Healing</span>', build.stat_rows(m))
 
     def test_sick_card_shows_sickness_only(self):
         sick = {k: (40, 10) for k in ("strength", "agility", "stamina", "intellect", "spirit")}
@@ -1135,22 +1166,16 @@ class Quips(unittest.TestCase):
 
     def test_no_repeat_on_page_and_daily_change(self):
         q = build.Quips(self.data, date(2026, 11, 13))
-        lines = [q.line("gap_tail", s) for s in ("a", "b", "c")]
+        lines = [q.line("craft.offer", s) for s in ("a", "b", "c")]
         self.assertEqual(len(set(lines)), 3)  # 3 postavy, nikdo nemá stejnou
         again = build.Quips(self.data, date(2026, 11, 13))
-        self.assertEqual(again.line("gap_tail", "a"), lines[0])  # stejný den, stejný build
+        self.assertEqual(again.line("craft.offer", "a"), lines[0])  # stejný den, stejný build
         days = {build.Quips(self.data, date(2026, 11, d)).label("loot.fight") for d in range(1, 8)}
         self.assertGreater(len(days), 1)  # štítek se během týdne mění
 
     def test_format_and_fallback(self):
-        q = build.Quips(self.data, date(2026, 11, 13))
-        self.assertIn("Kozel", q.line("prof_low.Cooking", "a", who="Kozel"))
+        self.assertIn("Kozel", build.Quips({"x": ["{who} a", "{who} b", "{who} c"]}).line("x", "a", who="Kozel"))
         self.assertEqual(build.Quips({}).label("loot.fight", "🎲 víc zájemců"), "🎲 víc zájemců")
-
-    def test_bare_line(self):
-        self.assertEqual(build.bare_line(["NECK", "FINGER_1", "FINGER_2", "TRINKET_2"]),
-                         "Chodí s holým krkem, bez prstenů a jen s jednou cetkou.")
-        self.assertEqual(build.bare_line([]), "")
 
     def test_prof_num(self):
         self.assertEqual(build.prof_num({"skill": 75, "max": 150}), "75/150")
