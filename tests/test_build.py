@@ -356,6 +356,7 @@ class ManyAlts(unittest.TestCase):
         self.assertIn('pg-sec', rows[0])  # vedlejší profese tlumeně
         self.assertNotIn("Herbalism", rows[0])
         self.assertIn("Herbalism <b>12</b>", rows[1])
+        self.assertNotIn("pg-who", rows[0])  # jedna postava: je jasné, kdo to umí
 
     def test_profession_overview_has_one_column_per_player(self):
         chars = [{**self.char("a", "a"), "professions": [{"name": "Mining", "skill": 10, "max": 75, "primary": True}]},
@@ -365,6 +366,10 @@ class ManyAlts(unittest.TestCase):
         self.assertIn('--cols:1', html)
         self.assertIn("<b>60</b>", html)
         self.assertNotIn("<b>10</b>", html)
+        # víc postav: pod skillem příjmení té, která to umí, v tooltipu celé jméno
+        name = chars[1]["name"]
+        self.assertIn(f'<small class="pg-who">{name.partition(" ")[2]}</small>', html)
+        self.assertIn(f'title="{chars[1]["nick"] if chars[1].get("nick") else name.split()[0]} · {name}: 60/75"', html)
 
 
 class Dungeons(unittest.TestCase):
