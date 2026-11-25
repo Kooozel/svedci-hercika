@@ -2800,7 +2800,7 @@ mask-image:linear-gradient(to right,transparent,#000 32px,#000 calc(100% - 32px)
 .col-menu[hidden]{display:none}.col-menu .mm-c[aria-checked=true]{background:var(--panel2);border-left-color:var(--gold)}
 .col-menu .mm-reset{color:var(--muted);font-size:13px}
 .col-sw{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:baseline;gap:3px}
-.col-sw i{font-style:normal;font-size:10px;color:var(--muted)}.col-sw:hover b{text-decoration:underline}
+.col-sw i{font-style:normal;font-size:.95em;line-height:1;color:var(--muted)}.col-sw:hover b{text-decoration:underline}
 th.col-manual .col-sw b::after{content:"•";color:var(--gold);margin-left:3px}
 .mm-p{padding:4px 0}.mm-p[hidden]{display:none}
 .mm-nick{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--cls);padding:4px 6px 2px}
