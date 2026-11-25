@@ -69,7 +69,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Řemesla:** „Dílna“ nabídne nejvýš tři kusy (`CRAFT_MAX`), které někdo z party umí vyrobit a jinému nebo sobě
   výrazně pomůžou (velký upgrade nebo prázdný slot, class je unese, level stačí), u nich kdo co přinese
   (kůže od skinnera, Copper Rod od kováře…), kdo umí třpytky (enchanty, bez jmen, komu chybí) a kdo je na stropu
-  skillu. Pod tím je přehled se skillem číslem (strop v tooltipu; na mobilu řádek = hráč a jeho profese),
+  skillu. Řemeslníky, příjemce i dodavatele jmenuje celým „přezdívka · jméno postavy“, ať je jasné, na koho se přelogovat; s vybranou postavou, pro kterou nic není, napíše „Pro postavu Kozel · Kozel Rohatý teď nikdo nic nevyrobí.“ Pod tím je přehled se skillem číslem (strop v tooltipu; na mobilu řádek = hráč a jeho profese),
   hlášky k vedlejším profesím skoro na nule a jedna věta o profesích, které nikdo nemá. Detaily receptů a předmětů se ukládají do `cache/static.json`, takže se
   z API stahuje jen to nové (ranní běh cache commitne). Smazáním souboru se stáhne znovu.
   Nové recepty se ukážou v novinkách.

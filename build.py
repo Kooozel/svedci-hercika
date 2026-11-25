@@ -1402,7 +1402,7 @@ def nick(m):
     return m.get("nick") or first(m)
 
 
-def who(m):
+def char_who(m):
     """Jednotné jméno postavy: přezdívka hráče · celé jméno postavy (Kozel · Kozel Mourningale)."""
     return f'{nick(m)} · {m["name"]}'
 
@@ -1738,7 +1738,7 @@ def ahead_rows(rows, members, by_slug=None):
 
 def ahead_cell(r, m):
     """(css třída, text, tooltip) pro jednu postavu: kolik levelů zbývá do procházky."""
-    lvl, cap, name = m["level"], walk_level(r), f'{who(m)} ({m.get("class") or "?"})'
+    lvl, cap, name = m["level"], walk_level(r), f'{char_who(m)} ({m.get("class") or "?"})'
     if lvl < r["min"]:
         return "low", f"za {r['min'] - lvl}", f"{name}: dungeon od levelu {r['min']}"
     if lvl > cap:
@@ -2365,7 +2365,7 @@ def craft_box(plan, members):
         m = by_slug.get(slug)
         if not m:
             return e(slug)
-        return f'<b style="color:{cls_color(m)}">{e(char_label(m) if m.get("alt") else nick(m))}</b>'
+        return f'<b style="color:{cls_color(m)}">{e(char_who(m))}</b>'
 
     def one_per_player(slugs):
         out = {}  # hlavní postava má přednost před altem
@@ -2409,7 +2409,7 @@ def craft_box(plan, members):
         rest.append(f'<li class="cf-cap" title="{e(prof)} {skill}/{skill}"><span class="cf-title">⚠️ {who(slug)} je na stropu jako '
                     f'{e(CRAFTSMAN.get(prof, prof))}, {e(Q.line("craft.cap", slug + prof))}</span></li>')
     body = (f'<ul class="craft craft-all">{general}</ul>{personal}'
-            f'<p class="muted craft-none" hidden>Pro tuhle postavu teď nikdo nic nevyrobí.</p>'
+            f'<p class="muted craft-none" hidden>Pro postavu <b class="craft-who"></b> teď nikdo nic nevyrobí.</p>'
             f'{f"""<ul class="craft">{"".join(rest)}</ul>""" if rest else ""}' if general or personal or rest
             else f'<p class="muted">{e(Q.line("craft.empty", "craft", "Nic k výrobě."))}</p>')
     return f'<div class="craft-box"><h3 class="sub-h">Dílna</h3>{body}</div>'
@@ -3311,7 +3311,8 @@ function syncLoot(){const t=selOpts.find(o=>o.value===sel?.value)?.dataset.title
 lootBtn?.addEventListener('click',()=>{lootAll=!lootAll;syncLoot()});
 function syncCraft(){const mine=[...document.querySelectorAll('.craft-for')];mine.forEach(u=>u.hidden=u.dataset.for!==viewer);
   const has=mine.some(u=>!u.hidden);document.querySelector('.craft-all')?.toggleAttribute('hidden',!!viewer);
-  document.querySelector('.craft-none')?.toggleAttribute('hidden',!viewer||has)}
+  const none=document.querySelector('.craft-none');if(!none)return;none.toggleAttribute('hidden',!viewer||has);
+  const nm=NAMES[viewer];none.querySelector('.craft-who').textContent=nm?nm[0]+' · '+nm[1]:'tuhle'}
 function pick(i){panels.forEach(a=>a.hidden=a.id!=='rc-'+i);if(sel)sel.value=String(i);
   const t=selOpts.find(o=>o.value==i);
   try{if(t)localStorage.setItem('rc-pick',t.dataset.title)}catch(e){}

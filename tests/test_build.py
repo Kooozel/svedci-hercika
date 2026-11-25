@@ -329,6 +329,15 @@ class ManyAlts(unittest.TestCase):
         who = re.sub(r"<[^>]+>", "", html.split('class="t-who">')[1].split("</span><b")[0])
         self.assertEqual(who, "A · A Velký, B · B Velký, C · C Nemrtvý")  # všude přezdívka · celé jméno
 
+    def test_craft_box_names_characters_in_full(self):
+        a, b = self.char("a", "a"), self.char("b", "b")
+        a["name"], b["name"] = "Kozel Rohatý", "Horaes Velký"
+        a["nick"], b["nick"] = "Kozel", "Hora"
+        plan = {"ups": [], "enchants": {}, "capped": [("a", "Tailoring", 75)]}
+        html = build.craft_box(plan, [a, b])
+        self.assertIn("Kozel · Kozel Rohatý</b> je na stropu", html)
+        self.assertIn('Pro postavu <b class="craft-who"></b>', html)  # jméno doplní stránka podle vybrané postavy
+
     def test_title_names_always_nick_and_full_name(self):
         m = self.char("a", "kozel")
         self.assertEqual(build.title_who(m, {"char": "Kozel Rohatý"}), "Kozel · Kozel Rohatý")
