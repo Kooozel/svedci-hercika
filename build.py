@@ -1935,7 +1935,10 @@ def evening_box(members, base, titles, counters):
     head = "Tituly za včerejší večer" if daily else "Tituly za celou dobu"
     note = (Q.line("titles_note", "note", "Není to žebříček.")
             if daily else "Od zítřka se tituly budou dávat za včerejší večer.")
-    return (f'<section id="tituly"><h2 class="sec">{head}</h2><ul class="titles">{cards}</ul>'
+    # na šířku nejvýš 5 vedle sebe; víc titulů do vyrovnaných řad (6 = 3 + 3), ať jeden neuskočí sám
+    n = len(titles)
+    cols = 5 if n <= 5 else -(-n // -(-n // 5))
+    return (f'<section id="tituly"><h2 class="sec">{head}</h2><ul class="titles" style="--cols:{cols}">{cards}</ul>'
             f'<details class="counters-box"><summary>Parta dohromady{summary} <span class="c-more">ukázat všech {len(tiles)}</span></summary>'
             f'<ul class="counters">{"".join(tiles)}</ul></details>'
             f'<p class="note" title="Počítá se ze statistik Blizzard API, které se aktualizují, když se postava odhlásí.">{e(note)}</p></section>')
@@ -2888,6 +2891,7 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px}
 .sub{font-size:15px;color:var(--muted);margin:18px 0 10px}
 .titles,.counters{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 .titles{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+@media(min-width:1000px){.titles{grid-template-columns:repeat(var(--cols,5),minmax(0,1fr))}}
 .title{background:linear-gradient(160deg,#2c2014,var(--panel));border:1px solid #5a4422;border-radius:12px;padding:12px 14px;
 display:grid;grid-template-columns:auto 1fr;column-gap:12px;align-items:center}
 .t-emoji{grid-row:1/4;font-size:30px;line-height:1}
