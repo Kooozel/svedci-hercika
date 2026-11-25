@@ -374,7 +374,8 @@ class Dungeons(unittest.TestCase):
         html = build.me_menu(chars)
         self.assertEqual(html.count('class="mm-p"'), 2)
         self.assertLess(html.index('data-me="j2"'), html.index('data-me="k"'))
-        self.assertIn('data-me="">jen koukám', html)
+        self.assertIn('<div class="mm-p" data-player="j" hidden>', html)  # stránka ukáže jen moje postavy
+        self.assertIn("změnit hráče", html)
 
     def test_ahead_cell(self):
         rfk = {"name": "RFK", "min": 30, "max": 40, "difficulty": [25, 28, 31, 34]}

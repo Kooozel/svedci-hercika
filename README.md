@@ -55,7 +55,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   V prohlížeči (`localStorage`) se pamatuje jen hráč; po načtení se za něj vezme jeho naposledy hraná postava,
   přepnutý alt platí do obnovení stránky. Odkaz `#char-…` volbu přeskočí.
 - **Ready check:** nahoře jsou čipy tvých postav (jméno v barvě classy a level) pro přepnutí alta. Vybraná postava je vpravo v liště
-  („Hraju za“: klik otevře menu hráčů a jejich postav, stránka nikam neodskočí; „jen koukám“ výběr zruší) a podle ní se řídí ready check, loot, Dílna a tvoje místo ve skupinové fotce. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
+  („Hraju za“: klik otevře menu tvých postav, stránka nikam neodskočí; „změnit hráče“ otevře znovu úvodní volbu) a podle ní se řídí ready check, loot, Dílna a tvoje místo ve skupinové fotce. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
   co si má dojít, co jí může někdo nasdílet a co začíná uvnitř. Nasdílet může postava jiného hráče, která se do dungeonu levelem vejde.
   Pod úkoly je tabulka „Celá parta“: řádek = quest, sloupec = hráč s postavou, kterou do dungeonu nejspíš vezme
   (stejná jako ve výpravě, u postavy mimo rozsah kolik chybí). Tvůj sloupec ukazuje tvou vybranou postavu a je zvýrazněný.

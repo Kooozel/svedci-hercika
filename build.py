@@ -2229,18 +2229,18 @@ def me_gate(chars):
 
 
 def me_menu(chars):
-    """Výběr „Hraju za“ přímo v liště: hráči a pod každým jeho postavy."""
+    """Výběr „Hraju za“ přímo v liště: jen postavy vybraného hráče (stránka skryje ostatní) a změna hráče."""
     players = {}
     for m in chars:
         players.setdefault(m.get("player", m["slug"]), []).append(m)
     groups = "".join(
-        f'<div class="mm-p"><span class="mm-nick" style="--cls:{cls_color(cs[0])}">{e(nick(cs[0]))}</span>'
+        f'<div class="mm-p" data-player="{e(p)}" hidden><span class="mm-nick" style="--cls:{cls_color(cs[0])}">{e(nick(cs[0]))}</span>'
         + "".join(f'<button type="button" class="mm-c" data-me="{e(m["slug"])}" aria-pressed="false" style="--cls:{cls_color(m)}">'
                   f'{avatar(m, "mm-av")}<span class="mm-name">{e(m["name"])}</span><span class="mm-lvl">{m.get("level", "")}</span></button>'
                   for m in cs) + "</div>"
-        for cs in players.values())
+        for p, cs in players.items())
     return (f'<div class="me-menu" role="dialog" aria-label="Hraju za" hidden>{groups}'
-            f'<button type="button" class="mm-c mm-none" data-me="">jen koukám</button></div>')
+            f'<button type="button" class="mm-c mm-none mm-switch">nejsem to já, změnit hráče</button></div>')
 
 
 def ready_section(checks, members):
@@ -2751,7 +2751,7 @@ mask-image:linear-gradient(to right,transparent,#000 32px,#000 calc(100% - 32px)
 .me-menu{position:absolute;right:16px;top:calc(100% - 2px);z-index:30;width:min(340px,calc(100vw - 32px));max-height:min(70vh,520px);overflow-y:auto;
   background:var(--panel);border:1px solid #6b5420;border-radius:14px;padding:8px;box-shadow:0 12px 32px #000a}
 .me-menu[hidden]{display:none}
-.mm-p{padding:4px 0;border-top:1px solid #ffffff10}.mm-p:first-child{border-top:0}
+.mm-p{padding:4px 0}.mm-p[hidden]{display:none}
 .mm-nick{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--cls);padding:4px 6px 2px}
 .mm-c{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:4px 6px;font:inherit;font-size:14px;color:var(--text);
   background:none;border:0;border-left:3px solid transparent;border-radius:8px;cursor:pointer;text-align:left}
@@ -3118,7 +3118,8 @@ const navMe=document.querySelector('.nav-me');
 function syncMe(){if(navMe){const n=NAMES[viewer],same=n&&n[1].split(' ')[0]===n[0];navMe.hidden=!document.querySelector('.me-menu');
   navMe.querySelector('b').textContent=n?(same?n[1]:n[0]):'Kdo jsi?';navMe.querySelector('small').textContent=n&&!same?n[1]:'';navMe.title=n?'Hraju za '+n[1]+': změnit postavu':'Vyber, za koho hraješ'}
   document.querySelectorAll('.ahead [data-player]').forEach(x=>x.classList.toggle('ah-me',!!viewer&&x.dataset.player===OWNER[viewer]));
-  document.querySelectorAll('.mm-c').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===viewer));
+  document.querySelectorAll('.mm-c[data-me]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===viewer));
+  document.querySelectorAll('.mm-p').forEach(g=>g.hidden=!viewer||g.dataset.player!==OWNER[viewer]);
   syncNext()}
 function syncNext(){const rc=document.querySelector('.nx-rc');if(!rc)return;const you=rc.querySelector('.nx-you'),n=NAMES[viewer];
   let todo={};try{todo=JSON.parse(rc.dataset.todo||'{}')}catch(e){}
@@ -3178,21 +3179,25 @@ document.querySelectorAll('.mc[data-me]').forEach(b=>b.addEventListener('click',
 const menu=document.querySelector('.me-menu');
 function menuOpen(on){if(!menu)return;menu.hidden=!on;navMe.setAttribute('aria-expanded',on);
   if(on)(menu.querySelector('.mm-c[aria-pressed=true]')||menu.querySelector('.mm-c')).focus({preventScroll:true})}
-navMe?.addEventListener('click',ev=>{ev.stopPropagation();menuOpen(menu.hidden)});
-menu?.querySelectorAll('.mm-c').forEach(b=>b.addEventListener('click',()=>{me(b.dataset.me);fitJump(b.dataset.me);menuOpen(false);navMe.focus()}));
+// bez vybraného hráče otevře lišta volbu hráče, jinak menu jeho postav
+navMe?.addEventListener('click',ev=>{ev.stopPropagation();if(!viewer){openGate();return}menuOpen(menu.hidden)});
+menu?.querySelector('.mm-switch')?.addEventListener('click',()=>{menuOpen(false);openGate()});
+menu?.querySelectorAll('.mm-c[data-me]').forEach(b=>b.addEventListener('click',()=>{me(b.dataset.me);fitJump(b.dataset.me);menuOpen(false);navMe.focus()}));
 document.addEventListener('click',ev=>{if(menu&&!menu.hidden&&!menu.contains(ev.target))menuOpen(false)});
 addEventListener('keydown',ev=>{if(ev.key==='Escape'&&menu&&!menu.hidden){menuOpen(false);navMe.focus()}});
-document.querySelector('.me-ask')?.addEventListener('click',ev=>{ev.stopPropagation();
-  navMe.scrollIntoView({block:'nearest'});menuOpen(true)});
+document.querySelector('.me-ask')?.addEventListener('click',ev=>{ev.stopPropagation();openGate()});
 // první návštěva: stránka se zeptá, kdo jsi; volba (i „jen koukám“) se pamatuje v prohlížeči
 const gate=document.querySelector('.gate');
-function gateDone(slug){gate.hidden=true;document.body.classList.remove('gate-on');
+function openGate(){if(!gate)return;gate.hidden=false;document.body.classList.add('gate-on');
+  gate.querySelector('.ch').focus({preventScroll:true})}
+function closeGate(){gate.hidden=true;document.body.classList.remove('gate-on')}
+addEventListener('keydown',ev=>{if(ev.key==='Escape'&&gate&&!gate.hidden&&viewer)closeGate()});
+function gateDone(slug){closeGate();
   try{localStorage.setItem('me-asked','1')}catch(e){}me(slug);fitJump(slug)}
 gate?.querySelectorAll('.ch[data-pick]').forEach(b=>b.addEventListener('click',()=>gateDone(b.dataset.pick)));
 gate?.querySelector('.gate-skip').addEventListener('click',()=>gateDone(''));
 {let asked=false;try{asked=!!localStorage.getItem('me-asked')||!!localStorage.getItem('player')||!!localStorage.getItem('me')}catch(e){asked=true}
- if(gate&&!asked&&!viewer&&!location.hash.startsWith('#char-')){gate.hidden=false;document.body.classList.add('gate-on');
-   gate.querySelector('.ch').focus({preventScroll:true})}}
+ if(!asked&&!location.hash.startsWith('#char-'))openGate()}
 document.querySelectorAll('.ah-more').forEach(b=>b.addEventListener('click',()=>{const t=b.previousElementSibling.querySelector('.ahead'),
   on=t.classList.toggle('ah-open');b.textContent=on?'méně dungeonů ▴':'další dungeony ('+b.dataset.n+') ▾'}));
 if(sel)sel.addEventListener('change',()=>pick(+sel.value));
