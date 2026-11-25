@@ -1,22 +1,15 @@
 {
- "_info": "Hlášky na stránku. Každý seznam má aspoň tři varianty, střídají se podle dne. Štítky (loot, legenda) jsou celý den na celé stránce stejné, věty u postav se liší postava od postavy a na jedné stránce se neopakují. {names}, {who}, {what}, {rank}, {craft}, {v}, {name} se doplní. Klidně připiš další.",
+ "_info": "Hlášky na stránku. Každý seznam má aspoň tři varianty, střídají se podle dne. Štítky (loot, legenda) jsou celý den na celé stránce stejné, věty u postav se liší postava od postavy a na jedné stránce se neopakují. {names}, {what}, {rank}, {craft}, {v}, {name} se doplní. Klidně připiš další.",
  "loot": {
   "fight": ["🎲 bude se o to rvát", "🎲 dohodněte se u piva", "🎲 víc zájemců, kámen nůžky papír"],
   "nobody": ["💰 do krámu, na rundu", "💰 prodat a propít", "💰 enchanterovi na prach"]
  },
  "trash_boe": ["Občas z trashe padne něco modrého. Kdo to vytáhne, platí rundu.", "Z trashe sem tam vypadne modrá věc. Nálezce kupuje pivo.", "Trash umí překvapit modrou věcí. Šťastlivec platí rundu."],
- "gap_tail": ["Chudák.", "Ať mu někdo něco hodí.", "Móda je móda.", "Asi otužuje."],
- "weak": ["tohle by chtělo do krámu", "nosí to snad z recese", "zasloužilo by si důchod", "i krysy by se styděly"],
  "craft": {
   "offer": ["Za rundu.", "Stačí hezky poprosit.", "Cena: jedno pivo.", "Dodací lhůta: až bude nálada."],
   "enchant": ["Kdo chce, ať přinese prach.", "Třpytky za pivo.", "Stačí přinést prach a dobrou náladu."],
   "cap": ["ať zajde za mistrem.", "trenér už čeká (i s nataženou dlaní).", "dál to bez učitele nepůjde."],
   "empty": ["V dílně je klid, nikdo nic nepotřebuje.", "Dílna má zavřeno, všichni jsou oblečení.", "Nic k výrobě. Jde se na pivo."]
- },
- "prof_low": {
-  "Cooking": ["{who} vaří. Raději ne.", "{who} umí spálit i vodu.", "{who} u plotny? Volejte hasiče."],
-  "Fishing": ["{who} rybaří. Zatím jen boty.", "{who} drží prut obráceně.", "{who} krmí ryby, chytat je nebude."],
-  "First Aid": ["{who} obvazuje. Hlavně sebe.", "{who} má náplasti s kačenkama.", "{who} umí obvaz, ne uzel."]
  },
  "missing": {
   "Alchemy": ["lektvary kupujeme", "lektvary jen z obchodu", "lektvary pije každý svoje"],

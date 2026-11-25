@@ -1,5 +1,6 @@
 """Testy logiky titulů, výchozího stavu a karty postavy. Bez sítě a bez API klíčů:
 python3 -m unittest discover -s tests"""
+import html as html_lib
 import json
 import re
 import sys
@@ -132,6 +133,261 @@ class Titles(unittest.TestCase):
         self.assertIn("další milník 1", html)
 
 
+class People(unittest.TestCase):
+    """Tituly, počítadla a novinky za člověka, ne za postavu."""
+
+    @staticmethod
+    def char(slug, player, **kw):
+        return {**member(slug, **kw), "player": player, "class": "Mage", "nick": player.title()}
+
+    def test_one_title_per_person_from_all_characters(self):
+        olds = [self.char("a", "a", stats={"Total deaths": 1}), self.char("a2", "a", stats={"Total deaths": 1}),
+                self.char("b", "b", stats={"Total deaths": 1})]
+        now = [self.char("a", "a", stats={"Total deaths": 4}), self.char("a2", "a", stats={"Total deaths": 6}),
+               self.char("b", "b", stats={"Total deaths": 6})]
+        titles = build.evening_titles(now, base(olds), TODAY, CATALOG)
+        self.assertEqual(set(titles), {"a", "b"})
+        self.assertEqual(titles["a"]["key"], "Total deaths")  # 3 + 5 přebije 5 u b
+        self.assertEqual(titles["a"]["char"], "A2")  # víc přinesl alt
+
+    def test_new_alt_is_not_a_newcomer_and_brings_no_lifetime_stats(self):
+        olds = [self.char("a", "a", stats={"Total deaths": 1})]
+        now = [self.char("a", "a", stats={"Total deaths": 1}), self.char("a2", "a", stats={"Total deaths": 900})]
+        titles = build.evening_titles(now, base(olds), TODAY, CATALOG)
+        self.assertFalse(titles["a"]["key"].startswith("newcomers:"))
+        self.assertNotEqual(titles["a"]["key"], "Total deaths")
+        deaths = next(c for c in build.party_counters(now, base(olds)) if c["label"] == "smrtí")
+        self.assertEqual((deaths["total"], deaths["delta"], deaths["crossed"]), (901, 0, None))
+
+    def test_alt_doing_something_main_did_is_no_premiere(self):
+        olds = [self.char("a", "a", stats={"Food eaten": 3}), self.char("a2", "a", stats={"Total deaths": 1})]
+        now = [self.char("a", "a", stats={"Food eaten": 3}), self.char("a2", "a", stats={"Total deaths": 1, "Food eaten": 1})]
+        titles = build.evening_titles(now, base(olds), TODAY, CATALOG)
+        self.assertFalse(titles["a"]["key"].startswith("_first:"))
+
+    def test_chronicle_title_for_alt_goes_to_player(self):
+        entry = {"date": "2026-11-11", "titles": {"a2": {"title": "Zeppelin"}}}
+        got = build.chronicle_titles([entry], base([member("a")]), TODAY, {"a"}, {"a2": "a"})
+        self.assertEqual(got["a"]["title"], "Zeppelin")
+
+    def news(self, now, olds):
+        build.Q = build.Quips({}, TODAY)
+        return build.news_box(now, base(olds), TODAY)
+
+    def test_news_has_one_row_per_person(self):
+        olds = [self.char("a", "a", xp=100), self.char("a2", "a", xp=100), self.char("b", "b", xp=100)]
+        now = [self.char("a", "a", xp=500), self.char("a2", "a", xp=300), self.char("b", "b", xp=100)]
+        html = self.news(now, olds)
+        self.assertEqual(html.count('class="who-n"'), 1)
+        self.assertEqual(html.count('class="nw-line"'), 2)
+        self.assertIn("B: nic nového", html)
+
+    def test_news_announces_new_alt(self):
+        olds = [self.char("a", "a")]
+        now = [self.char("a", "a"), {**self.char("a2", "a", level=11), "name": "Kozel Bezrohý"}]
+        self.assertIn("Nová postava: Kozel Bezrohý, level 11", self.news(now, olds))
+
+    def test_news_lists_several_new_alts_in_one_line(self):
+        olds = [self.char("a", "a")]
+        now = [self.char("a", "a"), {**self.char("a2", "a", level=11), "name": "Kozel Bezrohý"},
+               {**self.char("a3", "a", level=24), "name": "Kozel Pivoň"}]
+        html = self.news(now, olds)
+        self.assertEqual(html.count("🆕"), 1)
+        self.assertIn("Nové postavy: Kozel Bezrohý (11), Kozel Pivoň (24)", html)
+
+
+class ManyAlts(unittest.TestCase):
+    """Stránka musí zůstat přehledná i s pěti alty na hráče."""
+
+    @staticmethod
+    def char(slug, player, level=25, active=()):
+        return {"ok": True, "slug": slug, "name": slug.title() + " Velký", "nick": player.title(), "player": player, "class": "Mage",
+                "class_slug": "mage", "level": level, "quests_active": [{"id": i} for i in active], "quests_done": []}
+
+    def check(self, party):
+        catalog = {"D": {"quests": [{"id": 1, "name": "Q", "sharable": True}]}}
+        row = {"name": "D", "min": 20, "max": 30, "near": True}
+        orig = build.api_get
+        build.api_get = lambda *a: {}
+        try:
+            return build.ready_check("t", "eu", [row], row, party, catalog)[0]
+        finally:
+            build.api_get = orig
+
+    def test_give_list_offers_all_takers_and_page_keeps_column_ones(self):
+        """„Můžeš nasdílet“ nese všechny, komu quest dá, i ty mimo level; stránka nechá jen postavy ze sloupců."""
+        party = [self.char("a", "a", active=[1]), self.char("b", "b"), self.char("b2", "b"), self.char("c", "c", level=15)]
+        html = build.ready_box(self.check(party), party, 0)
+        self.assertIn('<li data-takers="b b2 c">', html)
+        self.assertNotIn("potřebuje:", html)  # text doplní stránka podle sloupců
+
+    def test_party_table_header_switch_only_for_player_with_more_chars(self):
+        party = [self.char("a", "a", active=[1]), self.char("b", "b"), self.char("b2", "b")]
+        head = build.ready_box(self.check(party), party, 0).split("<thead>")[1].split("</thead>")[0]
+        self.assertEqual(head.count('class="col-sw"'), 2)  # obě postavy hráče b, hráč a jen jméno
+
+    def test_chain_with_prequest_in_log_is_own_state(self):
+        q = {"id": 1, "name": "Q", "prev": "P", "status": {"a": "pre"}, "start": "", "req": 0}
+        self.assertIn("⛓ dokončit", build.quest_cell(q, "pre", ""))
+        self.assertEqual(build.char_todo({"quests": [q]}, {"slug": "a"}), ([], [], [q]))
+        self.assertEqual(build.todo_state([], [], [q]), "⛓ 1× dokončit")
+        html = build.mine_card({"quests": [q], "min": 1, "max": 60}, {"slug": "a", "level": 20}, {}, ["a"])
+        self.assertIn("⛓ Dokonči řetěz", html)
+        self.assertNotIn("Musíš dojít", html)
+        self.assertNotIn("Nemusíš nikam chodit", html)
+
+    def test_party_table_has_one_visible_column_per_player(self):
+        party = [self.char("a", "a", active=[1]), self.char("b", "b"), self.char("b2", "b", active=[1]), self.char("b3", "b")]
+        html = build.ready_box(self.check(party), party, 0)
+        head = html.split("<thead>")[1].split("</thead>")[0]
+        self.assertEqual(head.count('data-player="b"'), 3)  # všechny postavy hráče, aby šlo přepnout
+        self.assertEqual(head.count("data-def"), 2)  # viditelný sloupec jen jeden na hráče
+        self.assertIn('<th>Quest</th>', head)
+
+    def test_party_table_marks_rows_and_done_cells_for_mobile_fold(self):
+        party = [self.char("a", "a", active=[1]), self.char("b", "b")]
+        html = build.ready_box(self.check(party), party, 0)
+        self.assertIn('<tr data-q="0"', html)  # pořadí, do kterého stránka řádky vrací
+        self.assertIn('class="rc-fold"', html)
+        self.assertIn("parta je na tenhle dungeon připravená", html)
+        self.assertIn('class="st st-over st-done"', build.quest_cell({}, "done", ""))
+
+    def test_sharing_names_player_once_for_many_characters(self):
+        party = [self.char("a", "a"), self.char("b", "b", active=[1]), self.char("b2", "b", active=[1])]
+        html = build.ready_box(self.check(party), party, 0)
+        self.assertIn("může nasdílet B (2 postavy)", html)
+
+    def test_idle_alt_stays_out_of_history_but_stays_in_baseline(self):
+        main, alt = {**member("a"), "player": "a"}, {**member("a2"), "player": "a", "alt": True}
+        old = {s: {"name": m["name"], **build.snapshot(m)} for s, m in (("a", main), ("a2", alt))}
+        old = json.loads(json.dumps(old))
+        self.assertEqual(set(build.history_members([main, alt], {"members": old})), {"a"})
+        self.assertEqual(set(build.history_members([main, {**alt, "level": 19}], {"members": old})), {"a", "a2"})
+        with tempfile.TemporaryDirectory() as tmp:
+            for day, members in (("2026-11-10", {"a": {"attrs": {}}, "a2": {"attrs": {}, "level": 5}}), ("2026-11-11", {"a": {"attrs": {}}})):
+                (Path(tmp) / f"{day}.json").write_text(json.dumps({"date": day, "built": day + "T04:20:00Z", "members": members}))
+            saved, build.HISTORY = build.HISTORY, Path(tmp)
+            try:
+                got = build.load_baseline({}, "2026-11-12T20:00:00Z")
+            finally:
+                build.HISTORY = saved
+        self.assertEqual(got["members"]["a2"]["level"], 5)
+
+    def test_alt_chip_is_hidden_and_does_not_make_loot_contested(self):
+        by_slug = {"k": {**member("k"), "nick": "Kozel"}, "z": {**member("z"), "nick": "Zrza", "alt": True, "name": "Zrza Alt", "player": "zr"},
+                   "z1": {**member("z1"), "nick": "Zrza", "name": "Zrza Hlavní", "player": "zr"}}
+        chips = build.loot_who({"z": {"gain": "big", "lvl": 0}}, by_slug)
+        self.assertIn('class="lt-who lt-x"', chips)  # bez picks je vidět jen hlavní postava
+        self.assertIn("<b>Zrza Alt</b>", chips)
+        build.Q = build.Quips({}, TODAY)
+        line = build.loot_line({"item": {"name": "Meč"}, "fits": {"k": {"gain": "big", "lvl": 0}, "z": {"gain": "big", "lvl": 0}}}, by_slug)
+        self.assertIn('class="lt-flag" title="hodí se víc lidem, domluvte se před rollem" hidden', line)
+        self.assertNotIn("lt-fight", line)
+
+    def test_loot_chip_names_full_char_name(self):
+        """Na štítku je vždy celé jméno postavy, i u hráče s jednou postavou; level je „až na N“."""
+        by_slug = {"k": {**member("k"), "nick": "Kozel", "name": "Kozel Mourningale"},
+                   "c": {**member("c"), "nick": "Cilda", "name": "Cildac Velky", "player": "ci", "level": 24},
+                   "c2": {**member("c2"), "nick": "Cilda", "name": "Cilda Malý", "player": "ci"}}
+        chips = build.loot_who({"k": {"gain": "big", "lvl": 0}, "c": {"gain": "big", "lvl": 2}}, by_slug)
+        self.assertIn("<b>Kozel Mourningale</b>", chips)
+        self.assertIn("<b>Cildac Velky</b> velký upgrade <small>až na 26</small>", chips)
+
+    def test_next_box_sums_up_ready_check_per_player(self):
+        """Výprava nahoře: za každého hráče stav jeho postavy, stav všech vhodných postav pro „Ty“ v data-todo."""
+        party = [self.char("a", "a", active=[1]), self.char("b", "b"), self.char("b2", "b"), self.char("b3", "b", level=12)]
+        check = {**self.check(party), "best": True}
+        best = {"name": "D", "min": 20, "max": 30, "zone": "Z", "status": {"a": ("fit", 0), "b": ("fit", 0)}, "pick": {"b": "b2"}}
+        html = build.next_box([best], best, [party[0], party[1]], [check], party)
+        self.assertIn('id="vyprava"', html)
+        self.assertIn('data-player="a" data-def="a" style="--cls:#3FC7EB"><b>A</b> ✓ připraveno', html)
+        self.assertIn('data-player="b" data-def="b2" style="--cls:#3FC7EB"><b>B</b> ↗ 1× nasdílet', html)
+        todo = json.loads(html_lib.unescape(re.search(r'data-todo="([^"]*)"', html).group(1)))
+        self.assertEqual(todo, {"a": "✓ připraveno", "b": "↗ 1× nasdílet", "b2": "↗ 1× nasdílet"})  # b3 levelem nesedí
+        self.assertIn('href="#ready"', html)
+
+    def test_news_folds_other_characters_of_player(self):
+        olds = [self.char("a", "a"), self.char("a2", "a"), self.char("a3", "a")]
+        now = [{**self.char("a", "a"), "xp": 500}, {**self.char("a2", "a"), "xp": 900}, {**self.char("a3", "a"), "xp": 100}]
+        for m in olds:
+            m["xp"] = 100
+        build.Q = build.Quips({}, TODAY)
+        html = build.news_box(now, base(olds), TODAY)
+        head, more = html.split('<details class="nw-more">')
+        self.assertIn("A2 Velký", head)  # nejvíc nahrála, je vidět rovnou
+        self.assertNotIn("A Velký", head)
+        self.assertIn("<summary>+1 další postava</summary>", more)
+        self.assertIn("A Velký", more)
+
+    def test_counters_stay_folded_even_with_milestone(self):
+        old, now = member("a", stats={"Quests completed": 480}), member("a", stats={"Quests completed": 511})
+        build.Q = build.Quips({}, TODAY)
+        html = build.evening_box([now], base([old]), {"a": {"emoji": "🎉", "title": "T", "detail": ""}},
+                                 build.party_counters([now], base([old])))
+        self.assertIn('<details class="counters-box">', html)
+        self.assertIn("🎉 questů přes 500", html.split("</summary>")[0])
+
+    def test_same_title_is_one_card_with_all_names(self):
+        quiet = {"emoji": "🛠️", "title": "Tichý tahoun", "detail": "Odmakal svoje."}
+        chars = [self.char("a", "a"), self.char("b", "b"), self.char("c", "c"), self.char("d", "d")]
+        titles = {"a": quiet, "b": dict(quiet), "c": {**quiet, "char": "C Nemrtvý"},
+                  "d": {"emoji": "🎉", "title": "Rostoucí legenda", "detail": "+2 levely."}}
+        html = build.title_cards(chars, titles)
+        self.assertEqual(html.count('<li class="title"'), 2)
+        self.assertEqual(html.count("Tichý tahoun"), 1)
+        who = re.sub(r"<[^>]+>", "", html.split('class="t-who">')[1].split("</span><b")[0])
+        self.assertEqual(who, "A · A Velký, B · B Velký, C · C Nemrtvý")  # všude přezdívka · celé jméno
+
+    def test_craft_box_names_characters_in_full(self):
+        a, b = self.char("a", "a"), self.char("b", "b")
+        a["name"], b["name"] = "Kozel Rohatý", "Horaes Velký"
+        a["nick"], b["nick"] = "Kozel", "Hora"
+        plan = {"ups": [], "enchants": {}, "capped": [("a", "Tailoring", 75)]}
+        html = build.craft_box(plan, [a, b])
+        self.assertIn("Kozel · Kozel Rohatý</b> je na stropu", html)
+        self.assertIn('Pro postavu <b class="craft-who"></b>', html)  # jméno doplní stránka podle vybrané postavy
+
+    def test_title_names_always_nick_and_full_name(self):
+        m = self.char("a", "kozel")
+        self.assertEqual(build.title_who(m, {"char": "Kozel Rohatý"}), "Kozel · Kozel Rohatý")
+        self.assertEqual(build.title_who(m, {"char": "Cildac Velky"}), "Kozel · Cildac Velky")
+        self.assertEqual(build.title_who(m, {}), f"Kozel · {m['name']}")
+
+    def test_profession_overview_on_mobile_has_row_per_player(self):
+        chars = [{**self.char("a", "a"), "professions": [{"name": "Mining", "skill": 60, "max": 75, "primary": True},
+                                                         {"name": "Cooking", "skill": 30, "max": 75, "primary": False}]},
+                 {**self.char("b", "b"), "professions": [{"name": "Herbalism", "skill": 12, "max": 75, "primary": True}]}]
+        build.Q = build.Quips({}, TODAY)
+        rows = build.professions_box(chars).split('<ul class="prof-list">')[1].split("</ul>")[0].split("<li>")[1:]
+        self.assertEqual(len(rows), 2)
+        self.assertIn(">A</b>", rows[0])
+        self.assertIn("Mining <b>60</b>", rows[0])
+        self.assertIn('pg-sec', rows[0])  # vedlejší profese tlumeně
+        self.assertNotIn("Herbalism", rows[0])
+        self.assertIn("Herbalism <b>12</b>", rows[1])
+        self.assertNotIn("Barva čísla", build.professions_box(chars))  # po jedné postavě: je jasné, kdo to umí
+
+    def test_low_secondary_profession_is_a_number(self):
+        chars = [{**self.char("a", "a"), "professions": [{"name": "Cooking", "skill": 1, "max": 75, "primary": False},
+                                                         {"name": "Fishing", "skill": 40, "max": 75, "primary": False}]}]
+        build.Q = build.Quips({}, TODAY)
+        html = build.professions_box(chars)
+        self.assertIn("Vedlejší řemesla skoro na nule: A: Cooking 1/75</p>", html)
+
+    def test_profession_overview_has_one_column_per_player(self):
+        chars = [{**self.char("a", "a"), "professions": [{"name": "Mining", "skill": 10, "max": 75, "primary": True}]},
+                 {**self.char("a2", "a"), "professions": [{"name": "Mining", "skill": 60, "max": 75, "primary": True}]}]
+        build.Q = build.Quips({}, TODAY)
+        html = build.professions_box(chars)
+        self.assertIn('--cols:1', html)
+        self.assertIn("<b>60</b>", html)
+        self.assertNotIn("<b>10</b>", html)
+        # víc postav: barva povolání té, která to umí, v tooltipu celé jméno
+        name = chars[1]["name"]
+        self.assertIn("Barva čísla = povolání postavy", html)
+        self.assertIn(f'title="{chars[1]["nick"] if chars[1].get("nick") else name.split()[0]} · {name}: 60/75"', html)
+
+
 class Dungeons(unittest.TestCase):
     def test_done_dungeon_only_in_list(self):
         ds = [{"name": "RoL", "zone": "z", "min": 15, "max": 20, "done": "2026-11-12"},
@@ -158,6 +414,84 @@ class Dungeons(unittest.TestCase):
         rows, _ = build.plan_dungeons(team, ds)
         # RFC je procházka pro všechny, RFD začíná až na 40; řazení podle toho, co uteče dřív
         self.assertEqual([r["name"] for r in build.ahead_rows(rows, team)], ["WC", "RFK", "SM"])
+
+    def test_ahead_table_hides_far_rows_on_mobile(self):
+        ds = [{"name": f"D{i}", "zone": "z", "min": 20 + 2 * i, "max": 30 + 2 * i} for i in range(8)]
+        team = [member("a", level=26)]
+        rows, _ = build.plan_dungeons(team, ds)
+        shown = build.ahead_rows(rows, team)
+        best = shown[4]
+        html = build.ahead_table(rows, best, team)
+        # dva před příští výpravou a tři po ní zůstanou, zbytek až po „další dungeony“
+        self.assertEqual(html.count('ah-far'), len(shown) - 6)
+        self.assertIn("další dungeony (2)", html)
+        self.assertIn('data-player="a"', html)
+
+    def test_ahead_table_folds_played_rows(self):
+        ds = [{"name": f"D{i}", "zone": "z", "min": 20 + 2 * i, "max": 30 + 2 * i, "done": i < 3} for i in range(8)]
+        team = [member("a", level=26)]
+        rows, _ = build.plan_dungeons(team, ds)
+        shown = build.ahead_rows(rows, team)
+        best = next(r for r in shown if not r.get("done"))
+        html = build.ahead_table(rows, best, team)
+        n = sum(1 for r in shown if r.get("done"))
+        # odehrané jsou sbalené na desktopu i mobilu a nepočítají se do „dva před příští výpravou“
+        self.assertEqual(html.count('ah-done ah-old'), n)
+        self.assertEqual(html.count("ah-old-btn"), 1)
+        self.assertIn(f"✓ odehrané ({n})", html)
+        self.assertNotIn("ah-old ah-far", html)
+
+    def test_order_chars_main_first_then_alts_by_level(self):
+        chars = [Alts.char("k", 31), Alts.char("k2", 12, "k"), Alts.char("j", 30, "j"), Alts.char("k3", 24, "k"),
+                 Alts.char("j2", 33, "j")]
+        for c in chars[1:]:
+            c["alt"] = c["slug"] not in ("j",)
+        chars[0]["alt"] = False
+        self.assertEqual([c["slug"] for c in build.order_chars(chars)], ["k", "k3", "k2", "j", "j2"])
+
+    def test_me_gate_offers_players_with_highest_level_char(self):
+        chars = [Alts.char("j", 30, "j"), Alts.char("j2", 12, "j"), Alts.char("k", 31)]
+        for c in chars:
+            c["name"] = c["slug"].upper() + " Velký"
+        chars[1]["updated"] = "2026-11-20"
+        html = build.me_gate(chars)
+        self.assertEqual(html.count('data-who="'), 2)
+        self.assertIn('data-who="j" data-pick="j"', html)  # nejvyšší level, i když alt hrál naposledy
+        self.assertIn("jen koukám", html)
+
+    def test_me_menu_groups_chars_by_player(self):
+        chars = [Alts.char("j", 30, "j"), Alts.char("j2", 8, "j"), Alts.char("k", 31)]
+        for c in chars:
+            c["name"] = c["slug"].upper()
+        html = build.me_menu(chars)
+        self.assertEqual(html.count('class="mm-p"'), 1)
+        self.assertIn('data-me="j2"', html)
+        self.assertNotIn('data-me="k"', html)  # s jedinou postavou není co vybírat, zbývá změna hráče
+        self.assertIn('<div class="mm-p" data-player="j" hidden>', html)  # stránka ukáže jen moje postavy
+        self.assertIn("změnit hráče", html)
+
+    def test_single_char_player_has_no_alt_controls_or_double_names(self):
+        party = [Alts.char("a", 25), Alts.char("b", 25), Alts.char("b2", 24, "b")]
+        chars = [{**m, "ok": True, "name": m["slug"].title() + " Velký", "class_slug": "mage"} for m in party]
+        chars[2]["alt"] = True
+        for c in chars:
+            c["solo"] = c["player"] == "a"
+        a, b = chars[0], chars[1]
+        self.assertEqual(build.who_name(a), "A Velký")
+        self.assertEqual(build.who_name(b), "B · B Velký")
+        self.assertEqual(build.title_who(a, {}), "A Velký")
+        check = Alts().check(party)
+        html = build.ready_section([check], chars)
+        self.assertNotIn('class="me-chips" data-player="a"', html)
+        self.assertIn('class="me-chips" data-player="b"', html)
+        box = build.ready_box(check, chars, 0)
+        self.assertIn('data-slug="a" data-def style="--cls:#3FC7EB"><b>A</b><small>25</small>', box)
+        self.assertIn('<span class="wc-name">B Velký · </span>', box)
+        r = {"name": "SFK", "zone": "z", "min": 22, "max": 28}
+        solo = build.ahead_table([r], r, [a], {"a": a})
+        self.assertNotIn("jde alt", solo)
+        self.assertIn('title="A Velký (Mage): ', solo)
+        self.assertIn("jde alt", build.ahead_table([r], r, [a, b], {c["slug"]: c for c in chars}))
 
     def test_ahead_cell(self):
         rfk = {"name": "RFK", "min": 30, "max": 40, "difficulty": [25, 28, 31, 34]}
@@ -190,10 +524,9 @@ class Dungeons(unittest.TestCase):
         self.assertEqual([c["title"] for c in checks], ["New", "Old"])
         self.assertEqual(checks[1]["quests"][0]["status"], {"a": "done", "alt": "missing"})  # i když ho nikdo nemá
         html = build.ready_section(checks, [member("a", level=25), member("alt", level=14)])
-        self.assertIn("už odehrané (1)", html)
+        self.assertIn('data-past=1', html)
         self.assertIn('data-fit="alt"', html)  # do RFC se vejde jen alt
-        self.assertNotIn('data-rc="1"', html)  # odehraný není čip
-        self.assertIn("odehráno 7. 11.", build.ready_box(checks[1], [member("a"), member("alt")], 1))
+        self.assertNotIn("odehrál", build.ready_box(checks[1], [member("a"), member("alt")], 1))  # alt o tom nic neví
 
 
 class Baseline(unittest.TestCase):
@@ -222,6 +555,17 @@ class Sheet(unittest.TestCase):
         healthy = {k: (20, 30) for k in ("strength", "agility", "stamina", "intellect", "spirit")}
         self.assertFalse(build.sick({"cstats": healthy}))
 
+    def test_gear_summary_is_numbers(self):
+        def g(slot, lvl, q="UNCOMMON"):
+            return {"slot": slot, "name": f"Kus {slot}", "quality": q, "level": lvl, "inv": "WEAPON", "id": 1}
+        slots = ["HEAD", "SHOULDER", "BACK", "CHEST", "WRIST", "HANDS", "WAIST", "LEGS", "FEET",
+                 "TRINKET_1", "MAIN_HAND", "OFF_HAND"]
+        gear = [g(s, 20, "RARE" if s == "HEAD" else "UNCOMMON") for s in slots] + [g("RANGED", 7, "COMMON")]
+        text = re.sub(r"\s+", " ", re.sub("<[^>]+>", " ", build.sheet_side({"gear": gear, "class_slug": "warrior"})))
+        self.assertIn("Průměrný item level 19", text)
+        self.assertNotIn("Nejslabší", text)
+        self.assertIn("Prázdné sloty 4 : krk, 2× prsten, trinket", text)
+
 
     def test_flat_stats_keep_times(self):
         data = {"categories": [{"statistics": [{"name": "Total deaths", "quantity": 23.0,
@@ -240,6 +584,19 @@ class Sheet(unittest.TestCase):
                 "cstats": {"health": 300, "spell_power": 0, "intellect": (20, 25)}}
         self.assertEqual(build.stat_values(lock), [("HP", 300), ("Intellect", 25)])  # nulový spell power pryč
 
+    def test_card_shows_all_stats(self):
+        m = {"slug": "a", "level": 31, "class_slug": "priest", "roles": ["heal"],
+             "cstats": {"health": 947, "power": 1810, "power_type": "Mana", "armor": (0, 315),
+                        "stamina": (33, 71), "intellect": (61, 95), "spirit": (70, 106),
+                        "strength": (25, 25), "agility": (26, 26), "main_hand_dps": 21.84, "spell_crit": 4.21,
+                        "spell_healing": 129, "parry": 0.0, "defense": (144, 144)}}
+        text = re.sub(r"\s+", " ", re.sub("<[^>]+>", " ", build.stat_rows(m)))
+        for bit in ("Mana 1 810", "Stamina 71 +38", "Strength 25 Agility", "DPS zbraně 21,8",
+                    "Spell crit 4,2 %", "Defense 144"):
+            self.assertIn(bit, text)
+        self.assertNotIn("Parry", text)  # nula se nevypisuje
+        self.assertIn('<li class="st-main"><span>Healing</span>', build.stat_rows(m))
+
     def test_sick_card_shows_sickness_only(self):
         sick = {k: (40, 10) for k in ("strength", "agility", "stamina", "intellect", "spirit")}
         html = build.stat_rows({"slug": "a", "level": 20, "roles": [], "cstats": sick})
@@ -256,8 +613,8 @@ class Sheet(unittest.TestCase):
 
     def test_news_xp_numbers(self):
         ch = {"from": 20, "to": 20, "xp": 11600}
-        self.assertEqual(build.xp_news(ch), "+11\xa0600 XP (50 % levelu)")  # level 20 chce 23 200
-        self.assertEqual(build.xp_news({**ch, "to": 21}), "+11\xa0600 XP")  # level je vidět zvlášť
+        self.assertEqual(build.level_share(ch), "50 %")  # level 20 chce 23 200; v novinkách „+50 % levelu“
+        self.assertEqual(build.level_share({**ch, "to": 21}), "")  # level je vidět zvlášť
 
     def test_prof_news_numbers(self):
         m = {"slug": "a", "professions": [{"name": "Tailoring", "skill": 80}, {"name": "Fishing", "skill": 1},
@@ -394,11 +751,181 @@ class ReadyCheckLimits(unittest.TestCase):
 
     def test_render(self):
         check = self.run_check()
-        members = [{"slug": "j", "name": "Johnie", "class_slug": "paladin"}, {"slug": "h", "name": "Horaes", "class_slug": "mage"}]
+        members = [{"slug": "j", "name": "Johnie", "class_slug": "paladin", "level": 25},
+                   {"slug": "h", "name": "Horaes", "class_slug": "mage", "level": 25}]
         html = build.ready_box(check, members, 0)
-        self.assertIn('class="share share-cls"', html)
-        self.assertIn('q-cls" style="--cls:#F48CBA"', html)
-        self.assertIn('class="st st-na"', html)
+        self.assertIn('class="mine" data-slug="j"', html)
+        self.assertIn('data-player="h" data-slug="h" data-def', html)
+        self.assertIn("✋ Musíš dojít", html)
+
+
+class Alts(unittest.TestCase):
+    """Víc postav na hráče: kdo komu může nasdílet a kdo patří do výchozí sestavy."""
+
+    @staticmethod
+    def char(slug, level, player=None, active=()):
+        return {"slug": slug, "class": "Mage", "race": "Orc", "level": level, "player": player or slug,
+                "quests_active": [{"id": i} for i in active], "quests_done": []}
+
+    def check(self, party, low=24, high=32):
+        catalog = {"D": {"quests": [{"id": 1, "name": "Q", "sharable": True}]}}
+        row = {"name": "D", "min": low, "max": high, "near": True}
+        orig = build.api_get
+        build.api_get = lambda *a: {}
+        try:
+            return build.ready_check("t", "eu", [row], row, party, catalog)[0]
+        finally:
+            build.api_get = orig
+
+    def test_wings_share_one_check_with_full_range(self):
+        catalog = {"SM": {"quests": [{"id": 1, "name": "Q", "sharable": True}]}}
+        rows = [{"name": "SM: GY", "min": 28, "max": 38, "near": True, "difficulty": [26, 30, 33, 36]},
+                {"name": "SM: Cath", "min": 35, "max": 45, "near": True}]
+        orig = build.api_get
+        build.api_get = lambda *a: {}
+        try:
+            checks = build.ready_check("t", "eu", rows, rows[0], [self.char("a", 40, active=[1])], catalog)
+        finally:
+            build.api_get = orig
+        self.assertEqual(len(checks), 1)
+        c = checks[0]
+        self.assertEqual((c["min"], c["max"], c["wings"], c["difficulty"]), (28, 45, 2, None))
+        self.assertEqual(build.check_label(c), "SM (2 křídla)")
+
+    def test_roster(self):
+        self.assertEqual(build.roster({"characters": ["a", "b"]}), [["a"], ["b"]])
+        self.assertEqual(build.roster({"players": [{"chars": ["a", "a2"]}, {"chars": ["b"]}]}), [["a", "a2"], ["b"]])
+
+    def test_nick_from_party_or_main_character(self):
+        chars = [{"ok": True, "slug": "a", "name": "Johnie Rotking", "player": "a"},
+                 {"ok": True, "slug": "a2", "name": "Cildac Velky", "player": "a", "alt": True},
+                 {"ok": True, "slug": "b", "name": "Zrza Jegod", "player": "b"}]
+        build.add_nicks({"players": [{"name": "Fanda", "chars": ["a", "a2"]}, {"chars": ["b"]}]}, chars)
+        self.assertEqual([m["nick"] for m in chars], ["Fanda", "Fanda", "Zrza"])
+        self.assertEqual(build.char_label(chars[1]), "Cildac Velky (Fanda)")
+        self.assertEqual(build.char_label(chars[2]), "Zrza Jegod")
+
+    def test_mark_from_party_goes_to_all_player_chars(self):
+        chars = [{"ok": True, "slug": "a", "name": "Johnie Rotking", "player": "a"},
+                 {"ok": True, "slug": "a2", "name": "Cildac Velky", "player": "a", "alt": True},
+                 {"ok": True, "slug": "b", "name": "Zrza Jegod", "player": "b"}]
+        build.add_nicks({"players": [{"name": "J", "mark": "skull", "chars": ["a", "a2"]},
+                                     {"name": "Z", "mark": "banán", "chars": ["b"]}]}, chars)
+        self.assertEqual([m.get("mark") for m in chars], ["skull", "skull", None])  # neznámý mark se zahodí
+
+    def test_gate_shows_player_mark_not_character_image(self):
+        chars = [Alts.char("j", 30, "j"), Alts.char("j2", 12, "j"), Alts.char("k", 31)]
+        for c in chars:
+            c["name"], c["render"] = c["slug"].upper() + " Velký", "https://x/render.jpg"
+        chars[0]["mark"] = chars[1]["mark"] = "skull"
+        chars[0]["nick"] = chars[1]["nick"] = "Johnie"
+        html = build.me_gate(chars)
+        self.assertNotIn("render.jpg", html)
+        self.assertIn('aria-label="lebka"', html)
+        self.assertIn("2 postavy", html)
+        self.assertIn('mark-none" aria-hidden="true">K<', html)  # bez marku iniciála
+
+    def test_photo_shows_last_played_and_tie_goes_to_main(self):
+        main, alt = {"updated": "2026-11-16"}, {"updated": "2026-11-17"}
+        self.assertIs(build.shown_char([main, alt]), alt)
+        alt["updated"] = "2026-11-16"
+        self.assertIs(build.shown_char([main, alt]), main)
+
+    def test_photo_slot_names_player_and_character(self):
+        m = {**member("a", level=27), "name": "Cildac Velky", "nick": "Fanda", "class": "Warlock", "roles": ["dps"], "player": "a"}
+        other = {**member("b", level=17), "name": "Johnie Rotking", "nick": "Fanda", "class": "Paladin", "roles": ["tank"], "player": "a"}
+        html = build.pc_figure(m, [m, other], m)
+        self.assertIn('<span class="pc-nick">Fanda<small class="pc-alts" title="Johnie Rotking">+1 postava</small></span>', html)
+        self.assertIn('<span class="pc-name"><span>Cildac Velky</span><b>27</b></span>', html)
+        self.assertNotIn("<details", html)  # další postavy jen jako poznámka, přepínají se v kartě
+        self.assertIn(' hidden>', build.pc_figure(other, [m, other], m))
+        self.assertNotIn("pc-alts", build.pc_figure(m, [m], m))
+
+    def test_rows_of_same_named_characters_differ(self):
+        chars = [{**member(s), "ok": True, "name": n, "nick": "Kozel", "class": "Mage", "roles": [], "player": "k"}
+                 for s, n in (("a", "Kozel Mourningale"), ("b", "Kozel Bezrohý"))]
+        html = build.pc_figure(chars[0], chars, chars[0])
+        self.assertIn("<span>Kozel Mourningale</span>", html)
+        tabs = build.char_tabs(chars[1], chars)
+        self.assertIn('data-open="a" aria-pressed="false" style="--cls:#F0F0F0" title="Mage"><b>Kozel Mourningale</b> <i>18</i>', tabs)
+        self.assertIn('data-open="b" aria-pressed="true"', tabs)
+        self.assertIn("<b>Kozel Bezrohý</b>", tabs)
+
+    def test_sheet_switches_between_players_characters(self):
+        chars = [{**member(s, level=lv), "ok": True, "name": n, "nick": "Kozel", "class": "Mage", "roles": ["heal"], "player": "a",
+                  "race": "Human", "spec": "", "url": "u", "updated_label": "Naposledy"}
+                 for s, n, lv in (("a", "Kozel Mourningale", 25), ("b", "Kozel Bezrohý", 12))]
+        chars[1]["alt"] = True
+        html = build.squad(chars[:1], 1, TODAY, alts=chars[1:])
+        self.assertEqual(html.count('class="sheet-alts"'), 2)  # obě karty mají přepínač
+        self.assertIn('<nav class="sheet-alts" aria-label="Postavy hráče Kozel"><button type="button" data-open="a"', html)
+        self.assertIn('<div class="sheet-dim" hidden></div>', html)
+        self.assertNotIn("sheet-alts", build.sheet(chars[0], TODAY))  # jediná postava přepínač nemá
+    def test_player_without_character_waits_on_free_slot(self):
+        party = {"players": [{"name": "Kozel", "chars": ["a"]}, {"name": "Susak", "chars": []}]}
+        self.assertEqual(build.roster(party), [["a"]])
+        self.assertEqual(build.waiting_players(party), ["Susak"])
+        html = build.squad([], 2, TODAY, waiting=["Susak"])
+        self.assertIn('<span class="pc-name">Susak</span><span class="pc-sub">bez postavy</span>', html)
+        self.assertIn('<span class="pc-name">volné místo</span>', html)
+
+    def test_own_alt_never_shares(self):
+        check = self.check([self.char("a", 25), self.char("a2", 25, "a", [1])])
+        self.assertEqual(check["quests"][0]["status"]["a"], "missing")
+        self.assertEqual(check["quests"][0]["holders"], {})
+
+    def test_holder_who_does_not_fit_dungeon_cannot_share(self):
+        check = self.check([self.char("a", 25), self.char("b", 26), self.char("b2", 12, "b", [1])])
+        q = check["quests"][0]
+        self.assertEqual(q["status"]["a"], "missing")
+        self.assertEqual(q["holders"], {})
+        self.assertEqual((check["take"], check["share"]), (2, 0))
+
+    def test_other_player_in_lineup_shares(self):
+        check = self.check([self.char("a", 25), self.char("b", 26, active=[1])])
+        self.assertEqual(check["quests"][0]["status"]["a"], "share")
+        self.assertEqual((check["take"], check["share"]), (0, 1))
+
+    def test_lineup_takes_fitting_char_of_each_player(self):
+        party = [self.char("a", 40), self.char("a2", 25, "a"), self.char("b", 25), self.char("b2", 26, "b"), self.char("c", 14)]
+        self.assertEqual(build.default_lineup({"min": 24, "max": 32}, party), ["a2", "b2"])  # z pasujících vyšší level
+        self.assertEqual(build.default_lineup({"min": 50, "max": 60}, party), ["a", "b", "c"])  # nikdo: hlavní postavy
+
+    def test_alt_keeps_done_dungeon_on_offer_but_not_the_plan(self):
+        ds = [{"name": "RFC", "zone": "z", "min": 13, "max": 18, "done": "2026-11-07"},
+              {"name": "BFD", "zone": "z", "min": 24, "max": 32}]
+        mains, chars = [member("a", level=25)], [member("a", level=25), member("a2", level=14)]
+        rows, best = build.plan_dungeons(mains, ds, chars)
+        self.assertTrue(rows[0]["past"])
+        self.assertEqual(best["name"], "BFD")
+        self.assertEqual(set(rows[1]["status"]), {"a"})
+
+    def test_unavailable_alt_is_skipped_but_main_is_reported(self):
+        def fail(*a):
+            raise RuntimeError("500")
+        saved = build.fetch_armory, build.time.sleep
+        build.fetch_armory, build.time.sleep = fail, lambda s: None
+        try:
+            out = build.load_party({"region": "eu", "players": [{"chars": ["a", "a2"]}]}, None)
+        finally:
+            build.fetch_armory, build.time.sleep = saved
+        self.assertEqual([m["slug"] for m in out], ["a"])
+        self.assertFalse(out[0]["ok"])
+
+    def test_render_has_cards_with_full_name_and_personal_tasks(self):
+        party = [self.char("a", 25), self.char("a2", 25, "a"), self.char("b", 26, active=[1])]
+        check = self.check(party)
+        chars = [{**m, "ok": True, "name": m["slug"].title() + " Velký", "class_slug": "mage"} for m in party]
+        chars[1]["alt"] = True
+        html = build.ready_section([check], chars)
+        # v ready checku jen čipy postav hráče, hráče vybírá úvodní volba a lišta
+        self.assertIn('<div class="me-chips" data-player="a" hidden>', html)
+        self.assertIn('data-me="a2"', html)
+        self.assertIn('<span class="mc-name">A2 Velký</span><span class="mc-lvl">25</span>', html)
+        self.assertIn('id="rc-mains">{"a": "a"', html)  # pamatuje se hráč, za něj jeho postava
+        self.assertNotIn('data-who="', html)
+        self.assertIn("může nasdílet B", html)
+        self.assertNotIn("Kdo jde", html)
 
 
 def stat(t, v, bonus=False):
@@ -684,27 +1211,34 @@ class Quips(unittest.TestCase):
 
     def test_no_repeat_on_page_and_daily_change(self):
         q = build.Quips(self.data, date(2026, 11, 13))
-        lines = [q.line("gap_tail", s) for s in ("a", "b", "c")]
+        lines = [q.line("craft.offer", s) for s in ("a", "b", "c")]
         self.assertEqual(len(set(lines)), 3)  # 3 postavy, nikdo nemá stejnou
         again = build.Quips(self.data, date(2026, 11, 13))
-        self.assertEqual(again.line("gap_tail", "a"), lines[0])  # stejný den, stejný build
+        self.assertEqual(again.line("craft.offer", "a"), lines[0])  # stejný den, stejný build
         days = {build.Quips(self.data, date(2026, 11, d)).label("loot.fight") for d in range(1, 8)}
         self.assertGreater(len(days), 1)  # štítek se během týdne mění
 
     def test_format_and_fallback(self):
-        q = build.Quips(self.data, date(2026, 11, 13))
-        self.assertIn("Kozel", q.line("prof_low.Cooking", "a", who="Kozel"))
+        self.assertIn("Kozel", build.Quips({"x": ["{who} a", "{who} b", "{who} c"]}).line("x", "a", who="Kozel"))
         self.assertEqual(build.Quips({}).label("loot.fight", "🎲 víc zájemců"), "🎲 víc zájemců")
-
-    def test_bare_line(self):
-        self.assertEqual(build.bare_line(["NECK", "FINGER_1", "FINGER_2", "TRINKET_2"]),
-                         "Chodí s holým krkem, bez prstenů a jen s jednou cetkou.")
-        self.assertEqual(build.bare_line([]), "")
 
     def test_prof_num(self):
         self.assertEqual(build.prof_num({"skill": 75, "max": 150}), "75/150")
         self.assertEqual(build.prof_num({"skill": 12, "max": 0}), "12")
 
+
+
+class BossTips(unittest.TestCase):
+    def test_tips_name_roles_not_players(self):
+        """Taktiky a poznámky bossů píšou role a classy, ne jména: rada musí sedět, ať jde kdokoli."""
+        root = Path(__file__).resolve().parent.parent
+        party = json.loads((root / "party.json").read_text(encoding="utf-8"))
+        names = {p["name"] for p in party["players"]} | {c.split("-")[0].title() for p in party["players"] for c in p["chars"]}
+        rx = re.compile(r"\b(" + "|".join(sorted({n[:4] for n in names if len(n) > 3})) + r")\w*", re.I)
+        for title, d in json.loads((root / "bosses.json").read_text(encoding="utf-8"))["dungeons"].items():
+            texts = [d.get("note") or ""] + [b.get("tip") or "" for b in d.get("bosses", [])]
+            for t in texts:
+                self.assertIsNone(rx.search(t), f"{title}: {t}")
 
 if __name__ == "__main__":
     unittest.main()
@@ -801,3 +1335,94 @@ class BossLoot(unittest.TestCase):
         bucket = {"name": "B", "inv": "HOLDABLE", "level": 22, "stat": "Healing"}
         self.assertIsNone(build.loot_fit(build.loot_item(bucket, FakeStatic({}, {})), party[2]))
         self.assertIsNotNone(build.loot_fit(build.loot_item(bucket, FakeStatic({}, {})), party[0]))
+
+
+class OneChoice(unittest.TestCase):
+    """Výprava a ready check ukazují za hráče stejnou postavu: tu, která se do dungeonu hodí."""
+    ds = [{"name": "BFD", "zone": "z", "min": 24, "max": 32}]
+
+    @staticmethod
+    def char(slug, level, player, updated="2026-11-11"):
+        return {**member(slug, level=level, updated=updated), "player": player, "name": slug.title() + " Velký",
+                "class": "Mage", "class_slug": "mage", "roles": ["dps"], "nick": player.title()}
+
+    def test_plan_takes_fitting_alt(self):
+        main, alt = self.char("s", 20, "s"), self.char("s2", 25, "s")
+        rows, best = build.plan_dungeons([main], self.ds, [main, alt])
+        self.assertEqual(best["status"]["s"], ("fit", 0))
+        self.assertEqual(best["pick"]["s"], "s2")
+        self.assertEqual(best["fit"], 1)
+
+    def test_plan_takes_closest_when_none_fits(self):
+        main, alt = self.char("s", 20, "s"), self.char("s2", 23, "s")
+        _, best = build.plan_dungeons([main], self.ds, [main, alt])
+        self.assertEqual(best["status"]["s"], ("under", 1))
+        self.assertEqual(best["pick"]["s"], "s2")
+
+    def test_plan_prefers_last_played_of_fitting(self):
+        main = self.char("k", 25, "k", "2026-11-10")
+        alt = self.char("k2", 26, "k", "2026-11-12")
+        _, best = build.plan_dungeons([main], self.ds, [main, alt])
+        self.assertEqual(best["pick"]["k"], "k2")
+
+    def test_ahead_takes_char_with_most_reserve(self):
+        """Kam dál: z postav v rozsahu ta s největší rezervou, ne naposledy hraná."""
+        r = {"name": "SFK", "zone": "z", "min": 22, "max": 28}
+        low, high = self.char("z1", 22, "z", "2026-11-01"), self.char("z2", 29, "z", "2026-11-20")
+        mid = self.char("z3", 26, "z", "2026-11-19")
+        self.assertIs(build.reserve_char([low, mid, high], r), low)
+        self.assertIs(build.reserve_char([self.char("u", 18, "z"), self.char("u2", 20, "z"), high], r)["level"], 20)
+        self.assertEqual(build.reserve_char([high, self.char("h", 31, "z")], r)["level"], 29)
+        html = build.ahead_table([r], r, [high], {c["slug"]: c for c in (low, mid, high)})
+        self.assertIn('title="Z · Z1 Velký (Mage): ještě 6 lvl, pak procházka">6<', html)
+        self.assertIn('data-min="22" data-cap="28"', html)
+
+    def test_default_char_is_pick_for_next_dungeon(self):
+        """Moje výchozí postava je stejný odhad jako za ostatní: naposledy hraná, která se do výpravy vejde."""
+        top = self.char("k3", 33, "k", "2026-11-01")
+        last = self.char("k2", 31, "k", "2026-11-12")
+        _, best = build.plan_dungeons([top], self.ds, [top, last])
+        self.assertIs(build.default_char([top, last], best), last)
+        self.assertIs(build.default_char([top, last]), top)  # bez výpravy nejvyšší level
+        self.assertIn('data-who="k" data-pick="k2"', build.me_gate([top, last], best))
+
+    def test_ahead_next_row_uses_ready_check_pick(self):
+        """Řádek příští výpravy ukazuje postavu z ready checku, ne tu s největší rezervou."""
+        main, low = self.char("z", 31, "z", "2026-11-12"), self.char("z2", 25, "z", "2026-11-01")
+        rows, best = build.plan_dungeons([main], self.ds, [main, low])
+        html = build.ahead_table(rows, best, [main], {c["slug"]: c for c in (main, low)})
+        self.assertIn('title="Z · Z Velký (Mage): ještě 1 lvl, pak procházka">1<', html)
+
+    def test_loot_shows_ready_check_chars(self):
+        """Loot ukáže postavy ze sloupců ready checku; ostatní jsou schované (lt-x) a do 🎲 se nepočítají."""
+        main, alt, other = self.char("j", 30, "j"), self.char("j2", 31, "j"), self.char("k", 30, "k")
+        by_slug = {c["slug"]: c for c in (main, alt, other)}
+        build.Q = build.Quips({}, TODAY)
+        fits = {"j": {"gain": "big", "lvl": 0}, "j2": {"gain": "big", "lvl": 0}, "k": {"gain": "big", "lvl": 0}}
+        line = build.loot_line({"item": {"name": "Meč"}, "fits": fits}, by_slug, picks=["j2", "k"])
+        self.assertIn('class="lt-who lt-x" data-slug="j"', line)
+        self.assertIn('class="lt-who" data-slug="j2" data-up="1"', line)
+        self.assertIn("lt-fight", line)
+        alone = build.loot_line({"item": {"name": "Meč"}, "fits": {"j": fits["j"]}}, by_slug, picks=["j2", "k"])
+        self.assertIn('<span class="lt-none" title="nikomu z party se nehodí">', alone)  # j není ve sloupci
+
+    def test_top_char_is_highest_level(self):
+        a, b = self.char("a", 30, "k", "2026-11-01"), self.char("b", 17, "k", "2026-11-20")
+        self.assertIs(build.top_char([b, a]), a)
+
+    def test_next_box_names_picked_character(self):
+        main, alt = self.char("s", 20, "s"), self.char("s2", 23, "s")
+        rows, best = build.plan_dungeons([main], self.ds, [main, alt])
+        html = build.next_box(rows, best, [main], [], [main, alt])
+        # sloupec za hráče, buňka za jeho alta, který se do dungeonu vejde nejlíp
+        self.assertIn('title="S · S2 Velký (Mage): dungeon od levelu 24"><span class="ah-long">za </span>1</span>', html)
+        self.assertIn('class="ah ah-low ah-alt" style="--alt:#3FC7EB"', html)  # jde alt: tečka v barvě povolání
+
+    def test_party_table_shows_closest_char_of_player_out_of_range(self):
+        party = [Alts.char("a", 25), Alts.char("c", 20), Alts.char("c2", 23, "c")]
+        check = Alts().check(party)
+        chars = [{**m, "ok": True, "name": m["slug"].title() + " Velký", "class_slug": "mage"} for m in party]
+        html = build.ready_box(check, chars, 0)
+        self.assertIn('data-player="c" data-slug="c2" data-def', html)
+        self.assertIn('data-player="c" data-slug="c" hidden', html)
+        self.assertIn("<small><span class=\"wc-name\">C2 Velký · </span>23</small><small class=\"gap\">−1 lvl</small>", html)
