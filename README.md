@@ -58,6 +58,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
 - **Ready check:** nahoře jsou čipy tvých postav (jméno v barvě classy a level) pro přepnutí alta. Vybraná postava je vpravo v liště
   („Hraju za“: klik otevře menu tvých postav, stránka nikam neodskočí; „změnit hráče“ otevře znovu úvodní volbu) a podle ní se řídí ready check, loot, Dílna a tvoje místo ve skupinové fotce. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
   co si má dojít, co jí může někdo nasdílet a co začíná uvnitř. Nasdílet může postava jiného hráče, která se do dungeonu levelem vejde.
+  Scarlet Monastery má ve výběru jednu položku za všechna křídla („Scarlet Monastery (4 křídla) · 28–45“), protože questy přecházejí přes křídla; které křídlo, říká poznámka u questu. Kam dál a loot jsou po křídlech. Názvy dungeonů jsou všude celé, zkratky (SM:, bez Excavation Site) jen v Kam dál na mobilu.
   Pod úkoly je tabulka „Celá parta“: řádek = quest, sloupec = hráč s postavou, kterou do dungeonu nejspíš vezme
   (stejná jako ve výpravě, u postavy mimo rozsah kolik chybí). Tvůj sloupec ukazuje tvou vybranou postavu a je zvýrazněný.
   Hráč s víc postavami má u jména ▾: klik nabídne jeho postavy. U tvého sloupce to změní tvou postavu, u ostatních

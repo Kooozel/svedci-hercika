@@ -530,9 +530,12 @@ def ready_check(token, region, rows, best, members, catalog):
         if title not in catalog or title in seen:
             continue
         seen.add(title)
+        # křídla: rozsah přes všechna, obtížnost se k celku nedá říct
+        wings = [w for w in rows if w["name"].startswith(title + ":")] if title != r["name"] else []
+        span = (min(w["min"] for w in wings), max(w["max"] for w in wings)) if wings else (r["min"], r["max"])
         quests = []
         lineup = default_lineup(r, with_quests)
-        fits = {s for s in active if r["min"] <= levels[s] <= r["max"]}
+        fits = {s for s in active if span[0] <= levels[s] <= span[1]}
         for q in catalog[title]["quests"]:
             qid, pre = q["id"], q.get("pre")
             # předquesty se nezobrazují, jen se podle nich pozná, kdo už quest může vzít
@@ -599,7 +602,8 @@ def ready_check(token, region, rows, best, members, catalog):
         share = sum(1 for q in quests for s in lineup if q["status"][s] == "share")
         past = r.get("past", False)
         if quests and (r is best or past or any(not q["unclaimed"] for q in quests)) and not all(q["finished"] for q in quests):
-            checks.append({"title": title, "min": r["min"], "max": r["max"], "difficulty": r.get("difficulty"),
+            checks.append({"title": title, "min": span[0], "max": span[1], "wings": len(wings),
+                           "difficulty": None if wings else r.get("difficulty"),
                            "best": r is best, "past": past, "done": r.get("done") if past else None,
                            "quests": quests, "members": list(active), "lineup": lineup, "take": take, "share": share,
                            "source": catalog[title].get("source"), "tavern": catalog[title].get("tavern")})
@@ -1757,6 +1761,12 @@ def short_dungeon(name):
     return name.replace("Scarlet Monastery:", "SM:").replace("Excavation Site: ", "")
 
 
+def dungeon_name(name):
+    """Plný název; zkratka (SM:, bez Excavation Site) jen v úzké tabulce na mobilu."""
+    short = short_dungeon(name)
+    return e(name) if short == name else f'<span class="ah-long">{e(name)}</span><span class="ah-short">{e(short)}</span>'
+
+
 def ahead_table(rows, best, members, by_slug=None):
     """Sloupec za hráče (members = hlavní postavy), v řádku jeho postava s největší rezervou (reserve_char).
     Stránka do sloupce vybraného hráče (a ručně přepnutých v ready checku) dá jeho zvolenou postavu, proto data-min a data-cap."""
@@ -1789,7 +1799,7 @@ def ahead_table(rows, best, members, by_slug=None):
             cells += f'<td data-player="{p}"><span class="ah ah-{k}{alt}" title="{e(tip)}">{ahead_text(t)}</span></td>'
         mark = "✓ " if r.get("done") else ""
         body.append(f'<tr{cls} data-min="{r["min"]}" data-cap="{walk_level(r)}"><th scope="row" title="{e(r["name"])}, level {r["min"]}–{r["max"]}, {e(r["zone"])}">'
-                    f'{mark}{e(short_dungeon(r["name"]))}</th><td class="ah-cap">{walk_level(r)}</td>{cells}</tr>')
+                    f'{mark}{dungeon_name(r["name"])}</th><td class="ah-cap">{walk_level(r)}</td>{cells}</tr>')
     if not body:
         return ""
     return (f'<p class="eyebrow">Kam dál · levely do procházky</p>'
@@ -2308,6 +2318,11 @@ def me_menu(chars):
             f'<button type="button" class="mm-c mm-none mm-switch">nejsem to já, změnit hráče</button></div>')
 
 
+def check_label(c):
+    """Název dungeonu ve výběru; dungeon s křídly má jeden seznam questů za všechna."""
+    return f'{c["title"]} ({pl(c["wings"], ("{n} křídlo", "{n} křídla", "{n} křídel"))})' if c.get("wings") else c["title"]
+
+
 def ready_section(checks, members):
     if not checks:
         return ""
@@ -2316,7 +2331,7 @@ def ready_section(checks, members):
     opts = "".join(
         f'<option value="{i}" data-title="{e(c["title"])}"{" data-past=1" if c.get("past") else ""} '
         f'data-fit="{e(" ".join(m["slug"] for m in members if c["min"] <= m.get("level", 0) <= c["max"]))}">'
-        f'{e(c["title"])} · {c["min"]}–{c["max"]}</option>' for i, c in order)
+        f'{e(check_label(c))} · {c["min"]}–{c["max"]}</option>' for i, c in order)
     players = {}
     for m in members:
         players.setdefault(m.get("player", m["slug"]), []).append(m)

@@ -699,6 +699,21 @@ class Alts(unittest.TestCase):
         finally:
             build.api_get = orig
 
+    def test_wings_share_one_check_with_full_range(self):
+        catalog = {"SM": {"quests": [{"id": 1, "name": "Q", "sharable": True}]}}
+        rows = [{"name": "SM: GY", "min": 28, "max": 38, "near": True, "difficulty": [26, 30, 33, 36]},
+                {"name": "SM: Cath", "min": 35, "max": 45, "near": True}]
+        orig = build.api_get
+        build.api_get = lambda *a: {}
+        try:
+            checks = build.ready_check("t", "eu", rows, rows[0], [self.char("a", 40, active=[1])], catalog)
+        finally:
+            build.api_get = orig
+        self.assertEqual(len(checks), 1)
+        c = checks[0]
+        self.assertEqual((c["min"], c["max"], c["wings"], c["difficulty"]), (28, 45, 2, None))
+        self.assertEqual(build.check_label(c), "SM (2 křídla)")
+
     def test_roster(self):
         self.assertEqual(build.roster({"characters": ["a", "b"]}), [["a"], ["b"]])
         self.assertEqual(build.roster({"players": [{"chars": ["a", "a2"]}, {"chars": ["b"]}]}), [["a", "a2"], ["b"]])
