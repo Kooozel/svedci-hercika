@@ -974,6 +974,7 @@ def load_baseline(party, built):
         if any("attrs" not in b for b in snap["members"].values()):
             add_attrs(snap["members"], fetch_deployed(party))
         return {"at": snap["built"], "date": snap["date"], "titles": snap.get("titles") or {},
+                "recent_titles": [p.get("titles") or {} for p in reversed(past[-TITLE_PAUSE:])],
                 "members": snap["members"]}
     prev = fetch_deployed(party)
     if not prev:
@@ -1162,12 +1163,19 @@ Q = Quips(read_quips())  # render() ho přenastaví na dnešek
 
 # kolik z nejlepšího výkonu party stačí na titul za statistiku
 LEAD = 0.75
+# kolik posledních dní se stejná statistika stejnému člověku nedá znova
+# (warlock vede v healthstonech skoro denně, ob den by měl pořád ten samý)
+TITLE_PAUSE = 2
 
 
 def evening_titles(members, base, today, catalog):
-    """Každý dostane jeden titul, žádná statistika se nedá dvakrát a nikdo nedostane stejnou jako včera."""
+    """Každý dostane jeden titul, žádná statistika se nedá dvakrát a nikdo nedostane stejnou
+    jako v posledních TITLE_PAUSE dnech."""
     with_stats = [m for m in members if m.get("stats") is not None]
     yesterday = (base or {}).get("titles") or {}
+    recent = (base or {}).get("recent_titles") or [yesterday]
+    def lately(s, key):
+        return any(t.get(s) == key for t in recent)
     values, played, info = {}, {}, {}
     for m in with_stats:
         values[m["slug"]], played[m["slug"]], info[m["slug"]] = evening_values(m, base)
@@ -1189,7 +1197,7 @@ def evening_titles(members, base, today, catalog):
         for s in values:
             v = values[s].get(stat, 0)
             # titul je superlativ („nejvíc ve vzduchu“): jen pro toho, kdo ve statistice vede nebo je těsně za ním
-            if v >= rule["min"] and v >= LEAD * top and played[s] and yesterday.get(s) != stat:
+            if v >= rule["min"] and v >= LEAD * top and played[s] and not lately(s, stat):
                 # podíl na nejlepším + vtipnost + velikost čísla (185 nápojů přebije 2 zvířátka)
                 score = v / top + rule["bonus"] + 0.1 * math.log2(v / rule["min"])
                 candidates.append((score, v / rule["min"], s, stat, v))
@@ -1199,7 +1207,7 @@ def evening_titles(members, base, today, catalog):
         for s in values:
             for stat in info[s]["firsts"]:
                 key = "_first:" + stat
-                if stat in stats and not stat.startswith("_") and played[s] and yesterday.get(s) != key:
+                if stat in stats and not stat.startswith("_") and played[s] and not lately(s, key):
                     rules[key] = {**first, "forms": stats[stat]["forms"]}
                     # čím víc to ostatní dělají, tím vtipnější premiéra (první jídlo > první vzdaný quest)
                     others = sum(((b or {}).get("stats") or {}).get(stat, 0)

@@ -7,7 +7,7 @@
   {"name": "Shadowfang Keep", "zone": "Silverpine Forest", "min": 22, "max": 30, "done": "2026-11-15", "difficulty": [18, 21, 23, 28]},
   {"name": "The Stockade", "zone": "Stormwind", "min": 22, "max": 30, "alliance_side": true, "note": "uprostřed Stormwindu", "difficulty": [22, 24, 26, 30]},
   {"name": "Blackfathom Deeps", "zone": "Ashenvale", "min": 24, "max": 32, "done": "2026-11-19", "difficulty": [21, 23, 25, 30]},
-  {"name": "Excavation Site: Wetlands", "zone": "Wetlands", "min": 26, "max": 32, "new": true, "note": "questy od 24, ale poslední boss má 31 a loot chce 26–28; Wowhead doporučuje 26–32", "difficulty": [22, 24, 26, 29]},
+  {"name": "Excavation Site: Wetlands", "zone": "Wetlands", "min": 26, "max": 32, "new": true, "note": "questy od 24, ale poslední boss má 31 a loot chce 26–28; Wowhead doporučuje 26–32", "done": "2026-11-24", "difficulty": [22, 24, 26, 29]},
   {"name": "City of Dalaran", "zone": "Alterac Mountains", "min": 28, "max": 33, "new": true, "difficulty": [26, 29, 31, 34]},
   {"name": "Scarlet Monastery: Graveyard", "zone": "Tirisfal Glades", "min": 28, "max": 38, "difficulty": [26, 30, 33, 36]},
   {"name": "Scarlet Monastery: Library", "zone": "Tirisfal Glades", "min": 29, "max": 39, "difficulty": [29, 33, 37, 39]},

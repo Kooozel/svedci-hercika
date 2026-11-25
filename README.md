@@ -18,7 +18,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   řemeslo a body skillu jedním řádkem (anglické názvy), recepty jednou větou. Bez historie se vezme `party.json`
   z nasazené stránky (`site_url`).
 - **Tituly a počítadla:** ze statistik postav (smrti, jídlo, need rolly, lety…) dostane každý titul za včerejší večer,
-  bez žebříčku a bez opakování stejné statistiky dva dny po sobě. Kdo nehrál, dostane hezký titul.
+  bez žebříčku a stejnou statistiku dostane stejný člověk nejdřív za tři dny (`TITLE_PAUSE`). Kdo nehrál, dostane hezký titul.
   Tituly a jejich varianty jsou v `titles.json` (klidně připiš další), počítadla za partu jsou `COUNTERS` v `build.py`.
   Statistika, kterou `titles.json` nezná, dostane obecný titul „Objevitel“. Vlastní klíče: `_lvl`, `_xp`, `_skill`,
   `_explore` (objevená místa z achievementů Explore, `{zone}`).

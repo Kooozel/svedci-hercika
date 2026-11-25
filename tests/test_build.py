@@ -94,6 +94,14 @@ class Titles(unittest.TestCase):
         titles = build.evening_titles([now], base([old], titles={"a": "Total deaths"}), TODAY, CATALOG)
         self.assertNotEqual(titles["a"]["key"], "Total deaths")
 
+    def test_no_same_stat_every_other_day(self):
+        # Cilda: healthstony předevčírem, včera vzdané questy, dnes zase healthstony nesmí
+        old = member("a", stats={"Healthstones used": 24, "Quests abandoned": 11})
+        now = member("a", stats={"Healthstones used": 27, "Quests abandoned": 13})
+        b = base([old], titles={"a": "Quests abandoned"})
+        b["recent_titles"] = [{"a": "Quests abandoned"}, {"a": "Healthstones used"}]
+        titles = build.evening_titles([now], b, TODAY, CATALOG)
+        self.assertNotIn(titles["a"]["key"], ("Healthstones used", "Quests abandoned"))
 
     def test_stat_title_only_for_leader(self):
         # Horaes nabral 22 460 XP a dostal level; Kozel s 8 975 XP nesmí být „Rychlík“
@@ -201,6 +209,7 @@ class Baseline(unittest.TestCase):
                 build.HISTORY = saved
         self.assertEqual(b["date"], "2026-11-11")
         self.assertEqual(b["titles"], {"a": "2026-11-11"})
+        self.assertEqual(b["recent_titles"], [{"a": "2026-11-11"}, {"a": "2026-11-10"}])
 
 
 class Sheet(unittest.TestCase):

@@ -2,6 +2,51 @@
  "_info": "Kronika výprav, nejnovější nahoře se řadí sám. Pole zápisu: date (RRRR-MM-DD), title, dungeon (nepovinné), party (slugy postav z party.json), text (seznam odstavců), facts (krátká čísla a fakta pod zápisem), titles (nepovinné: ruční tituly za ten večer, slug → emoji, title, detail; přebijí ty ze statistik, platí jen den po výpravě). Na hlavní stránce je jen první odstavec posledního zápisu, celý text je na kronika.html.",
  "entries": [
   {
+   "date": "2026-11-24",
+   "title": "Do trávy se nechodí",
+   "dungeon": "Excavation Site: Wetlands",
+   "party": [
+    "kozel-mourningale",
+    "zrza-jegod",
+    "johnie-rotking",
+    "horaes-velký",
+    "cripling-susi"
+   ],
+   "text": [
+    "Wetlands, trpasličí vykopávky a na jejich konci Relic Guardian. Šel k zemi, ale cestou jsme víc běhali od hřbitova, než chodili dopředu: dvacet smrtí, Johnie šest, Kozel se Zrzou po čtyřech, Horaes se Susi po třech. Kozel +1 na 31, Johnie s Horaesem +1 na 30, Susi +1 na 26. Zrza zůstal na 31, ale do 32 mu chybí kousek.",
+    "Wipe jsme si dali víckrát a pokaždé za to mohla vysoká tráva. Věděli jsme, že se tam nechodí, jenže quest chtěl maso a maso běhá v trávě. Občas někdo přeagroval, z trávy vylezli další raptoři a raptoři nechodí sami.",
+    "Healoval Susi, poprvé v kronice a na levelu 25 do dungeonu od 26. Johnieho dvakrát zvedl v boji rebirthem, po zbytku wipů ho dvakrát vzkřísil Kozel. Kozel tentokrát neléčil, a stejně si z questu odnesl Healer's Staff. Pro jistotu. K tomu Satchel of Potions a Knife-Polishing Rag, který má teď i Horaes, takže zase chodí v páru.",
+    "Před dungeonem dal Horaes Johniemu modrá BoE ramena, ať tank vypadá k světu. Vydržela mu přesně jeden dungeon: z Relic Guardiana padla Reliquary Mantle a modrá ramena jdou do kůlny za želvou. K tomu si Johnie odnesl Saltscale Girdle ze Saltspina. Zrzovi tentokrát šípy nedošly, rovnou přešel na lepší. Cilda nešel, ale doma si mezitím dal level na 25. Na zdraví!"
+   ],
+   "facts": [
+    "Relic Guardian ⚰️",
+    "+4 levely",
+    "20 smrtí, Johnie šest",
+    "Wipe v trávě kvůli masu 🌾",
+    "Johnie: modrá ramena na jeden dungeon 🎁",
+    "Susi: první kronika, heal 🌿",
+    "Kozel: Healer's Staff bez healování 🪄",
+    "Zrza: šípy vydržely 🏹"
+   ],
+   "titles": {
+    "cripling-susi": {
+     "emoji": "🌿",
+     "title": "Zelený doktor",
+     "detail": "Healoval o level pod čarou a tanka dvakrát zvedl rebirthem."
+    },
+    "kozel-mourningale": {
+     "emoji": "🪄",
+     "title": "Hůl na zeď",
+     "detail": "Healer's Staff si odnesl ten, kdo zrovna neléčil."
+    },
+    "johnie-rotking": {
+     "emoji": "🌾",
+     "title": "Sekáč",
+     "detail": "Šest smrtí za večer. Tráva vyhrála."
+    }
+   }
+  },
+  {
    "date": "2026-11-19",
    "title": "Hydra na dně, šípy nikde",
    "dungeon": "Blackfathom Deeps",

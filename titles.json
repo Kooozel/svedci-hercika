@@ -1,5 +1,5 @@
 {
- "_info": "Tituly za včerejší večer. Klíč je anglický název statistiky z Blizzard API (nebo _xp, _lvl). forms = tvary čísla pro 1 / 2–4 / 5+, {n} je číslo. V line je {v} vyskloňované číslo. min = od kolika se titul dává, bonus = jak moc je vtipný (vyšší vyhrává). Varianty se střídají podle dne, stejná statistika nikdy dva dny po sobě.",
+ "_info": "Tituly za včerejší večer. Klíč je anglický název statistiky z Blizzard API (nebo _xp, _lvl). forms = tvary čísla pro 1 / 2–4 / 5+, {n} je číslo. V line je {v} vyskloňované číslo. min = od kolika se titul dává, bonus = jak moc je vtipný (vyšší vyhrává). Varianty se střídají podle dne, stejná statistika stejnému člověku nejdřív za tři dny.",
  "stats": {
   "_lvl": {"emoji": "🎉", "min": 1, "bonus": 0.9, "forms": ["+{n} level", "+{n} levely", "+{n} levelů"], "titles": [
    {"name": "Oslavenec", "line": "{v}. Dort je v Orgrimmaru."},
@@ -175,6 +175,15 @@
    {"name": "Mučedník Hordy", "line": "{v}. Lok'tar ogar, i v hrobě."},
    {"name": "Terč", "line": "{v}. Někdo z Aliance má dobrý den."}
   ]},
+  "Rebirthed by druids": {"emoji": "🌱", "min": 1, "bonus": 0.8, "forms": ["{n}× zvednut druidem", "{n}× zvednut druidem", "{n}× zvednut druidem"], "titles": [
+   {"name": "Zpátky ze záhonu", "line": "{v}. Druid zalil a on vyrostl."},
+   {"name": "Kompost", "line": "{v}. Příroda nic nevyhodí."},
+   {"name": "Rebirth na dluh", "line": "{v}. Cooldown byl, výmluva ne."}
+  ]},
+  "Summons accepted": {"emoji": "🔮", "min": 1, "bonus": 0.6, "forms": ["{n} přivolání", "{n} přivolání", "{n} přivolání"], "titles": [
+   {"name": "Taxík", "line": "{v} přijato. Proč chodit, když můžou tahat ostatní."},
+   {"name": "Zavolaný", "line": "{v} přijato. Kámen kliknul, on přiletěl."}
+  ]},
   "Spirit returned to body by shamans": {"emoji": "🌀", "min": 1, "bonus": 0.8, "forms": ["{n}× oživen šamanem", "{n}× oživen šamanem", "{n}× oživen šamanem"], "titles": [
    {"name": "Duch na gumičce", "line": "{v}. Totem ho stáhl zpátky do těla."},
    {"name": "Ankh na dluh", "line": "{v}. Šaman si to zapsal na sekeru."},
@@ -222,7 +231,9 @@
    {"name": "Obětní beránek", "line": "{v}. Pro dobro party."},
    {"name": "Suvenýr podzemí", "line": "{v}. Dungeon si chtěl něco nechat."},
    {"name": "Zvěd", "line": "{v}. Někdo musí zjistit, co je za rohem."},
-   {"name": "Běžec od hřbitova", "line": "{v}. Cestu zpátky zná nazpaměť."}
+   {"name": "Běžec od hřbitova", "line": "{v}. Cestu zpátky zná nazpaměť."},
+   {"name": "Stálý host", "line": "{v}. Spirit healer už ho zdraví jménem."},
+   {"name": "Věrnostní karta", "line": "{v}. Hřbitov mu dává slevu."}
   ]},
   "_skill": {"emoji": "🔨", "min": 10, "bonus": 0.45, "forms": ["+{n} bod", "+{n} body", "+{n} bodů"], "titles": [
    {"name": "Mistr řemesla", "line": "{skill} {v}. Kovadlina ještě dýmá."},
