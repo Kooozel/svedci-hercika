@@ -891,6 +891,7 @@ def boss_loot(rows, best, members, static, catalog):
             return res
 
         out.append({"title": title, "min": r["min"], "max": r["max"], "best": r is best, "past": bool(r.get("past")),
+                    "picks": list((r.get("pick") or {}).values()),
                     "source": d.get("source"), "tactics": d.get("tactics"), "note": d.get("note"),
                     "sets": d.get("sets") or {},
                     "bosses": [{"name": b["name"], "tip": b.get("tip"), "rare": b.get("rare"), "trash": b.get("trash"),
@@ -1426,8 +1427,14 @@ def shown_char(group):
 
 
 def top_char(group):
-    """Výchozí „moje“ postava hráče: nejvyšší level, při shodě naposledy hraná. Jinou si zvolí v liště."""
+    """Postava hráče s nejvyšším levelem, při shodě naposledy hraná."""
     return max(group, key=lambda c: (c.get("level") or 0, c.get("updated") or ""))
+
+
+def default_char(group, best=None):
+    """Výchozí „moje“ postava hráče: stejný odhad jako za ostatní v ready checku (pick_char pro příští výpravu),
+    bez výpravy nejvyšší level. Jinou si zvolí v liště."""
+    return pick_char(group, best) if best else top_char(group)
 
 
 def first_gen(m):
@@ -1790,7 +1797,8 @@ def dungeon_name(name):
 
 
 def ahead_table(rows, best, members, by_slug=None):
-    """Sloupec za hráče (members = hlavní postavy), v řádku jeho postava s největší rezervou (reserve_char).
+    """Sloupec za hráče (members = hlavní postavy), v řádku jeho postava s největší rezervou (reserve_char),
+    v řádku příští výpravy ta z ready checku (pick z plan_dungeons).
     Stránka do sloupce vybraného hráče (a ručně přepnutých v ready checku) dá jeho zvolenou postavu, proto data-min a data-cap."""
     by_slug = by_slug or {}
     groups = player_groups(members, by_slug)
@@ -1814,7 +1822,7 @@ def ahead_table(rows, best, members, by_slug=None):
         cls = f' class="{classes}"' if classes else ""
         cells = ""
         for p, m, g in zip(pl, members, groups):
-            c = reserve_char(g, r)
+            c = picked(r, m, by_slug) if r is best and r.get("pick") else reserve_char(g, r)
             k, t, tip = ahead_cell(r, c)
             # jde jiná postava než hlavní: tečka v barvě jejího povolání
             alt = f' ah-alt" style="--alt:{cls_color(c)}' if c is not m else ""
@@ -2312,13 +2320,14 @@ def char_card(m, attr, title=None, line=None, small=None, level=True):
             f'<small>{e(small or m.get("class", ""))}</small></span></button>')
 
 
-def me_gate(chars):
-    """Volba hráče při první návštěvě: karty hráčů, za každého jeho postava s nejvyšším levelem (alta přepne „Hraju za“)."""
+def me_gate(chars, best=None):
+    """Volba hráče při první návštěvě: karty hráčů, za každého jeho výchozí postava (default_char, alta přepne „Hraju za“)."""
     players = {}
     for m in chars:
         players.setdefault(m.get("player", m["slug"]), []).append(m)
-    cards = "".join(char_card(top_char(cs), f'data-who="{e(p)}" data-pick="{e(top_char(cs)["slug"])}"', nick(top_char(cs)),
-                              top_char(cs)["name"], pl(len(cs), ("{n} postava", "{n} postavy", "{n} postav")), level=False)
+    tops = {p: default_char(cs, best) for p, cs in players.items()}
+    cards = "".join(char_card(tops[p], f'data-who="{e(p)}" data-pick="{e(tops[p]["slug"])}"', nick(tops[p]),
+                              tops[p]["name"], pl(len(cs), ("{n} postava", "{n} postavy", "{n} postav")), level=False)
                     for p, cs in players.items())
     return (f'<div class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-h" hidden><div class="gate-box">'
             f'<h2 id="gate-h">Kdo jsi?</h2><p class="gate-sub">Podle toho ti stránka ukáže tvoje questy, loot a dungeony. Změníš to v liště.</p>'
@@ -2346,7 +2355,7 @@ def check_label(c):
     return f'{c["title"]} ({pl(c["wings"], ("{n} křídlo", "{n} křídla", "{n} křídel"))})' if c.get("wings") else c["title"]
 
 
-def ready_section(checks, members):
+def ready_section(checks, members, best=None):
     if not checks:
         return ""
     # jeden výběr dungeonu, skupiny podle vybrané postavy skládá stránka; odehrané až za těmi před námi, obojí podle min. levelu
@@ -2366,8 +2375,8 @@ def ready_section(checks, members):
     data = json.dumps({m["slug"]: m.get("player", m["slug"]) for m in members}, ensure_ascii=False).replace("<", "\\u003c")
     names = json.dumps({m["slug"]: [nick(m), m["name"], cls_color(m), m.get("level", 0), m.get("class") or "?", bool(m.get("alt"))]
                         for m in members}, ensure_ascii=False).replace("<", "\\u003c")
-    # pamatuje se zvolená postava; bez ní (nebo když zmizela) se za hráče vezme jeho nejvyšší level
-    mains = json.dumps({p: top_char(cs)["slug"] for p, cs in players.items()}, ensure_ascii=False).replace("<", "\\u003c")
+    # pamatuje se zvolená postava; bez ní (nebo když zmizela) se za hráče vezme odhad pro příští výpravu
+    mains = json.dumps({p: default_char(cs, best)["slug"] for p, cs in players.items()}, ensure_ascii=False).replace("<", "\\u003c")
     return (f'<section id="ready"><h2 class="sec">Ready check</h2>'
             f'<script type="application/json" id="rc-chars">{data}</script>'
             f'<script type="application/json" id="rc-names">{names}</script>'
@@ -2457,13 +2466,13 @@ def gain_text(g):
     return "asi lepší", f"staty neznáme, o {g} item levelů lepší než to, co nosí (+{g} ilvl)"
 
 
-def loot_who(fits, by_slug):
+def loot_who(fits, by_slug, picks=None):
     """Štítky postav, kterým se kus hodí: upgrade barvou classy, ostatní tlumeně.
-    Hráč s víc postavami má na štítku celé jméno postavy, s jednou jen přezdívku."""
+    Na štítku je vždy celé jméno postavy, jako všude jinde na stránce.
+    Vidět jsou jen postavy ze sloupců ready checku (picks, bez nich hlavní); ostatní mají lt-x a stránka je ukáže,
+    když hráče nebo sloupec přepneš na ně."""
+    shown = loot_shown(by_slug, picks)
     chips = []
-    count = {}
-    for c in by_slug.values():
-        count[c.get("player", c["slug"])] = count.get(c.get("player", c["slug"]), 0) + 1
     rank = {"empty": 0, "big": 1, "small": 2, "?": 4, None: 5}
     order = sorted(fits.items(), key=lambda kv: (kv[1].get("second", False), rank.get(kv[1]["gain"], 3),
                                                  list(by_slug).index(kv[0])))
@@ -2472,7 +2481,8 @@ def loot_who(fits, by_slug):
         g = f["gain"]
         text, tip = gain_text(g)
         cls = {None: " lt-no", "?": " lt-maybe", "small": " lt-small"}.get(g, "")
-        cls += " lt-altc" if m.get("alt") else ""  # alta je vidět, jen když je vybraný
+        cls += "" if slug in shown else " lt-x"
+        up = ' data-up="1"' if g not in (None, "?") and not f.get("second") else ""
         if f.get("second"):
             cls += " lt-second"
             tip = "druhá volba: heal nebo damage jiné školy nevyužije, " + tip
@@ -2480,12 +2490,17 @@ def loot_who(fits, by_slug):
         lvl = f' <small>až na {m["level"] + f["lvl"]}</small>' if f["lvl"] else ""
         if f["lvl"]:
             tip += f', nasadí až na levelu {m["level"] + f["lvl"]}'
-        chips.append(f'<span class="lt-who{cls}" data-slug="{e(slug)}" style="--cls:{cls_color(m)}" title="{e(tip)}">'
-                     f'<b>{e(m["name"] if count.get(m.get("player", slug), 1) > 1 else nick(m))}</b> {e(text)}{lvl}</span>')
+        chips.append(f'<span class="lt-who{cls}" data-slug="{e(slug)}"{up} style="--cls:{cls_color(m)}" title="{e(tip)}">'
+                     f'<b>{e(m["name"])}</b> {e(text)}{lvl}</span>')
     return "".join(chips)
 
 
-def loot_line(entry, by_slug, contested=True, sets=None):
+def loot_shown(by_slug, picks=None):
+    """Postavy, jejichž štítky jsou bez JS vidět: z ready checku dungeonu, jinak hlavní."""
+    return set(picks) if picks is not None else {s for s, c in by_slug.items() if not c.get("alt")}
+
+
+def loot_line(entry, by_slug, contested=True, sets=None, picks=None):
     it, fits = entry["item"], entry["fits"]
     color = QUALITY_COLOR.get(it.get("quality"), "var(--text)")
     href = (f'https://www.wowhead.com/forever/item={it["id"]}' if it.get("id")
@@ -2497,17 +2512,18 @@ def loot_line(entry, by_slug, contested=True, sets=None):
     meta = " · ".join(str(x) for x in (slot, it.get("sub") if it.get("sub") not in (None, "Miscellaneous") else None,
                                        it.get("stats") or it.get("stat"), it.get("req") and f'od lvl {it["req"]}') if x)
     alt = f' <small class="lt-alt">(nebo {e(it["alt"])})</small>' if it.get("alt") else ""
-    ups = [s for s, f in fits.items() if f["gain"] not in (None, "?") and not f.get("second") and not by_slug[s].get("alt")]
+    shown = loot_shown(by_slug, picks)
+    ups = [s for s, f in fits.items() if f["gain"] not in (None, "?") and not f.get("second") and s in shown]
     if it.get("set"):
         bonus = " · ".join((sets or {}).get(it["set"], {}).get("bonus") or [])
         alt += f' <span class="lt-set" title="{e(bonus)}">set {e(it["set"])}</span>'
-    flag = (f'<span class="lt-flag" title="hodí se víc lidem, domluvte se před rollem">{e(Q.label("loot.fight", "🎲 víc zájemců"))}</span>'
-            if contested and len(ups) > 1 else "")
-    who = loot_who(fits, by_slug)
-    if not any(not by_slug[s].get("alt") for s in fits):
-        who += (f'<span class="lt-none" title="nikomu z party se nehodí">'
-                f'{e(Q.label("loot.nobody", "nikomu, disenchant nebo prodat"))}</span>')
-    cls = " lt-fight" if flag else ""
+    # štítek i „nikomu“ jsou vždy v HTML, stránka je přepočítá podle postav ve sloupcích
+    flag = (f'<span class="lt-flag" title="hodí se víc lidem, domluvte se před rollem"{"" if len(ups) > 1 else " hidden"}>'
+            f'{e(Q.label("loot.fight", "🎲 víc zájemců"))}</span>' if contested else "")
+    who = loot_who(fits, by_slug, picks)
+    who += (f'<span class="lt-none" title="nikomu z party se nehodí"{" hidden" if shown & set(fits) else ""}>'
+            f'{e(Q.label("loot.nobody", "nikomu, disenchant nebo prodat"))}</span>')
+    cls = " lt-fight" if len(ups) > 1 and contested else ""
     return (f'<li class="lt{cls}"><div class="lt-item"><a class="item" style="color:{color}" href="{e(href)}" target="_blank" '
             f'rel="noopener">{icon}{e(it["name"])}</a>{alt}<small>{e(meta)}</small></div>'
             f'<div class="lt-whos">{flag}{who}</div></li>')
@@ -2529,7 +2545,7 @@ def loot_section(lists, members):
             quip = f'<p class="boss-quip">{e(quip)}</p>' if quip else ""
             tip = f'<p class="boss-tip">{e(b["tip"])}</p>' if b.get("tip") else ""
             # vzácné BoE z trashe: žádný seznam na farmení, jen věta
-            items = "" if b.get("boe") else f'<ul class="loot">{"".join(loot_line(x, by_slug, sets=d["sets"]) for x in b["items"])}</ul>'
+            items = "" if b.get("boe") else f'<ul class="loot">{"".join(loot_line(x, by_slug, sets=d["sets"], picks=d.get("picks")) for x in b["items"])}</ul>'
             bosses.append(f'<article class="boss{" boss-trash" if b.get("trash") else ""}"><h4>{e(b["name"])}{rare}</h4>{quip}{tip}'
                           f'{items}</article>')
         set_boxes = []
@@ -2542,7 +2558,7 @@ def loot_section(lists, members):
             set_boxes.append(f'<article class="set-box"><h4>Set {e(name)} <small>{len(pieces)} kusů v dungeonu</small></h4>'
                              f'<div class="set-cols"><ul class="set-pieces">{rows_}</ul><ul class="set-bonus">{bonus}</ul></div></article>')
         quests = "".join(f'<li class="lq"><span class="lq-name">{e(q["quest"])}</span>'
-                         f'<ul class="loot">{"".join(loot_line(x, by_slug, contested=False) for x in q["items"])}</ul></li>'
+                         f'<ul class="loot">{"".join(loot_line(x, by_slug, contested=False, picks=d.get("picks")) for x in q["items"])}</ul></li>'
                          for q in d["quests"])
         links = [(d.get("source"), "Loot", "seznam lootu"), (d.get("tactics"), "Taktika", "postup a bossové podle Warcraft Tavern")]
         src = "".join(f'<a href="{e(u)}" target="_blank" rel="noopener" title="{t}">{n} ↗</a>' for u, n, t in links if u)
@@ -2553,7 +2569,8 @@ def loot_section(lists, members):
         n = sum(1 for b in d["bosses"] if not b.get("trash"))
         past = " data-past=1" if d.get("past") else ""
         hide = " hidden" if d.get("past") else ""
-        parts.append(f'<details class="loot-dg" data-title="{e(d["title"])}"{past}{hide}><summary><div class="rc-head"><h3>{e(d["title"])}{best}</h3>'
+        picks = f' data-picks="{e(" ".join(d["picks"]))}"' if d.get("picks") else ""
+        parts.append(f'<details class="loot-dg" data-title="{e(d["title"])}"{picks}{past}{hide}><summary><div class="rc-head"><h3>{e(d["title"])}{best}</h3>'
                      f'<span class="range">level {d["min"]}–{d["max"]}</span>'
                      f'<span class="spoil">⚠ spoiler · {pl(n, ("{n} boss", "{n} bossové", "{n} bossů"))}, taktika a loot '
                      f'<span class="spoil-open">ukázat ▾</span><span class="spoil-close">schovat ▴</span></span></div></summary>'
@@ -2783,12 +2800,12 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
     </div>
   </header>
   <nav class="nav"><div class="nav-links">{nav_html}</div>{'<button type="button" class="nav-me" aria-haspopup="dialog" aria-expanded="false" hidden><span>Hraju za</span><b>Kdo jsi?</b><small></small><i class="nav-caret">▾</i></button>' + me_menu(chars) if checks else ""}</nav>
-  {me_gate(chars) if checks else ""}
+  {me_gate(chars, best) if checks else ""}
   {squad(members, party.get("size", len(members)), today, [m for m in chars if m.get("alt")], waiting_players(party))}
   {next_box(rows, best, ok, checks, chars)}
   {evening_box(ok, base, titles, counters)}
   {news_box(chars, base, today) if base else ""}
-  {ready_section(checks, chars)}
+  {ready_section(checks, chars, best)}
   {loot_section(loot, chars)}
   {chronicle_box(chronicle, ok)}
   <section id="profese"><h2 class="sec">Řemesla</h2>{craft_box(plan, chars) if plan else ""}
@@ -3196,7 +3213,7 @@ border:1px solid color-mix(in srgb,var(--cls) 40%,transparent)}
 .lt-none{font-size:12px;color:var(--muted)}
 .lt-flag{font-size:12px;padding:1px 8px;border-radius:999px;background:#4a3a14;color:var(--warn);font-weight:600}
 .lt-who.dim{color:var(--muted);background:transparent;border-color:var(--line)}
-.lt-who.dim b{color:color-mix(in srgb,var(--cls) 60%,var(--muted))}.lt-who.dim small{color:var(--muted)}.lt-altc{display:none}.lt-altc.lt-me{display:inline-block}
+.lt-who.dim b{color:color-mix(in srgb,var(--cls) 60%,var(--muted))}.lt-who.dim small{color:var(--muted)}.lt-who.lt-x,.lt-flag[hidden],.lt-none[hidden]{display:none}
 .craft[hidden],.craft-none[hidden],.loot-empty[hidden]{display:none}.lt-whos:has(.lt-me) .lt-none{display:none}#loot.loot-mine .lt-off{display:none}.loot-dg[hidden]{display:none}
 .loot-all{font:600 13px Inter,system-ui,sans-serif;color:var(--gold);background:none;border:0;padding:0;cursor:pointer}
 .lt-who.lt-second{background:transparent;border-style:dashed;color:var(--muted)}
@@ -3240,7 +3257,7 @@ background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:
 .nav a{min-height:36px;display:inline-flex;align-items:center}.nav-me{min-height:36px;align-items:center}
 .sheet-armory,.loot-all:not([hidden]),.rc-source a,.k-more a{display:inline-flex;align-items:center;min-height:36px;padding:0 4px}
 footer a{display:inline-block;padding:8px 2px}
-.lt-who:not(.lt-altc),.lt-altc.lt-me,.lt-flag{display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:2px 10px}
+.lt-who:not(.lt-x),.lt-flag:not([hidden]){display:inline-flex;align-items:center;gap:4px;min-height:36px;padding:2px 10px}
 .lt-item a.item,a.ql{display:inline-flex;align-items:center;min-height:36px}
 .counters-box>summary,.nw-more>summary,.all-dungeons>summary,.legend>summary{min-height:36px;padding-top:6px;padding-bottom:6px}
 .lg-q{width:32px;height:32px}}
@@ -3286,7 +3303,7 @@ function syncCols(){
     rc.querySelectorAll('.mine li[data-takers]').forEach(li=>{const who=words(li.dataset.takers).filter(s=>shown.has(s)&&NAMES[s]).map(charLabel);
       li.hidden=!who.length;li.querySelector('.m-takers').textContent=who.length?'potřebuje: '+who.join(', '):''});
     rc.querySelectorAll('.mine .m-give').forEach(g=>{const n=g.querySelectorAll('li:not([hidden])').length;g.hidden=!n;g.querySelector('.m-n').textContent='('+n+')'})});
-  syncAhead();syncNext()}
+  syncAhead();syncNext();if(sel)syncLoot()}
 const AH=new WeakMap();
 function aheadCell(r,s){const [nk,nm,,lvl,cl]=NAMES[s],who=nk+' · '+nm+' ('+cl+')',min=+r.dataset.min,cap=+r.dataset.cap;
   if(lvl<min)return['low','za '+(min-lvl),who+': dungeon od levelu '+min];
@@ -3330,7 +3347,14 @@ function orderSel(){if(!sel)return;const cur=sel.value;sel.textContent='';
   if(viewer){const fit=o=>words(o.dataset.fit).includes(viewer);grp('Sedí ti levelem',selOpts.filter(fit));grp('Ostatní',selOpts.filter(o=>!fit(o)))}
   else{grp('Před námi',selOpts.filter(o=>!o.dataset.past));grp('Parta už odehrála',selOpts.filter(o=>o.dataset.past))}
   sel.value=cur}
-function syncLoot(){const t=selOpts.find(o=>o.value===sel?.value)?.dataset.title,dgs=[...document.querySelectorAll('.loot-dg')];
+// loot ukazuje postavy ze sloupců ready checku: moji, ručně přepnuté, jinak odhad dungeonu (data-picks)
+function syncLootCols(){document.querySelectorAll('.loot-dg[data-picks]').forEach(d=>{
+  const shown=new Set(words(d.dataset.picks).map(s=>colOf(OWNER[s])||s));
+  d.querySelectorAll('.lt-who[data-slug]').forEach(c=>c.classList.toggle('lt-x',!shown.has(c.dataset.slug)));
+  d.querySelectorAll('.lt').forEach(l=>{const vis=[...l.querySelectorAll('.lt-who:not(.lt-x)')],flag=l.querySelector('.lt-flag'),none=l.querySelector('.lt-none');
+    const many=vis.filter(c=>c.dataset.up).length>1;if(flag){flag.hidden=!many;l.classList.toggle('lt-fight',many)}
+    if(none)none.hidden=vis.length>0})})}
+function syncLoot(){syncLootCols();const t=selOpts.find(o=>o.value===sel?.value)?.dataset.title,dgs=[...document.querySelectorAll('.loot-dg')];
   const match=!!viewer&&dgs.some(d=>d.dataset.title===t);
   dgs.forEach(d=>d.hidden=viewer?d.dataset.title!==t:d.dataset.past!==undefined);
   document.querySelector('.loot-empty')?.toggleAttribute('hidden',!viewer||match);

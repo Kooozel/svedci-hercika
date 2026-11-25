@@ -273,23 +273,24 @@ class ManyAlts(unittest.TestCase):
                 build.HISTORY = saved
         self.assertEqual(got["members"]["a2"]["level"], 5)
 
-    def test_alt_chip_is_marked_and_does_not_make_loot_contested(self):
+    def test_alt_chip_is_hidden_and_does_not_make_loot_contested(self):
         by_slug = {"k": {**member("k"), "nick": "Kozel"}, "z": {**member("z"), "nick": "Zrza", "alt": True, "name": "Zrza Alt", "player": "zr"},
                    "z1": {**member("z1"), "nick": "Zrza", "name": "Zrza Hlavní", "player": "zr"}}
         chips = build.loot_who({"z": {"gain": "big", "lvl": 0}}, by_slug)
-        self.assertIn("lt-altc", chips)
+        self.assertIn('class="lt-who lt-x"', chips)  # bez picks je vidět jen hlavní postava
         self.assertIn("<b>Zrza Alt</b>", chips)
         build.Q = build.Quips({}, TODAY)
         line = build.loot_line({"item": {"name": "Meč"}, "fits": {"k": {"gain": "big", "lvl": 0}, "z": {"gain": "big", "lvl": 0}}}, by_slug)
-        self.assertNotIn("lt-flag", line)
+        self.assertIn('class="lt-flag" title="hodí se víc lidem, domluvte se před rollem" hidden', line)
+        self.assertNotIn("lt-fight", line)
 
-    def test_loot_chip_names_char_of_player_with_more_chars(self):
-        """Hráč s víc postavami má na štítku celé jméno, sám jen přezdívku; level je „až na N“."""
+    def test_loot_chip_names_full_char_name(self):
+        """Na štítku je vždy celé jméno postavy, i u hráče s jednou postavou; level je „až na N“."""
         by_slug = {"k": {**member("k"), "nick": "Kozel", "name": "Kozel Mourningale"},
                    "c": {**member("c"), "nick": "Cilda", "name": "Cildac Velky", "player": "ci", "level": 24},
                    "c2": {**member("c2"), "nick": "Cilda", "name": "Cilda Malý", "player": "ci"}}
         chips = build.loot_who({"k": {"gain": "big", "lvl": 0}, "c": {"gain": "big", "lvl": 2}}, by_slug)
-        self.assertIn("<b>Kozel</b>", chips)
+        self.assertIn("<b>Kozel Mourningale</b>", chips)
         self.assertIn("<b>Cildac Velky</b> velký upgrade <small>až na 26</small>", chips)
 
     def test_next_box_sums_up_ready_check_per_player(self):
@@ -1331,6 +1332,35 @@ class OneChoice(unittest.TestCase):
         html = build.ahead_table([r], r, [high], {c["slug"]: c for c in (low, mid, high)})
         self.assertIn('title="Z · Z1 Velký (Mage): ještě 6 lvl, pak procházka">6<', html)
         self.assertIn('data-min="22" data-cap="28"', html)
+
+    def test_default_char_is_pick_for_next_dungeon(self):
+        """Moje výchozí postava je stejný odhad jako za ostatní: naposledy hraná, která se do výpravy vejde."""
+        top = self.char("k3", 33, "k", "2026-11-01")
+        last = self.char("k2", 31, "k", "2026-11-12")
+        _, best = build.plan_dungeons([top], self.ds, [top, last])
+        self.assertIs(build.default_char([top, last], best), last)
+        self.assertIs(build.default_char([top, last]), top)  # bez výpravy nejvyšší level
+        self.assertIn('data-who="k" data-pick="k2"', build.me_gate([top, last], best))
+
+    def test_ahead_next_row_uses_ready_check_pick(self):
+        """Řádek příští výpravy ukazuje postavu z ready checku, ne tu s největší rezervou."""
+        main, low = self.char("z", 31, "z", "2026-11-12"), self.char("z2", 25, "z", "2026-11-01")
+        rows, best = build.plan_dungeons([main], self.ds, [main, low])
+        html = build.ahead_table(rows, best, [main], {c["slug"]: c for c in (main, low)})
+        self.assertIn('title="Z · Z Velký (Mage): ještě 1 lvl, pak procházka">1<', html)
+
+    def test_loot_shows_ready_check_chars(self):
+        """Loot ukáže postavy ze sloupců ready checku; ostatní jsou schované (lt-x) a do 🎲 se nepočítají."""
+        main, alt, other = self.char("j", 30, "j"), self.char("j2", 31, "j"), self.char("k", 30, "k")
+        by_slug = {c["slug"]: c for c in (main, alt, other)}
+        build.Q = build.Quips({}, TODAY)
+        fits = {"j": {"gain": "big", "lvl": 0}, "j2": {"gain": "big", "lvl": 0}, "k": {"gain": "big", "lvl": 0}}
+        line = build.loot_line({"item": {"name": "Meč"}, "fits": fits}, by_slug, picks=["j2", "k"])
+        self.assertIn('class="lt-who lt-x" data-slug="j"', line)
+        self.assertIn('class="lt-who" data-slug="j2" data-up="1"', line)
+        self.assertIn("lt-fight", line)
+        alone = build.loot_line({"item": {"name": "Meč"}, "fits": {"j": fits["j"]}}, by_slug, picks=["j2", "k"])
+        self.assertIn('<span class="lt-none" title="nikomu z party se nehodí">', alone)  # j není ve sloupci
 
     def test_top_char_is_highest_level(self):
         a, b = self.char("a", 30, "k", "2026-11-01"), self.char("b", 17, "k", "2026-11-20")
