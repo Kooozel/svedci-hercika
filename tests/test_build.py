@@ -214,6 +214,14 @@ class ManyAlts(unittest.TestCase):
         self.assertEqual(head.count("data-def"), 2)  # viditelný sloupec jen jeden na hráče
         self.assertIn('<th>Quest</th>', head)
 
+    def test_party_table_marks_rows_and_done_cells_for_mobile_fold(self):
+        party = [self.char("a", "a", active=[1]), self.char("b", "b")]
+        html = build.ready_box(self.check(party), party, 0)
+        self.assertIn('<tr data-q="0"', html)  # pořadí, do kterého stránka řádky vrací
+        self.assertIn('class="rc-fold"', html)
+        self.assertIn("parta je na tenhle dungeon připravená", html)
+        self.assertIn('class="st st-over st-done"', build.quest_cell({}, "done", ""))
+
     def test_sharing_names_player_once_for_many_characters(self):
         party = [self.char("a", "a"), self.char("b", "b", active=[1]), self.char("b2", "b", active=[1])]
         html = build.ready_box(self.check(party), party, 0)
@@ -1197,4 +1205,4 @@ class OneChoice(unittest.TestCase):
         html = build.ready_box(check, chars, 0)
         self.assertIn('data-player="c" data-slug="c2" data-def', html)
         self.assertIn('data-player="c" data-slug="c" hidden', html)
-        self.assertIn("<small>C2 Velký · 23</small><small class=\"gap\">−1 lvl</small>", html)
+        self.assertIn("<small><span class=\"wc-name\">C2 Velký · </span>23</small><small class=\"gap\">−1 lvl</small>", html)

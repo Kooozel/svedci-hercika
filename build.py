@@ -2075,7 +2075,7 @@ def quest_cell(q, st, holders):
         start = f': {q["start"]}' if q["start"] else ""
         return f'<td class="st st-take" title="musí si dojít{e(start)}">dojít</td>'
     if st == "done":
-        return '<td class="st st-over" title="už odevzdal">hotovo</td>'
+        return '<td class="st st-over st-done" title="už odevzdal">hotovo</td>'
     if st == "level":
         return f'<td class="st st-over" title="quest jde vzít od levelu {q["req"]}">lvl {q["req"]}</td>'
     if st == "inside":
@@ -2133,7 +2133,7 @@ def party_table(check, members, by_slug, crew):
         kind, n = level_status(m.get("level", 0), check)
         gap = "" if kind == "fit" else f'<small class="gap">{"−" if kind == "under" else "+"}{n} lvl</small>'
         return (f'<th class="who-col" {attrs(m, default)} style="--cls:{cls_color(m)}"><b>{e(nick(m))}</b>'
-                f'<small>{e(m["name"])} · {m.get("level", "")}</small>{gap}</th>')
+                f'<small><span class="wc-name">{e(m["name"])} · </span>{m.get("level", "")}</small>{gap}</th>')
 
     def cell(q, m, default):
         st = q["status"][m["slug"]]
@@ -2142,16 +2142,20 @@ def party_table(check, members, by_slug, crew):
         return quest_cell(q, st, names).replace("<td ", f"<td {attrs(m, default)} ", 1)
 
     body = []
-    for q in check["quests"]:
+    for i, q in enumerate(check["quests"]):
         classes = (["q-none"] if q["unclaimed"] else []) + (["q-cls"] if q["limit"] and q["limit"]["cls"] else [])
         cls = f' class="{" ".join(classes)}"' if classes else ""
         if q["limit"] and q["limit"]["cls"]:
             cls += f' style="--cls:{CLASS_COLOR.get(q["limit"]["cls"], "var(--muted)")}"'
-        body.append(f'<tr{cls}><th scope="row"><div class="q-name">{quest_link(q)}{share_label(q)}</div>'
+        body.append(f'<tr data-q="{i}"{cls}><th scope="row"><div class="q-name">{quest_link(q)}{share_label(q)}</div>'
                     f'<small>{quest_meta(q)}</small></th>{"".join(cell(q, m, d) for m, d in cols)}</tr>')
-    return (f'<div class="rc-party"><h4>Celá parta</h4><div class="table-wrap"><table class="dungeons rc-table">'
+    # na mobilu stránka sbalí řádky, kde nikdo z ukázaných postav nic nemusí (hotovo nebo nemůže vzít)
+    return (f'<div class="rc-party"><h4>Celá parta</h4>'
+            f'<p class="rc-ready">✓ parta je na tenhle dungeon připravená</p>'
+            f'<div class="table-wrap rc-wrap"><table class="dungeons rc-table">'
             f'<thead><tr><th>Quest</th>{"".join(head(m, d) for m, d in cols)}</tr></thead>'
             f'<tbody>{"".join(body)}</tbody></table></div>'
+            f'<button type="button" class="rc-fold" aria-expanded="false" hidden></button>'
             f'<p class="note">✓ má v logu · ↗ dostane nasdílet · dojít = musí si ho vzít · ⛓ nejdřív předquest · '
             f'uvnitř = začne v dungeonu. Sloupec je postava, kterou hráč do dungeonu nejspíš vezme.</p></div>')
 
@@ -2877,6 +2881,17 @@ table.dungeons{width:100%;border-collapse:collapse;font-size:14px;min-width:520p
 @media (max-width:600px){.rc-table tbody th small{display:none}.rc-table tbody>tr>th:first-child,.rc-table thead th:first-child{min-width:120px;max-width:140px}
   .rc-table thead th.who-col{min-width:68px;font-size:12px}.rc-table th,.rc-table td{padding:6px 5px}.rc-table .share{font-size:10px;padding:0 6px}}
 .st-na{color:var(--muted);opacity:.45}
+/* posuvná tabulka ready checku: vpravo ztmavení, vlevo stín za připnutým sloupcem questů (ten se ztmavit nesmí) */
+.rc-wrap.more-l{-webkit-mask-image:none;mask-image:none}
+.rc-wrap.more-l.more-r{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 32px),transparent)}
+.rc-wrap.more-l .rc-table tbody>tr>th:first-child,.rc-wrap.more-l .rc-table thead th:first-child{box-shadow:6px 0 8px -4px #000c}
+.rc-wrap.more-l .rc-table tr.q-cls>th:first-child{box-shadow:inset 3px 0 0 var(--cls),6px 0 8px -4px #000c}
+.rc-ready{display:none;margin:0 0 8px;color:var(--ok);font-weight:600;font-size:14px}
+.rc-fold{display:none;width:100%;margin-top:6px;min-height:36px;font:600 13px Inter,system-ui,sans-serif;color:var(--gold);
+  background:none;border:1px dashed #6b5420;border-radius:8px;cursor:pointer}
+@media(max-width:600px){.rc-fold:not([hidden]){display:block}.rc-party:not(.fold-open) tr.q-fold{display:none}
+  .rc-party.all-fold:not(.fold-open) .table-wrap{display:none}.rc-party.all-fold .rc-ready{display:block}
+  table.rc-table{min-width:0}.rc-table thead th.who-col{min-width:56px}.rc-table .wc-name{display:none}.rc-table td.st{font-size:12px}}
 .share{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;white-space:nowrap}
 .share-cls{background:color-mix(in srgb,var(--cls) 18%,transparent);color:var(--cls);border:1px solid color-mix(in srgb,var(--cls) 45%,transparent)}
 .share-race{background:#3a2626;color:#e0a0a0}
@@ -3008,7 +3023,8 @@ background:#0003;border:1px solid #ffffff10;border-radius:10px;padding:8px 12px}
 .ah-low{color:var(--muted);border:1px dashed #ffffff30;font-weight:400}.ah-late{color:var(--muted);font-weight:400}
 .ah-legend{margin:8px 0 0;font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
 @media(max-width:480px){.ahead{font-size:12px}.ahead th:first-child{width:36%}.ahead th:nth-child(2){width:8%}
-.ah{min-width:22px;padding:0 3px;font-size:11px}.ah-long{display:none}.ah-short{display:inline}.ah-legend .ah-long{display:inline}}
+.ah{min-width:22px;padding:0 3px;font-size:11px}.ah-long{display:none}.ah-short{display:inline}.ah-legend .ah-long{display:inline}
+.ah-low{padding:0 2px;font-size:10px}.ah-low .ah-long{display:inline}}
 .nw{list-style:none;margin:0;padding:0;display:grid}
 .nw>li{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:10px 0;border-top:1px solid #ffffff10}
 .nw>li:first-child{border-top:0;padding-top:4px}
@@ -3163,12 +3179,26 @@ function showFig(slug){const f=document.querySelector(`.pc[data-slug="${CSS.esca
   document.querySelectorAll(`.pc[data-player="${CSS.escape(f.dataset.player)}"]`).forEach(x=>x.hidden=x!==f)}
 function syncChips(){const p=OWNER[viewer];document.querySelectorAll('.me-chips').forEach(d=>d.hidden=!viewer||d.dataset.player!==p);
   const ask=document.querySelector('.me-ask');if(ask)ask.hidden=!!viewer}
+// mobil: řádky, kde nikdo z ukázaných postav nic nemusí, na konec tabulky pod přepínač
+const thin=matchMedia('(max-width:600px)');
+function fold(rc){const box=rc.querySelector('.rc-party'),tb=box?.querySelector('tbody'),btn=box?.querySelector('.rc-fold');if(!tb||!btn)return;
+  const rows=[...tb.querySelectorAll('tr[data-q]')].sort((a,b)=>a.dataset.q-b.dataset.q);
+  const idle=r=>{const c=[...r.querySelectorAll('td')].filter(td=>!td.hidden);return c.length>0&&c.every(td=>td.matches('.st-done,.st-na'))};
+  const done=rows.filter(idle),n=done.length;
+  rows.forEach(r=>r.classList.toggle('q-fold',done.includes(r)));
+  tb.append(...(thin.matches?rows.filter(r=>!done.includes(r)).concat(done):rows));
+  box.classList.toggle('all-fold',n>0&&n===rows.length);btn.hidden=!n;btn.dataset.n=n;foldText(box)}
+function foldText(box){const btn=box.querySelector('.rc-fold'),n=+btn.dataset.n,on=box.classList.contains('fold-open');
+  btn.setAttribute('aria-expanded',on);
+  btn.textContent=on?'skrýt vyřízené ▴':n+' '+(n===1?'quest':n<5?'questy':'questů')+' nikdo nemusí řešit ▾'}
+document.querySelectorAll('.rc-fold').forEach(b=>b.addEventListener('click',()=>{const box=b.closest('.rc-party');box.classList.toggle('fold-open');foldText(box)}));
+thin.addEventListener('change',()=>panels.forEach(fold));
 function me(slug){viewer=slug;
   document.querySelectorAll('.mc[data-me]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===slug));
   panels.forEach(rc=>{rc.querySelectorAll('.mine').forEach(c=>c.hidden=c.dataset.slug!==slug);
     const has=!!slug&&!!rc.querySelector(`.rc-table th[data-slug="${CSS.escape(slug)}"]`);
     rc.querySelectorAll('.rc-table [data-player]').forEach(c=>{const mine=has&&c.dataset.player===OWNER[slug];
-      c.hidden=mine?c.dataset.slug!==slug:!('def' in c.dataset);c.classList.toggle('me-col',mine)})});
+      c.hidden=mine?c.dataset.slug!==slug:!('def' in c.dataset);c.classList.toggle('me-col',mine)});fold(rc)});
   syncMe();
   orderSel();if(slug)showFig(slug);syncChips();
   const on=document.querySelector('.me-chips:not([hidden]) .mc[aria-pressed=true]');
@@ -3234,7 +3264,7 @@ addEventListener('hashchange',()=>{const h=decodeURIComponent(location.hash);
 // posuvné řady (lišta, postavy v ready checku): ztmavení u okraje, za kterým ještě něco je
 function edges(el){const l=el.scrollLeft>2,r=el.scrollLeft+el.clientWidth<el.scrollWidth-2;
   el.classList.toggle('more-l',l);el.classList.toggle('more-r',r)}
-document.querySelectorAll('.nav-links,.me-chips').forEach(el=>{el.addEventListener('scroll',()=>edges(el),{passive:true});
+document.querySelectorAll('.nav-links,.me-chips,.rc-wrap').forEach(el=>{el.addEventListener('scroll',()=>edges(el),{passive:true});
   new ResizeObserver(()=>edges(el)).observe(el);edges(el)});
 // odkaz sekce, ve které právě jsem
 {const links=[...document.querySelectorAll('.nav-links a')],bar=document.querySelector('.nav-links');
