@@ -39,7 +39,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   s největší rezervou (nejnižší, která se do dungeonu vejde; jinak nejbližší pod rozsahem), tooltip buňky řekne kterou.
   Tvůj sloupec a ručně přepnuté sloupce z ready checku počítají ve všech řádcích se zvolenou postavou. Hranice „do lvl“ je konec
   rozsahu, nebo Wowhead Easy z `difficulty`, co přijde dřív. Dungeon, který je procházka pro všechny, zmizí,
-  nahoře je, co uteče nejdřív. Sloupec vybraného hráče je zvýrazněný. Na mobilu je v mřížce jen příští výprava, dva dungeony
+  nahoře je, co uteče nejdřív. Sloupec vybraného hráče je zvýrazněný. Když za hráče jde jiná postava než hlavní, má buňka tečku v barvě jejího povolání a tooltip ji jmenuje („Kozel · Kozel Smradlák (Mage): …“). Na mobilu je v mřížce jen příští výprava, dva dungeony
   před ní a tři po ní (`AHEAD_BEFORE`, `AHEAD_AFTER`), odehrané a zbytek jsou pod „další dungeony“. Vybírá se podle levelů, domluvený dungeon se dá napsat
   do `party.json` jako `"next": "Wailing Caverns"`. Odehraný dungeon dostane v `dungeons.json` `"done": "RRRR-MM-DD"` (nebo `true`, když datum
   nevíme) a zmizí z plánu a lootu. V seznamu všech dungeonů zůstane se štítkem odehráno. Dokud se do něj

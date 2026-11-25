@@ -1245,7 +1245,7 @@ class OneChoice(unittest.TestCase):
         self.assertIs(build.reserve_char([self.char("u", 18, "z"), self.char("u2", 20, "z"), high], r)["level"], 20)
         self.assertEqual(build.reserve_char([high, self.char("h", 31, "z")], r)["level"], 29)
         html = build.ahead_table([r], r, [high], {c["slug"]: c for c in (low, mid, high)})
-        self.assertIn('title="Z1 Velký: ještě 6 lvl, pak procházka">6<', html)
+        self.assertIn('title="Z · Z1 Velký (Mage): ještě 6 lvl, pak procházka">6<', html)
         self.assertIn('data-min="22" data-cap="28"', html)
 
     def test_top_char_is_highest_level(self):
@@ -1257,7 +1257,8 @@ class OneChoice(unittest.TestCase):
         rows, best = build.plan_dungeons([main], self.ds, [main, alt])
         html = build.next_box(rows, best, [main], [], [main, alt])
         # sloupec za hráče, buňka za jeho alta, který se do dungeonu vejde nejlíp
-        self.assertIn('title="S2 Velký: dungeon od levelu 24"><span class="ah-long">za </span>1</span>', html)
+        self.assertIn('title="S · S2 Velký (Mage): dungeon od levelu 24"><span class="ah-long">za </span>1</span>', html)
+        self.assertIn('class="ah ah-low ah-alt" style="--alt:#3FC7EB"', html)  # jde alt: tečka v barvě povolání
 
     def test_party_table_shows_closest_char_of_player_out_of_range(self):
         party = [Alts.char("a", 25), Alts.char("c", 20), Alts.char("c2", 23, "c")]

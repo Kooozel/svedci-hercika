@@ -1398,6 +1398,11 @@ def nick(m):
     return m.get("nick") or first(m)
 
 
+def who(m):
+    """Jednotné jméno postavy: přezdívka hráče · celé jméno postavy (Kozel · Kozel Mourningale)."""
+    return f'{nick(m)} · {m["name"]}'
+
+
 def char_label(m):
     """Celé jméno postavy, s hráčem, když se jmenuje jinak než on: Cildac Velky (Fanda)."""
     return m["name"] if nick(m) == first(m) else f'{m["name"]} ({nick(m)})'
@@ -1721,14 +1726,14 @@ def ahead_rows(rows, members, by_slug=None):
 
 def ahead_cell(r, m):
     """(css třída, text, tooltip) pro jednu postavu: kolik levelů zbývá do procházky."""
-    lvl, cap, who = m["level"], walk_level(r), m["name"]
+    lvl, cap, name = m["level"], walk_level(r), f'{who(m)} ({m.get("class") or "?"})'
     if lvl < r["min"]:
-        return "low", f"za {r['min'] - lvl}", f"{who}: dungeon od levelu {r['min']}"
+        return "low", f"za {r['min'] - lvl}", f"{name}: dungeon od levelu {r['min']}"
     if lvl > cap:
-        return "late", "pozdě", f"{who}: od levelu {cap + 1} už procházka"
+        return "late", "pozdě", f"{name}: od levelu {cap + 1} už procházka"
     left = cap - lvl
     kind = "last" if left == 0 else "soon" if left <= 2 else "ok"
-    return kind, str(left), f"{who}: ještě {left} lvl, pak procházka" if left else f"{who}: poslední level, pak procházka"
+    return kind, str(left), f"{name}: ještě {left} lvl, pak procházka" if left else f"{name}: poslední level, pak procházka"
 
 
 def ahead_text(t):
@@ -1761,8 +1766,13 @@ def ahead_table(rows, best, members, by_slug=None):
         far += hide
         classes = " ".join(c for c, on in (("ah-best", r is best), ("ah-done", r.get("done") and r is not best), ("ah-far", hide)) if on)
         cls = f' class="{classes}"' if classes else ""
-        cells = "".join(f'<td data-player="{p}"><span class="ah ah-{k}" title="{e(tip)}">{ahead_text(t)}</span></td>'
-                        for p, (k, t, tip) in zip(pl, (ahead_cell(r, reserve_char(g, r)) for g in groups)))
+        cells = ""
+        for p, m, g in zip(pl, members, groups):
+            c = reserve_char(g, r)
+            k, t, tip = ahead_cell(r, c)
+            # jde jiná postava než hlavní: tečka v barvě jejího povolání
+            alt = f' ah-alt" style="--alt:{cls_color(c)}' if c is not m else ""
+            cells += f'<td data-player="{p}"><span class="ah ah-{k}{alt}" title="{e(tip)}">{ahead_text(t)}</span></td>'
         mark = "✓ " if r.get("done") else ""
         body.append(f'<tr{cls} data-min="{r["min"]}" data-cap="{walk_level(r)}"><th scope="row" title="{e(r["name"])}, level {r["min"]}–{r["max"]}, {e(r["zone"])}">'
                     f'{mark}{e(short_dungeon(r["name"]))}</th><td class="ah-cap">{walk_level(r)}</td>{cells}</tr>')
@@ -1775,7 +1785,7 @@ def ahead_table(rows, best, members, by_slug=None):
             f'{f"<button type=button class=ah-more data-n={far}>další dungeony ({far}) ▾</button>" if far else ""}'
             f'<p class="ah-legend"><span class="ah ah-ok">5</span> rezerva <span class="ah ah-soon">2</span> brzy uteče '
             f'<span class="ah ah-last">0</span> poslední level <span class="ah ah-low">za 3</span> ještě nízko '
-            f'<span class="ah ah-late">pozdě</span> procházka</p>')
+            f'<span class="ah ah-late">pozdě</span> procházka <span class="ah ah-ok ah-alt" style="--alt:var(--muted)">5</span> jde alt (tečka = barva povolání)</p>')
 
 
 def picked(r, m, by_slug):
@@ -2301,7 +2311,8 @@ def ready_section(checks, members):
                                for m in chars) + "</div>"
                      for p, chars in players.items())
     data = json.dumps({m["slug"]: m.get("player", m["slug"]) for m in members}, ensure_ascii=False).replace("<", "\\u003c")
-    names = json.dumps({m["slug"]: [nick(m), m["name"], cls_color(m), m.get("level", 0)] for m in members}, ensure_ascii=False).replace("<", "\\u003c")
+    names = json.dumps({m["slug"]: [nick(m), m["name"], cls_color(m), m.get("level", 0), m.get("class") or "?", bool(m.get("alt"))]
+                        for m in members}, ensure_ascii=False).replace("<", "\\u003c")
     # pamatuje se zvolená postava; bez ní (nebo když zmizela) se za hráče vezme jeho nejvyšší level
     mains = json.dumps({p: top_char(cs)["slug"] for p, cs in players.items()}, ensure_ascii=False).replace("<", "\\u003c")
     return (f'<section id="ready"><h2 class="sec">Ready check</h2>'
@@ -3067,7 +3078,8 @@ background:#0003;border:1px solid #ffffff10;border-radius:10px;padding:8px 12px}
 .ah{display:inline-block;min-width:30px;padding:1px 5px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.5;white-space:nowrap}
 .ah-short{display:none}
 .ah-ok{background:#6fbf7326;color:var(--ok)}.ah-soon{background:#e8a13c26;color:var(--warn)}.ah-last{background:#e0574b2e;color:var(--bad)}
-.ah-low{color:var(--muted);border:1px dashed #ffffff30;font-weight:400}.ah-late{color:var(--muted);font-weight:400}
+.ah-low{color:var(--muted);border:1px dashed #ffffff30;font-weight:400}
+.ah-alt::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--alt);margin-right:3px;vertical-align:1px}.ah-late{color:var(--muted);font-weight:400}
 .ah-legend{margin:8px 0 0;font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
 @media(max-width:480px){.ahead{font-size:12px}.ahead th:first-child{width:36%}.ahead th:nth-child(2){width:8%}
 .ah{min-width:22px;padding:0 3px;font-size:11px}.ah-long{display:none}.ah-short{display:inline}.ah-legend .ah-long{display:inline}
@@ -3215,7 +3227,7 @@ function syncCols(){
     rc.querySelectorAll('.mine .m-give').forEach(g=>{const n=g.querySelectorAll('li:not([hidden])').length;g.hidden=!n;g.querySelector('.m-n').textContent='('+n+')'})});
   syncAhead();syncNext()}
 const AH=new WeakMap();
-function aheadCell(r,s){const [,who,,lvl]=NAMES[s],min=+r.dataset.min,cap=+r.dataset.cap;
+function aheadCell(r,s){const [nk,nm,,lvl,cl]=NAMES[s],who=nk+' · '+nm+' ('+cl+')',min=+r.dataset.min,cap=+r.dataset.cap;
   if(lvl<min)return['low','za '+(min-lvl),who+': dungeon od levelu '+min];
   if(lvl>cap)return['late','pozdě',who+': od levelu '+(cap+1)+' už procházka'];
   const left=cap-lvl;return[left===0?'last':left<=2?'soon':'ok',String(left),left?who+': ještě '+left+' lvl, pak procházka':who+': poslední level, pak procházka']}
@@ -3223,6 +3235,7 @@ function syncAhead(){document.querySelectorAll('.ahead tbody tr[data-min]').forE
   if(!AH.has(td))AH.set(td,td.innerHTML);const s=colOf(td.dataset.player);
   if(!s||!NAMES[s]){td.innerHTML=AH.get(td);return}
   const [k,t,tip]=aheadCell(r,s),sp=document.createElement('span');sp.className='ah ah-'+k;sp.title=tip;
+  if(NAMES[s][5]){sp.classList.add('ah-alt');sp.style.setProperty('--alt',NAMES[s][2])}
   sp.innerHTML=t==='pozdě'?'<span class="ah-long">pozdě</span><span class="ah-short">–</span>':t.startsWith('za ')?'<span class="ah-long">za </span>'+t.slice(3):t;
   td.replaceChildren(sp)}))}
 const colMenu=document.createElement('div');colMenu.className='col-menu';colMenu.setAttribute('role','menu');colMenu.hidden=true;document.body.append(colMenu);
