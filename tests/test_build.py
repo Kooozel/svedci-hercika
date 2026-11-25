@@ -345,6 +345,27 @@ class Dungeons(unittest.TestCase):
         # RFC je procházka pro všechny, RFD začíná až na 40; řazení podle toho, co uteče dřív
         self.assertEqual([r["name"] for r in build.ahead_rows(rows, team)], ["WC", "RFK", "SM"])
 
+    def test_ahead_table_hides_far_rows_on_mobile(self):
+        ds = [{"name": f"D{i}", "zone": "z", "min": 20 + 2 * i, "max": 30 + 2 * i} for i in range(8)]
+        team = [member("a", level=26)]
+        rows, _ = build.plan_dungeons(team, ds)
+        shown = build.ahead_rows(rows, team)
+        best = shown[4]
+        html = build.ahead_table(rows, best, team)
+        # dva před příští výpravou a tři po ní zůstanou, zbytek až po „další dungeony“
+        self.assertEqual(html.count('ah-far'), len(shown) - 6)
+        self.assertIn("další dungeony (2)", html)
+        self.assertIn('data-player="a"', html)
+
+    def test_me_menu_groups_chars_by_player(self):
+        chars = [Alts.char("j", 30, "j"), Alts.char("j2", 8, "j"), Alts.char("k", 31)]
+        for c in chars:
+            c["name"] = c["slug"].upper()
+        html = build.me_menu(chars)
+        self.assertEqual(html.count('class="mm-p"'), 2)
+        self.assertLess(html.index('data-me="j2"'), html.index('data-me="k"'))
+        self.assertIn('data-me="">jen koukám', html)
+
     def test_ahead_cell(self):
         rfk = {"name": "RFK", "min": 30, "max": 40, "difficulty": [25, 28, 31, 34]}
         self.assertEqual(build.ahead_cell(rfk, member("a", level=24))[:2], ("low", "za 6"))

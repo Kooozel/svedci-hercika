@@ -38,7 +38,8 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   pod 40 (`AHEAD_UNTIL`) × hráči, kolik levelů zbývá, než bude dungeon procházka. Za hráče se v každém řádku bere postava,
   která se do dungeonu levelem vejde (z víc naposledy hraná), a když žádná, ta levelem nejbližší. Hranice „do lvl“ je konec
   rozsahu, nebo Wowhead Easy z `difficulty`, co přijde dřív. Dungeon, který je procházka pro všechny, zmizí,
-  nahoře je, co uteče nejdřív. Vybírá se podle levelů, domluvený dungeon se dá napsat
+  nahoře je, co uteče nejdřív. Sloupec vybraného hráče je zvýrazněný. Na mobilu je v mřížce jen příští výprava, dva dungeony
+  před ní a tři po ní (`AHEAD_BEFORE`, `AHEAD_AFTER`), odehrané a zbytek jsou pod „další dungeony“. Vybírá se podle levelů, domluvený dungeon se dá napsat
   do `party.json` jako `"next": "Wailing Caverns"`. Odehraný dungeon dostane v `dungeons.json` `"done": "RRRR-MM-DD"` (nebo `true`, když datum
   nevíme) a zmizí z plánu a lootu. V seznamu všech dungeonů zůstane se štítkem odehráno. Dokud se do něj
   někdo levelem vejde (alt), je v ready checku ve výběru „už odehrané“.
@@ -51,7 +52,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu, jinak se na desktopu otevře ta
   z „Hraju za“ v ready checku (na mobilu je jen na místě svého hráče ve fotce).
 - **Ready check:** stránka se jednou zeptá, kdo jsi, a ukáže karty tvých postav. Vybraná postava je vpravo v liště
-  („Hraju za“, klik vede sem) a podle ní se řídí ready check, loot, Dílna a tvoje místo ve skupinové fotce. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
+  („Hraju za“: klik otevře menu hráčů a jejich postav, stránka nikam neodskočí; „jen koukám“ výběr zruší) a podle ní se řídí ready check, loot, Dílna a tvoje místo ve skupinové fotce. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
   co si má dojít, co jí může někdo nasdílet a co začíná uvnitř. Nasdílet může postava jiného hráče, která se do dungeonu levelem vejde.
   Pod úkoly je tabulka „Celá parta“: řádek = quest, sloupec = hráč s postavou, kterou do dungeonu nejspíš vezme
   (stejná jako ve výpravě, u postavy mimo rozsah kolik chybí). Tvůj sloupec ukazuje tvou vybranou postavu a je zvýrazněný.

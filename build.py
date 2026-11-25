@@ -1678,6 +1678,7 @@ def sheet(m, today, group=()):
 # ---------- hlavička ----------
 
 AHEAD_UNTIL = 40  # Příští výprava ukazuje dungeony, které začínají pod tímhle levelem
+AHEAD_BEFORE, AHEAD_AFTER = 2, 3  # na mobilu jen tolik dungeonů před a po příští výpravě
 
 
 def walk_level(r):
@@ -1722,13 +1723,20 @@ def short_dungeon(name):
 def ahead_table(rows, best, members, by_slug=None):
     """Sloupec za hráče (members = hlavní postavy), v řádku jeho postava, kterou do dungeonu pošle."""
     by_slug = by_slug or {}
-    head = "".join(f'<th style="--cls:{cls_color(m)}" title="{e(nick(m))}"><span class="ah-long">{e(nick(m))}</span>'
-                   f'<span class="ah-short">{e(nick(m)[:3])}</span></th>' for m in members)
-    body = []
-    for r in ahead_rows(rows, members, by_slug):
-        cls = " class=ah-best" if r is best else " class=ah-done" if r.get("done") else ""
-        cells = "".join(f'<td><span class="ah ah-{k}" title="{e(tip)}">{ahead_text(t)}</span></td>'
-                        for k, t, tip in (ahead_cell(r, picked(r, m, by_slug)) for m in members))
+    pl = [e(m.get("player", m["slug"])) for m in members]
+    head = "".join(f'<th data-player="{p}" style="--cls:{cls_color(m)}" title="{e(nick(m))}"><span class="ah-long">{e(nick(m))}</span>'
+                   f'<span class="ah-short">{e(nick(m)[:3])}</span></th>' for p, m in zip(pl, members))
+    body, far = [], 0
+    shown = ahead_rows(rows, members, by_slug)
+    at = next((i for i, r in enumerate(shown) if r is best), None)
+    for i, r in enumerate(shown):
+        # na mobilu jen příští výprava a pár dungeonů kolem, zbytek pod „další dungeony“
+        hide = at is not None and (bool(r.get("done")) or not at - AHEAD_BEFORE <= i <= at + AHEAD_AFTER)
+        far += hide
+        classes = " ".join(c for c, on in (("ah-best", r is best), ("ah-done", r.get("done") and r is not best), ("ah-far", hide)) if on)
+        cls = f' class="{classes}"' if classes else ""
+        cells = "".join(f'<td data-player="{p}"><span class="ah ah-{k}" title="{e(tip)}">{ahead_text(t)}</span></td>'
+                        for p, (k, t, tip) in zip(pl, (ahead_cell(r, picked(r, m, by_slug)) for m in members)))
         mark = "✓ " if r.get("done") else ""
         body.append(f'<tr{cls}><th scope="row" title="{e(r["name"])}, level {r["min"]}–{r["max"]}, {e(r["zone"])}">'
                     f'{mark}{e(short_dungeon(r["name"]))}</th><td class="ah-cap">{walk_level(r)}</td>{cells}</tr>')
@@ -1738,6 +1746,7 @@ def ahead_table(rows, best, members, by_slug=None):
             f'<div class="ah-wrap"><table class="ahead"><thead><tr><th>Dungeon</th>'
             f'<th title="poslední level, kdy to ještě není procházka (konec rozsahu nebo Wowhead Easy)">do lvl</th>{head}</tr></thead>'
             f'<tbody>{"".join(body)}</tbody></table></div>'
+            f'{f"<button type=button class=ah-more data-n={far}>další dungeony ({far}) ▾</button>" if far else ""}'
             f'<p class="ah-legend"><span class="ah ah-ok">5</span> rezerva <span class="ah ah-soon">2</span> brzy uteče '
             f'<span class="ah ah-last">0</span> poslední level <span class="ah ah-low">za 3</span> ještě nízko '
             f'<span class="ah ah-late">pozdě</span> procházka</p>')
@@ -2208,6 +2217,21 @@ def player_card(player, chars):
                      pl(len(chars), ("{n} postava", "{n} postavy", "{n} postav")), level=False)
 
 
+def me_menu(chars):
+    """Výběr „Hraju za“ přímo v liště: hráči a pod každým jeho postavy."""
+    players = {}
+    for m in chars:
+        players.setdefault(m.get("player", m["slug"]), []).append(m)
+    groups = "".join(
+        f'<div class="mm-p"><span class="mm-nick" style="--cls:{cls_color(cs[0])}">{e(nick(cs[0]))}</span>'
+        + "".join(f'<button type="button" class="mm-c" data-me="{e(m["slug"])}" aria-pressed="false" style="--cls:{cls_color(m)}">'
+                  f'{avatar(m, "mm-av")}<span class="mm-name">{e(m["name"])}</span><span class="mm-lvl">{m.get("level", "")}</span></button>'
+                  for m in cs) + "</div>"
+        for cs in players.values())
+    return (f'<div class="me-menu" role="dialog" aria-label="Hraju za" hidden>{groups}'
+            f'<button type="button" class="mm-c mm-none" data-me="">jen koukám</button></div>')
+
+
 def ready_section(checks, members):
     if not checks:
         return ""
@@ -2634,7 +2658,7 @@ def render(party, members, rows, best, built, checks, base, titles, counters, ch
       <p class="built">Natočeno <time data-ts="{built}">{built}</time></p>
     </div>
   </header>
-  <nav class="nav"><div class="nav-links">{nav_html}</div>{'<button type="button" class="nav-me" hidden><span>Hraju za</span><b>Kdo jsi?</b><small></small></button>' if checks else ""}</nav>
+  <nav class="nav"><div class="nav-links">{nav_html}</div>{'<button type="button" class="nav-me" aria-haspopup="dialog" aria-expanded="false" hidden><span>Hraju za</span><b>Kdo jsi?</b><small></small><i class="nav-caret">▾</i></button>' + me_menu(chars) if checks else ""}</nav>
   {next_box(rows, best, ok, checks, chars)}
   {squad(members, party.get("size", len(members)), today, [m for m in chars if m.get("alt")], waiting_players(party))}
   {evening_box(ok, base, titles, counters)}
@@ -2709,6 +2733,19 @@ mask-image:linear-gradient(to right,transparent,#000 32px,#000 calc(100% - 32px)
 .nav-me span{color:var(--muted);font-size:12px}.nav-me b{color:var(--gold);font-weight:600}
 .nav-me small{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nav-me small:empty{display:none}
+.nav-caret{font-style:normal;color:var(--muted);font-size:11px}
+.me-menu{position:absolute;right:16px;top:calc(100% - 2px);z-index:30;width:min(340px,calc(100vw - 32px));max-height:min(70vh,520px);overflow-y:auto;
+  background:var(--panel);border:1px solid #6b5420;border-radius:14px;padding:8px;box-shadow:0 12px 32px #000a}
+.me-menu[hidden]{display:none}
+.mm-p{padding:4px 0;border-top:1px solid #ffffff10}.mm-p:first-child{border-top:0}
+.mm-nick{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--cls);padding:4px 6px 2px}
+.mm-c{display:flex;align-items:center;gap:8px;width:100%;min-height:40px;padding:4px 6px;font:inherit;font-size:14px;color:var(--text);
+  background:none;border:0;border-left:3px solid transparent;border-radius:8px;cursor:pointer;text-align:left}
+.mm-c:hover,.mm-c:focus-visible{background:var(--panel2);outline:0}
+.mm-c[aria-pressed=true]{background:var(--panel2);border-left-color:var(--gold)}.mm-c[aria-pressed=true] .mm-name{color:var(--gold)}
+.mm-av{width:26px;height:26px;border-radius:50%;background:var(--panel2);flex:none}
+.mm-name{flex:1;color:var(--cls)}.mm-lvl{color:var(--muted);font-size:12px}
+.mm-none{margin-top:4px;border-top:1px solid #ffffff10;border-radius:0 0 8px 8px;color:var(--muted);justify-content:center}
 @media (max-width:600px){.nav-me span,.nav-me small{display:none}}
 section[id],div[id]{scroll-margin-top:56px}
 .sec-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap}
@@ -2931,11 +2968,15 @@ background:#0003;border:1px solid #ffffff10;border-radius:10px;padding:8px 12px}
 .ah-cap{color:var(--gold);font-size:12px}
 .ah-best td,.ah-best th{background:#e8b85c14}.ah-best th{color:var(--gold)}
 .ah-done th{color:var(--muted);font-weight:400}
+.ahead .ah-me{background:#e8b85c1a}.ahead thead .ah-me{box-shadow:inset 0 -2px 0 var(--gold)}
+.ah-more{display:none;width:100%;margin-top:6px;min-height:36px;font:600 13px Inter,system-ui,sans-serif;color:var(--gold);
+  background:none;border:1px dashed #6b5420;border-radius:8px;cursor:pointer}
+@media(max-width:600px){.ahead:not(.ah-open) .ah-far{display:none}.ah-more{display:block}}
 .ah{display:inline-block;min-width:30px;padding:1px 5px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.5;white-space:nowrap}
 .ah-short{display:none}
 .ah-ok{background:#6fbf7326;color:var(--ok)}.ah-soon{background:#e8a13c26;color:var(--warn)}.ah-last{background:#e0574b2e;color:var(--bad)}
 .ah-low{color:var(--muted);border:1px dashed #ffffff30;font-weight:400}.ah-late{color:var(--muted);font-weight:400}
-.ah-legend{margin:-6px 0 0;font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.ah-legend{margin:8px 0 0;font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
 @media(max-width:480px){.ahead{font-size:12px}.ahead th:first-child{width:36%}.ahead th:nth-child(2){width:8%}
 .ah{min-width:22px;padding:0 3px;font-size:11px}.ah-long{display:none}.ah-short{display:inline}.ah-legend .ah-long{display:inline}}
 .nw{list-style:none;margin:0;padding:0;display:grid}
@@ -3045,7 +3086,8 @@ const NAMES=JSON.parse(document.getElementById('rc-names')?.textContent||'{}');
 const navMe=document.querySelector('.nav-me');
 function syncMe(){if(navMe){const n=NAMES[viewer],same=n&&n[1].split(' ')[0]===n[0];navMe.hidden=!whoStrip;
   navMe.querySelector('b').textContent=n?(same?n[1]:n[0]):'Kdo jsi?';navMe.querySelector('small').textContent=n&&!same?n[1]:'';navMe.title=n?'Hraju za '+n[1]+': změnit postavu':'Vyber, za koho hraješ'}
-  document.querySelectorAll('.nx-m').forEach(x=>x.classList.toggle('nx-me',!!viewer&&x.dataset.player===OWNER[viewer]));
+  document.querySelectorAll('.ahead [data-player]').forEach(x=>x.classList.toggle('ah-me',!!viewer&&x.dataset.player===OWNER[viewer]));
+  document.querySelectorAll('.mm-c').forEach(b=>b.setAttribute('aria-pressed',b.dataset.me===viewer));
   syncNext()}
 function syncNext(){const rc=document.querySelector('.nx-rc');if(!rc)return;const you=rc.querySelector('.nx-you'),n=NAMES[viewer];
   let todo={};try{todo=JSON.parse(rc.dataset.todo||'{}')}catch(e){}
@@ -3109,7 +3151,15 @@ document.querySelectorAll('.ch[data-who]').forEach(b=>b.addEventListener('click'
   if(OWNER[viewer]===p){choosing(false);return}
   const slug=Object.keys(OWNER).find(s=>OWNER[s]===p);me(slug);fitJump(slug)}));
 swap?.addEventListener('click',()=>choosing(true));
-navMe?.addEventListener('click',()=>{if(!viewer)choosing(true);document.getElementById('ready')?.scrollIntoView({behavior:'smooth'})});
+const menu=document.querySelector('.me-menu');
+function menuOpen(on){if(!menu)return;menu.hidden=!on;navMe.setAttribute('aria-expanded',on);
+  if(on)(menu.querySelector('.mm-c[aria-pressed=true]')||menu.querySelector('.mm-c')).focus({preventScroll:true})}
+navMe?.addEventListener('click',ev=>{ev.stopPropagation();menuOpen(menu.hidden)});
+menu?.querySelectorAll('.mm-c').forEach(b=>b.addEventListener('click',()=>{me(b.dataset.me);fitJump(b.dataset.me);menuOpen(false);navMe.focus()}));
+document.addEventListener('click',ev=>{if(menu&&!menu.hidden&&!menu.contains(ev.target))menuOpen(false)});
+addEventListener('keydown',ev=>{if(ev.key==='Escape'&&menu&&!menu.hidden){menuOpen(false);navMe.focus()}});
+document.querySelectorAll('.ah-more').forEach(b=>b.addEventListener('click',()=>{const t=b.previousElementSibling.querySelector('.ahead'),
+  on=t.classList.toggle('ah-open');b.textContent=on?'méně dungeonů ▴':'další dungeony ('+b.dataset.n+') ▾'}));
 if(sel)sel.addEventListener('change',()=>pick(+sel.value));
 {let m='',saved=null;try{m=localStorage.getItem('me')||'';saved=localStorage.getItem('rc-pick')}catch(e){}
   me(OWNER[m]?m:'');const o=selOpts.find(o=>o.dataset.title===saved);if(o)pick(+o.value);fitJump(viewer)}
