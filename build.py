@@ -2578,10 +2578,6 @@ def professions_box(members):
     cols = len(people)
     head = "".join(f'<span class="pg-h" style="color:{cls_color(g[0])}">{e(nick(g[0]))}</span>' for g in people.values())
 
-    def whose(chars, m):
-        """U hráče s víc postavami, která to umí: příjmení (postavy jednoho hráče mívají stejné křestní)."""
-        return f'<small class="pg-who">{e(m["name"].partition(" ")[2] or m["name"])}</small>' if len(chars) > 1 else ""
-
     def best(chars, name):
         have = [(p, m) for m in chars for p in m.get("professions") or [] if p["name"] == name]
         return max(have, key=lambda x: x[0]["skill"]) if have else None
@@ -2594,7 +2590,7 @@ def professions_box(members):
                 continue
             p, m = got
             cells += (f'<span class="pg-cell" title="{e(char_who(m))}: {prof_num(p)}" style="--cls:{cls_color(m)}">'
-                      f'<b>{p["skill"]}</b>{whose(chars, m)}</span>')
+                      f'<b>{p["skill"]}</b></span>')
         return f'<span class="pg-name{cls}">{e(name)}</span>{cells}'
 
     grid = "".join(row(n) for n in prim) + "".join(row(n, " pg-sec") for n in sec)
@@ -2602,7 +2598,7 @@ def professions_box(members):
     lines = []
     for chars in people.values():
         bits = "".join(f'<span class="pl-p{" pg-sec" if n in sec else ""}" title="{e(char_who(m))}: {prof_num(p)}" '
-                       f'style="--cls:{cls_color(m)}">{e(n)} <b>{p["skill"]}</b>{whose(chars, m)}</span>'
+                       f'style="--cls:{cls_color(m)}">{e(n)} <b>{p["skill"]}</b></span>'
                        for n in prim + sec if (got := best(chars, n)) for p, m in [got])
         lines.append(f'<li><b class="pl-who" style="color:{cls_color(chars[0])}">{e(nick(chars[0]))}</b>'
                      f'<span class="pl-ps">{bits or "<span class=pg-sec>nic</span>"}</span></li>')
@@ -2610,6 +2606,8 @@ def professions_box(members):
     low = [Q.line(f"prof_low.{p['name']}", m["slug"], who=nick(m))
            for m in members if not m.get("alt") for p in m.get("professions") or [] if not p["primary"] and p["skill"] <= 5]
     foot = "".join(f'<p class="note pg-low">{e(x)}</p>' for x in low if x)
+    if any(len(g) > 1 for g in people.values()):  # u hráče s víc postavami říká barva, která to umí
+        foot = '<p class="note pg-low">Barva čísla = povolání postavy, která to umí (celé jméno v tooltipu).</p>' + foot
     if nobody:
         bits = [Q.line(f"missing.{n}", "missing", n) for n in nobody]
         line = and_join(bits)
@@ -3208,8 +3206,6 @@ border-top:1px solid #ffffff10;font-size:14px}
 background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;font-size:13px}
 .pg-h{font-weight:600;font-size:12px;line-height:18px}.pg-name{color:var(--text);line-height:18px}.pg-sec{color:var(--muted)}
 .pg-cell{display:grid;gap:3px}.pg-cell b{font-weight:600;font-size:12px;line-height:18px}
-.pg-who{color:var(--muted);font-size:11px;line-height:13px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.pl-p .pg-who{margin-left:4px}.pg-cell .pg-who{margin-top:-3px}
 .pg-none b{color:var(--line)}.pg-cell b{color:var(--cls)}.pg-none b{color:var(--line)}
 .prof-list{display:none;list-style:none;margin:0;padding:4px 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;font-size:13px}
 .prof-list li{display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;padding:8px 0;border-top:1px solid #ffffff10}
