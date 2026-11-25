@@ -3362,13 +3362,17 @@ function edges(el){const l=el.scrollLeft>2,r=el.scrollLeft+el.clientWidth<el.scr
   el.classList.toggle('more-l',l);el.classList.toggle('more-r',r)}
 document.querySelectorAll('.nav-links,.me-chips,.rc-wrap').forEach(el=>{el.addEventListener('scroll',()=>edges(el),{passive:true});
   new ResizeObserver(()=>edges(el)).observe(el);edges(el)});
-// odkaz sekce, ve které právě jsem
+// odkaz sekce, kterou čtu: nadpis v horní třetině pod lištou (nejvýš položený), jinak sekce, která tu třetinu překrývá;
+// po kliknutí v liště drží odkaz, na který jsem klikl, dokud sám nescrolluju
 {const links=[...document.querySelectorAll('.nav-links a')],bar=document.querySelector('.nav-links');
  const secs=links.map(a=>document.getElementById(a.hash.slice(1))).filter(Boolean);
- let cur=null;
- function mark(){const y=(document.querySelector('.nav')?.offsetHeight||0)+24;
-   let on=secs.filter(s=>s.getBoundingClientRect().top<=y).pop()||null;
-   if(innerHeight+scrollY>=document.documentElement.scrollHeight-2)on=secs[secs.length-1];
+ let cur=null,held=null;
+ links.forEach(a=>a.addEventListener('click',()=>{held=document.getElementById(a.hash.slice(1));cur=null;mark()}));
+ ['wheel','touchstart','keydown'].forEach(t=>addEventListener(t,()=>{held=null},{passive:true}));
+ function mark(){const h=document.querySelector('.nav')?.offsetHeight||0,y=h+Math.max(24,(innerHeight-h)*.3);
+   const top=s=>s.getBoundingClientRect().top;
+   let on=held||secs.find(s=>top(s)>=h-2&&top(s)<=y)||secs.filter(s=>top(s)<=y).pop()||null;
+   if(!held&&innerHeight+scrollY>=document.documentElement.scrollHeight-2)on=secs[secs.length-1];
    if(on===cur)return;cur=on;
    links.forEach(a=>{const it=on&&a.hash==='#'+on.id;a.classList.toggle('on',!!it);it?a.setAttribute('aria-current','true'):a.removeAttribute('aria-current')});
    const a=links.find(a=>a.classList.contains('on'));

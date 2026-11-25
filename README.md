@@ -30,7 +30,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Titul za statistiku dostane jen ten, kdo v ní vede (nebo má aspoň 75 % nejlepšího, `LEAD`); kdo hrál,
   ale v ničem nevedl, dostane titul z `busy`. Stejný titul u víc lidí je jedna karta se všemi jmény („Kozel, Zrza, Hora“).
 - **Pořadí stránky:** hlavička, lišta, skupinová fotka, Příští výprava, tituly, novinky, ready check, loot, kronika, řemesla.
-  Lišta má odkazy ve stejném pořadí a zvýrazní sekci, ve které právě jsi. Posuvné řady (lišta, postavy v ready checku)
+  Lišta má odkazy ve stejném pořadí a zvýrazní sekci, kterou čteš: tu, jejíž nadpis je v horní třetině pod lištou, jinak tu, která tou třetinou prochází. Po kliknutí na odkaz svítí on, dokud sám nescrolluješ. Posuvné řady (lišta, postavy v ready checku)
   ztmavnou u okraje, za kterým ještě něco je. Na mobilu mají odkazy a štítky aspoň 36 px na výšku.
 - **Příští výprava:** dungeon, rozsah levelů a souhrn ready checku. Souhrn má za každého hráče, co jeho postavě chybí („Johnie ✋ 1× dojít“).
   S vybranou postavou začíná „Ty (jméno): …“ a ukazuje jen ty ostatní, kteří ještě něco potřebují; za ostatní hráče mluví o postavě
