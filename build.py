@@ -398,12 +398,17 @@ def roster(party):
 
 
 def add_nicks(party, members):
-    """Přezdívka člověka za postavou (`name` v players), bez ní křestní jméno jeho hlavní postavy."""
-    names = {p["chars"][0]: p["name"] for p in party.get("players") or [] if p.get("name") and p.get("chars")}
+    """Přezdívka člověka za postavou (`name` v players), bez ní křestní jméno jeho hlavní postavy.
+    Raid mark hráče (`mark` v players) dostanou všechny jeho postavy; neznámý mark se zahodí."""
+    players = [p for p in party.get("players") or [] if p.get("chars")]
+    names = {p["chars"][0]: p["name"] for p in players if p.get("name")}
+    marks = {p["chars"][0]: p["mark"] for p in players if p.get("mark") in MARKS}
     mains = {m["player"]: m for m in members if m["ok"] and not m.get("alt")}
     for m in members:
         if m["ok"]:
             m["nick"] = names.get(m["player"]) or mains.get(m["player"], m)["name"].split()[0]
+            if m["player"] in marks:
+                m["mark"] = marks[m["player"]]
 
 
 def load_party(party, token):
@@ -1403,9 +1408,12 @@ def nick(m):
     return m.get("nick") or first(m)
 
 
-def char_who(m):
-    """Jednotné jméno postavy: přezdívka hráče · celé jméno postavy (Kozel · Kozel Mourningale)."""
-    return f'{nick(m)} · {m["name"]}'
+def who_name(m, name=None):
+    """Jméno postavy v popiscích: u hráče s alty „přezdívka · celé jméno“ (jde o to, kterou postavou),
+    u hráče s jedinou postavou jen char_label (přezdívka navíc, jen když se postava jmenuje jinak)."""
+    if m.get("solo"):
+        return char_label(m)
+    return f'{nick(m)} · {name or m["name"]}'
 
 
 def char_label(m):
@@ -1767,7 +1775,7 @@ def ahead_rows(rows, members, by_slug=None):
 
 def ahead_cell(r, m):
     """(css třída, text, tooltip) pro jednu postavu: kolik levelů zbývá do procházky."""
-    lvl, cap, name = m["level"], walk_level(r), f'{char_who(m)} ({m.get("class") or "?"})'
+    lvl, cap, name = m["level"], walk_level(r), f'{who_name(m)} ({m.get("class") or "?"})'
     if lvl < r["min"]:
         return "low", f"za {r['min'] - lvl}", f"{name}: dungeon od levelu {r['min']}"
     if lvl > cap:
@@ -1839,7 +1847,9 @@ def ahead_table(rows, best, members, by_slug=None):
             f'{f"<button type=button class=ah-more data-n={far}>další dungeony ({far}) ▾</button>" if far else ""}'
             f'<p class="ah-legend"><span class="ah ah-ok">5</span> rezerva <span class="ah ah-soon">2</span> brzy uteče '
             f'<span class="ah ah-last">0</span> poslední level <span class="ah ah-low">za 3</span> ještě nízko '
-            f'<span class="ah ah-late">pozdě</span> procházka <span class="ah ah-ok ah-alt" style="--alt:var(--muted)">5</span> jde alt (tečka = barva povolání)</p>'
+            f'<span class="ah ah-late">pozdě</span> procházka'
+            + (' <span class="ah ah-ok ah-alt" style="--alt:var(--muted)">5</span> jde alt (tečka = barva povolání)'
+               if any(len(g) > 1 for g in groups) else "") + '</p>'
             f'<p class="ah-note"><b>do lvl</b> = poslední level, kdy dungeon ještě není procházka (konec rozsahu, nebo dřív podle Wowhead Easy)</p>')
 
 
@@ -1984,8 +1994,8 @@ def news_box(members, base, today):
 
 
 def title_who(m, t):
-    """Kdo titul dostal, vždy „přezdívka · celé jméno postavy“; u hráče s alty postava, která k titulu přispěla nejvíc."""
-    return f'{nick(m)} · {t.get("char") or m["name"]}'
+    """Kdo titul dostal (who_name); u hráče s alty postava, která k titulu přispěla nejvíc."""
+    return who_name(m, t.get("char"))
 
 
 def title_cards(members, titles):
@@ -2234,7 +2244,8 @@ def party_table(check, members, by_slug, crew):
         return (f'<th class="who-col" {attrs(m, default)} style="--cls:{cls_color(m)}">'
                 + (f'<button type="button" class="col-sw" aria-haspopup="menu" title="změnit postavu ve sloupci"><b>{e(nick(m))}</b><i>▾</i></button>'
                    if m.get("player", m["slug"]) in many else f'<b>{e(nick(m))}</b>') +
-                f'<small><span class="wc-name">{e(m["name"])} · </span>{m.get("level", "")}</small>{gap}</th>')
+                (f'<small><span class="wc-name">{e(m["name"])} · </span>' if m.get("player", m["slug"]) in many else "<small>")
+                + f'{m.get("level", "")}</small>{gap}</th>')
 
     def cell(q, m, default):
         st = q["status"][m["slug"]]
@@ -2320,15 +2331,44 @@ def char_card(m, attr, title=None, line=None, small=None, level=True):
             f'<small>{e(small or m.get("class", ""))}</small></span></button>')
 
 
+# Raid target marky jako vlastní tvary (ne herní ikony): název, barva, SVG ve viewBoxu 0 0 32 32.
+MARKS = {
+    "star": ("hvězda", "#f5d23c", '<path d="M16 2l4.1 9.3 10.2.9-7.7 6.8 2.3 10-8.9-5.2-8.9 5.2 2.3-10-7.7-6.8 10.2-.9z"/>'),
+    "circle": ("kolečko", "#ff8a1f", '<circle cx="16" cy="16" r="13"/>'),
+    "diamond": ("kosočtverec", "#c25cf0", '<path d="M16 1l12 15-12 15L4 16z"/>'),
+    "triangle": ("trojúhelník", "#3fcf3f", '<path d="M16 3l14 25H2z"/>'),
+    "moon": ("měsíc", "#c9d3dc", '<path d="M20 2.5A13.5 13.5 0 1 0 29.5 22 11 11 0 0 1 20 2.5z"/>'),
+    "square": ("čtverec", "#2f8cff", '<rect x="4" y="4" width="24" height="24" rx="2"/>'),
+    "cross": ("křížek", "#e8312a", '<path d="M6 10l4-4 6 6 6-6 4 4-6 6 6 6-4 4-6-6-6 6-4-4 6-6z"/>'),
+    "skull": ("lebka", "#f2f0e6", '<path fill-rule="evenodd" d="M16 3C9 3 4 8 4 14.5c0 4 2 7 5 8.5V29h14v-6c3-1.5 5-4.5 5-8.5C28 8 23 3 16 3z'
+              'M8 15.5a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 1 0-6.4 0zM17.6 15.5a3.2 3.2 0 1 0 6.4 0 3.2 3.2 0 1 0-6.4 0zM16 20l1.8 3.2h-3.6z"/>'),
+}
+
+
+def mark_icon(m, cls="mark"):
+    """Raid mark hráče; bez marku iniciála přezdívky v kroužku."""
+    if m.get("mark") in MARKS:
+        label, color, shape = MARKS[m["mark"]]
+        return f'<svg class="{cls}" viewBox="0 0 32 32" role="img" aria-label="{label}" style="--mk:{color}">{shape}</svg>'
+    return f'<span class="{cls} mark-none" aria-hidden="true">{e(nick(m)[:1].upper())}</span>'
+
+
+def gate_card(player, m, count):
+    """Karta hráče ve volbě: mark, přezdívka, počet postav. Barva rámečku je barva marku, ne povolání."""
+    color = MARKS[m["mark"]][1] if m.get("mark") in MARKS else "var(--gold)"
+    return (f'<button type="button" class="gp" data-who="{e(player)}" data-pick="{e(m["slug"])}" style="--mk:{color}">'
+            f'{mark_icon(m, "gp-mark")}<b class="gp-nick">{e(nick(m))}</b>'
+            f'<small>{pl(count, ("{n} postava", "{n} postavy", "{n} postav"))}</small></button>')
+
+
 def me_gate(chars, best=None):
-    """Volba hráče při první návštěvě: karty hráčů, za každého jeho výchozí postava (default_char, alta přepne „Hraju za“)."""
+    """Volba hráče při první návštěvě: karta hráče s jeho raid markem a přezdívkou, ne obrázek jedné postavy.
+    Klik vybere jeho výchozí postavu (default_char), alta přepne „Hraju za“."""
     players = {}
     for m in chars:
         players.setdefault(m.get("player", m["slug"]), []).append(m)
     tops = {p: default_char(cs, best) for p, cs in players.items()}
-    cards = "".join(char_card(tops[p], f'data-who="{e(p)}" data-pick="{e(tops[p]["slug"])}"', nick(tops[p]),
-                              tops[p]["name"], pl(len(cs), ("{n} postava", "{n} postavy", "{n} postav")), level=False)
-                    for p, cs in players.items())
+    cards = "".join(gate_card(p, tops[p], len(cs)) for p, cs in players.items())
     return (f'<div class="gate" role="dialog" aria-modal="true" aria-labelledby="gate-h" hidden><div class="gate-box">'
             f'<h2 id="gate-h">Kdo jsi?</h2><p class="gate-sub">Podle toho ti stránka ukáže tvoje questy, loot a dungeony. Změníš to v liště.</p>'
             f'<div class="gate-grid">{cards}</div>'
@@ -2345,7 +2385,7 @@ def me_menu(chars):
         + "".join(f'<button type="button" class="mm-c" data-me="{e(m["slug"])}" aria-pressed="false" style="--cls:{cls_color(m)}">'
                   f'{avatar(m, "mm-av")}<span class="mm-name">{e(m["name"])}</span><span class="mm-lvl">{m.get("level", "")}</span></button>'
                   for m in cs) + "</div>"
-        for p, cs in players.items())
+        for p, cs in players.items() if len(cs) > 1)  # s jedinou postavou zbývá jen změna hráče
     return (f'<div class="me-menu" role="dialog" aria-label="Hraju za" hidden>{groups}'
             f'<button type="button" class="mm-c mm-none mm-switch">nejsem to já, změnit hráče</button></div>')
 
@@ -2371,9 +2411,9 @@ def ready_section(checks, members, best=None):
                      + "".join(f'<button type="button" class="mc" data-me="{e(m["slug"])}" aria-pressed="false" '
                                f'title="{e(m.get("class", ""))}" style="--cls:{cls_color(m)}"><span class="mc-name">{e(m["name"])}</span><span class="mc-lvl">{m.get("level", "")}</span></button>'
                                for m in chars) + "</div>"
-                     for p, chars in players.items())
+                     for p, chars in players.items() if len(chars) > 1)
     data = json.dumps({m["slug"]: m.get("player", m["slug"]) for m in members}, ensure_ascii=False).replace("<", "\\u003c")
-    names = json.dumps({m["slug"]: [nick(m), m["name"], cls_color(m), m.get("level", 0), m.get("class") or "?", bool(m.get("alt"))]
+    names = json.dumps({m["slug"]: [nick(m), m["name"], cls_color(m), m.get("level", 0), m.get("class") or "?", bool(m.get("alt")), who_name(m)]
                         for m in members}, ensure_ascii=False).replace("<", "\\u003c")
     # pamatuje se zvolená postava; bez ní (nebo když zmizela) se za hráče vezme odhad pro příští výpravu
     mains = json.dumps({p: default_char(cs, best)["slug"] for p, cs in players.items()}, ensure_ascii=False).replace("<", "\\u003c")
@@ -2401,7 +2441,7 @@ def craft_box(plan, members):
         m = by_slug.get(slug)
         if not m:
             return e(slug)
-        return f'<b style="color:{cls_color(m)}">{e(char_who(m))}</b>'
+        return f'<b style="color:{cls_color(m)}">{e(who_name(m))}</b>'
 
     def one_per_player(slugs):
         out = {}  # hlavní postava má přednost před altem
@@ -2628,7 +2668,7 @@ def professions_box(members):
                 cells += '<span class="pg-cell pg-none"><b>–</b></span>'
                 continue
             p, m = got
-            cells += (f'<span class="pg-cell" title="{e(char_who(m))}: {prof_num(p)}" style="--cls:{cls_color(m)}">'
+            cells += (f'<span class="pg-cell" title="{e(who_name(m))}: {prof_num(p)}" style="--cls:{cls_color(m)}">'
                       f'<b>{p["skill"]}</b></span>')
         return f'<span class="pg-name{cls}">{e(name)}</span>{cells}'
 
@@ -2636,7 +2676,7 @@ def professions_box(members):
     # na mobilu se šest sloupců nevejde: řádek = hráč a jeho profese
     lines = []
     for chars in people.values():
-        bits = "".join(f'<span class="pl-p{" pg-sec" if n in sec else ""}" title="{e(char_who(m))}: {prof_num(p)}" '
+        bits = "".join(f'<span class="pl-p{" pg-sec" if n in sec else ""}" title="{e(who_name(m))}: {prof_num(p)}" '
                        f'style="--cls:{cls_color(m)}">{e(n)} <b>{p["skill"]}</b></span>'
                        for n in prim + sec if (got := best(chars, n)) for p, m in [got])
         lines.append(f'<li><b class="pl-who" style="color:{cls_color(chars[0])}">{e(nick(chars[0]))}</b>'
@@ -2913,12 +2953,18 @@ section[id],div[id]{scroll-margin-top:56px}
 .gate-box{width:min(720px,100%);text-align:center}
 .gate-box h2{font:700 32px Cinzel,serif;color:var(--gold);margin:0 0 6px}
 .gate-sub{color:var(--muted);margin:0 0 18px;font-size:14px}
-.gate-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;text-align:left}
-.gate-grid .ch{flex:none;width:100%}.gate-grid .ch-art{filter:none}
+.gate-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:560px;margin:0 auto}
+.gp{display:grid;justify-items:center;gap:4px;padding:16px 10px 12px;color:var(--text);background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;cursor:pointer;font-family:Inter,system-ui,sans-serif;transition:border-color .15s,transform .15s,box-shadow .15s}
+.gp:hover,.gp:focus-visible{border-color:var(--mk);transform:translateY(-2px);box-shadow:0 4px 16px color-mix(in srgb,var(--mk) 25%,transparent);outline:none}
+.gp-mark{width:56px;height:56px;margin-bottom:4px;fill:var(--mk);stroke:rgba(0,0,0,.55);stroke-width:1.2;paint-order:stroke;
+  filter:drop-shadow(0 0 8px color-mix(in srgb,var(--mk) 35%,transparent))}
+.mark-none{display:grid;place-items:center;border-radius:50%;border:2px solid var(--mk);font:700 26px Cinzel,serif;color:var(--mk)}
+.gp-nick{font:700 17px Cinzel,serif;color:var(--gold)}.gp small{font-size:12px;color:var(--muted)}
 .gate-skip{margin-top:16px;min-height:36px;padding:4px 16px;font:600 13px Inter,system-ui,sans-serif;color:var(--muted);
   background:none;border:0;cursor:pointer;text-decoration:underline}
 @media(max-width:600px){.gate{place-items:start center}.gate-box h2{font-size:26px}.gate-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.gate-grid .ch-art{height:84px}}
+.gp-mark{width:44px;height:44px}}
 .ch{position:relative;flex:0 0 140px;scroll-snap-align:start;padding:0;text-align:left;color:var(--text);background:var(--panel);
 border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;font-family:Inter,system-ui,sans-serif;transition:border-color .15s,transform .15s}
 .ch:hover{border-color:var(--cls);transform:translateY(-2px)}
@@ -3305,7 +3351,7 @@ function syncCols(){
     rc.querySelectorAll('.mine .m-give').forEach(g=>{const n=g.querySelectorAll('li:not([hidden])').length;g.hidden=!n;g.querySelector('.m-n').textContent='('+n+')'})});
   syncAhead();syncNext();if(sel)syncLoot()}
 const AH=new WeakMap();
-function aheadCell(r,s){const [nk,nm,,lvl,cl]=NAMES[s],who=nk+' · '+nm+' ('+cl+')',min=+r.dataset.min,cap=+r.dataset.cap;
+function aheadCell(r,s){const [,,,lvl,cl,,lb]=NAMES[s],who=lb+' ('+cl+')',min=+r.dataset.min,cap=+r.dataset.cap;
   if(lvl<min)return['low','za '+(min-lvl),who+': dungeon od levelu '+min];
   if(lvl>cap)return['late','pozdě',who+': od levelu '+(cap+1)+' už procházka'];
   const left=cap-lvl;return[left===0?'last':left<=2?'soon':'ok',String(left),left?who+': ještě '+left+' lvl, pak procházka':who+': poslední level, pak procházka']}
@@ -3366,7 +3412,7 @@ lootBtn?.addEventListener('click',()=>{lootAll=!lootAll;syncLoot()});
 function syncCraft(){const mine=[...document.querySelectorAll('.craft-for')];mine.forEach(u=>u.hidden=u.dataset.for!==viewer);
   const has=mine.some(u=>!u.hidden);document.querySelector('.craft-all')?.toggleAttribute('hidden',!!viewer);
   const none=document.querySelector('.craft-none');if(!none)return;none.toggleAttribute('hidden',!viewer||has);
-  const nm=NAMES[viewer];none.querySelector('.craft-who').textContent=nm?nm[0]+' · '+nm[1]:'tuhle'}
+  const nm=NAMES[viewer];none.querySelector('.craft-who').textContent=nm?nm[6]:'tuhle'}
 function pick(i){panels.forEach(a=>a.hidden=a.id!=='rc-'+i);if(sel)sel.value=String(i);
   const t=selOpts.find(o=>o.value==i);
   try{if(t)localStorage.setItem('rc-pick',t.dataset.title)}catch(e){}
@@ -3414,12 +3460,12 @@ document.querySelector('.me-ask')?.addEventListener('click',ev=>{ev.stopPropagat
 // první návštěva: stránka se zeptá, kdo jsi; volba (i „jen koukám“) se pamatuje v prohlížeči
 const gate=document.querySelector('.gate');
 function openGate(){if(!gate)return;gate.hidden=false;document.body.classList.add('gate-on');
-  gate.querySelector('.ch').focus({preventScroll:true})}
+  gate.querySelector('.gp').focus({preventScroll:true})}
 function closeGate(){gate.hidden=true;document.body.classList.remove('gate-on')}
 addEventListener('keydown',ev=>{if(ev.key==='Escape'&&gate&&!gate.hidden&&viewer)closeGate()});
 function gateDone(slug){closeGate();
   try{localStorage.setItem('me-asked','1')}catch(e){}me(slug);fitJump(slug)}
-gate?.querySelectorAll('.ch[data-pick]').forEach(b=>b.addEventListener('click',()=>gateDone(b.dataset.pick)));
+gate?.querySelectorAll('.gp[data-pick]').forEach(b=>b.addEventListener('click',()=>gateDone(b.dataset.pick)));
 gate?.querySelector('.gate-skip').addEventListener('click',()=>gateDone(''));
 {let asked=false;try{asked=!!localStorage.getItem('me-asked')||!!localStorage.getItem('player')||!!localStorage.getItem('me')}catch(e){asked=true}
  if(!asked&&!location.hash.startsWith('#char-'))openGate()}
@@ -3507,6 +3553,9 @@ def main():
     members = [m for m in loaded if not m.get("alt")]  # hlavní postavy: místa v partě, plán, tituly, loot, řemesla
     ok = [m for m in members if m["ok"]]
     chars = order_chars([m for m in loaded if m["ok"]])  # navíc alti: ready check, karty, novinky
+    count = Counter(m.get("player", m["slug"]) for m in chars)
+    for m in loaded:  # hráč s jedinou postavou nemá v popiscích přezdívku navíc (who_name)
+        m["solo"] = count[m.get("player", m["slug"])] == 1
     if not ok:
         sys.exit("Nepodařilo se načíst žádnou postavu, stránku neměním.")
     if token:

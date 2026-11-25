@@ -464,10 +464,34 @@ class Dungeons(unittest.TestCase):
         for c in chars:
             c["name"] = c["slug"].upper()
         html = build.me_menu(chars)
-        self.assertEqual(html.count('class="mm-p"'), 2)
-        self.assertLess(html.index('data-me="j2"'), html.index('data-me="k"'))
+        self.assertEqual(html.count('class="mm-p"'), 1)
+        self.assertIn('data-me="j2"', html)
+        self.assertNotIn('data-me="k"', html)  # s jedinou postavou není co vybírat, zbývá změna hráče
         self.assertIn('<div class="mm-p" data-player="j" hidden>', html)  # stránka ukáže jen moje postavy
         self.assertIn("změnit hráče", html)
+
+    def test_single_char_player_has_no_alt_controls_or_double_names(self):
+        party = [Alts.char("a", 25), Alts.char("b", 25), Alts.char("b2", 24, "b")]
+        chars = [{**m, "ok": True, "name": m["slug"].title() + " Velký", "class_slug": "mage"} for m in party]
+        chars[2]["alt"] = True
+        for c in chars:
+            c["solo"] = c["player"] == "a"
+        a, b = chars[0], chars[1]
+        self.assertEqual(build.who_name(a), "A Velký")
+        self.assertEqual(build.who_name(b), "B · B Velký")
+        self.assertEqual(build.title_who(a, {}), "A Velký")
+        check = Alts().check(party)
+        html = build.ready_section([check], chars)
+        self.assertNotIn('class="me-chips" data-player="a"', html)
+        self.assertIn('class="me-chips" data-player="b"', html)
+        box = build.ready_box(check, chars, 0)
+        self.assertIn('data-slug="a" data-def style="--cls:#3FC7EB"><b>A</b><small>25</small>', box)
+        self.assertIn('<span class="wc-name">B Velký · </span>', box)
+        r = {"name": "SFK", "zone": "z", "min": 22, "max": 28}
+        solo = build.ahead_table([r], r, [a], {"a": a})
+        self.assertNotIn("jde alt", solo)
+        self.assertIn('title="A Velký (Mage): ', solo)
+        self.assertIn("jde alt", build.ahead_table([r], r, [a, b], {c["slug"]: c for c in chars}))
 
     def test_ahead_cell(self):
         rfk = {"name": "RFK", "min": 30, "max": 40, "difficulty": [25, 28, 31, 34]}
@@ -780,6 +804,26 @@ class Alts(unittest.TestCase):
         self.assertEqual([m["nick"] for m in chars], ["Fanda", "Fanda", "Zrza"])
         self.assertEqual(build.char_label(chars[1]), "Cildac Velky (Fanda)")
         self.assertEqual(build.char_label(chars[2]), "Zrza Jegod")
+
+    def test_mark_from_party_goes_to_all_player_chars(self):
+        chars = [{"ok": True, "slug": "a", "name": "Johnie Rotking", "player": "a"},
+                 {"ok": True, "slug": "a2", "name": "Cildac Velky", "player": "a", "alt": True},
+                 {"ok": True, "slug": "b", "name": "Zrza Jegod", "player": "b"}]
+        build.add_nicks({"players": [{"name": "J", "mark": "skull", "chars": ["a", "a2"]},
+                                     {"name": "Z", "mark": "banán", "chars": ["b"]}]}, chars)
+        self.assertEqual([m.get("mark") for m in chars], ["skull", "skull", None])  # neznámý mark se zahodí
+
+    def test_gate_shows_player_mark_not_character_image(self):
+        chars = [Alts.char("j", 30, "j"), Alts.char("j2", 12, "j"), Alts.char("k", 31)]
+        for c in chars:
+            c["name"], c["render"] = c["slug"].upper() + " Velký", "https://x/render.jpg"
+        chars[0]["mark"] = chars[1]["mark"] = "skull"
+        chars[0]["nick"] = chars[1]["nick"] = "Johnie"
+        html = build.me_gate(chars)
+        self.assertNotIn("render.jpg", html)
+        self.assertIn('aria-label="lebka"', html)
+        self.assertIn("2 postavy", html)
+        self.assertIn('mark-none" aria-hidden="true">K<', html)  # bez marku iniciála
 
     def test_photo_shows_last_played_and_tie_goes_to_main(self):
         main, alt = {"updated": "2026-11-16"}, {"updated": "2026-11-17"}

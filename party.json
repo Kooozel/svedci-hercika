@@ -5,12 +5,12 @@
   "next": "City of Dalaran",
   "site_url": "https://kooozel.github.io/svedci-hercika/",
   "players": [
-    {"name": "Kozel", "chars": ["kozel-mourningale"]},
-    {"name": "Zrza", "chars": ["zrza-jegod"]},
-    {"name": "Johnie", "chars": ["johnie-rotking", "johnie-tusklord"]},
-    {"name": "Hora", "chars": ["horaes-velký"]},
-    {"name": "Cilda", "chars": ["cildac-velky"]},
-    {"name": "Susak", "chars": ["cripling-susi"]}
+    {"name": "Kozel", "mark": "star", "chars": ["kozel-mourningale"]},
+    {"name": "Zrza", "mark": "circle", "chars": ["zrza-jegod"]},
+    {"name": "Johnie", "mark": "skull", "chars": ["johnie-rotking", "johnie-tusklord"]},
+    {"name": "Hora", "mark": "triangle", "chars": ["horaes-velký"]},
+    {"name": "Cilda", "mark": "moon", "chars": ["cildac-velky"]},
+    {"name": "Susak", "mark": "diamond", "chars": ["cripling-susi"]}
   ],
   "genitive": {
     "kozel-mourningale": "Kozla",
