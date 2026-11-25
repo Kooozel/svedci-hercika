@@ -52,8 +52,9 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu; obnovení stránky
   kartu znovu neotevře a sama od sebe se neotevře žádná.
 - **Kdo jsi:** při první návštěvě stránka ukáže jen volbu hráče (za něj jeho naposledy hraná postava) a „jen koukám“.
-  Volba se pamatuje v prohlížeči (`localStorage`), odkaz `#char-…` volbu přeskočí.
-- **Ready check:** nahoře jsou čipy tvých postav pro přepnutí alta. Vybraná postava je vpravo v liště
+  V prohlížeči (`localStorage`) se pamatuje jen hráč; po načtení se za něj vezme jeho naposledy hraná postava,
+  přepnutý alt platí do obnovení stránky. Odkaz `#char-…` volbu přeskočí.
+- **Ready check:** nahoře jsou čipy tvých postav (jméno v barvě classy a level) pro přepnutí alta. Vybraná postava je vpravo v liště
   („Hraju za“: klik otevře menu hráčů a jejich postav, stránka nikam neodskočí; „jen koukám“ výběr zruší) a podle ní se řídí ready check, loot, Dílna a tvoje místo ve skupinové fotce. Dungeon se předvybere podle levelu vybrané postavy, pod ním je,
   co si má dojít, co jí může někdo nasdílet a co začíná uvnitř. Nasdílet může postava jiného hráče, která se do dungeonu levelem vejde.
   Pod úkoly je tabulka „Celá parta“: řádek = quest, sloupec = hráč s postavou, kterou do dungeonu nejspíš vezme

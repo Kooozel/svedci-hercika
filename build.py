@@ -2253,15 +2253,18 @@ def ready_section(checks, members):
     for m in members:
         players.setdefault(m.get("player", m["slug"]), []).append(m)
     strips = "".join(f'<div class="me-chips" data-player="{e(p)}" hidden>'
-                     + "".join(f'<button type="button" class="mc" data-me="{e(m["slug"])}" aria-pressed="false" style="--cls:{cls_color(m)}">'
-                               f'{avatar(m, "mc-av")}<span class="mc-name">{e(m["name"])}</span><span class="mc-lvl">{m.get("level", "")}</span></button>'
+                     + "".join(f'<button type="button" class="mc" data-me="{e(m["slug"])}" aria-pressed="false" '
+                               f'title="{e(m.get("class", ""))}" style="--cls:{cls_color(m)}"><span class="mc-name">{e(m["name"])}</span><span class="mc-lvl">{m.get("level", "")}</span></button>'
                                for m in chars) + "</div>"
                      for p, chars in players.items())
     data = json.dumps({m["slug"]: m.get("player", m["slug"]) for m in members}, ensure_ascii=False).replace("<", "\\u003c")
     names = json.dumps({m["slug"]: [nick(m), m["name"]] for m in members}, ensure_ascii=False).replace("<", "\\u003c")
+    # pamatuje se jen hráč; po načtení se za něj vezme jeho naposledy hraná postava
+    mains = json.dumps({p: shown_char(cs)["slug"] for p, cs in players.items()}, ensure_ascii=False).replace("<", "\\u003c")
     return (f'<section id="ready"><h2 class="sec">Ready check</h2>'
             f'<script type="application/json" id="rc-chars">{data}</script>'
             f'<script type="application/json" id="rc-names">{names}</script>'
+            f'<script type="application/json" id="rc-mains">{mains}</script>'
             f'<div class="me-box">{strips}<button type="button" class="me-ask" hidden>Vyber, za koho hraješ ▾</button></div>'
             f'<label class="rc-sel"><span>Připravit na dungeon</span><select>{opts}</select></label>'
             f'{"".join(ready_box(c, members, i) for i, c in enumerate(checks))}</section>')
@@ -2759,9 +2762,9 @@ section[id],div[id]{scroll-margin-top:56px}
 .sec-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px 16px;flex-wrap:wrap}
 .me-box{margin:0 0 14px}
 .me-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}.me-chips[hidden]{display:none}
-.mc{flex:none;display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:3px 12px 3px 4px;font:600 13px Inter,system-ui,sans-serif;
+.mc{flex:none;display:inline-flex;align-items:baseline;gap:7px;min-height:36px;padding:6px 14px;font:600 13px Inter,system-ui,sans-serif;
   color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:999px;cursor:pointer}
-.mc:hover{border-color:var(--cls)}.mc-av{width:26px;height:26px;border-radius:50%;background:var(--panel2)}
+.mc:hover{border-color:var(--cls)}
 .mc-name{color:var(--cls)}.mc-lvl{color:var(--muted);font-size:12px;font-weight:400}
 .mc[aria-pressed=true]{border-color:var(--cls);background:color-mix(in srgb,var(--cls) 14%,var(--panel));box-shadow:0 0 0 1px var(--cls)}
 .me-ask{min-height:36px;padding:4px 14px;font:600 13px Inter,system-ui,sans-serif;color:var(--gold);background:var(--panel2);
@@ -3106,6 +3109,7 @@ footer a{display:inline-block;padding:8px 2px}
 JS = """
 const OWNER=JSON.parse(document.getElementById('rc-chars')?.textContent||'{}');
 const NAMES=JSON.parse(document.getElementById('rc-names')?.textContent||'{}');
+const MAINS=JSON.parse(document.getElementById('rc-mains')?.textContent||'{}');
 const navMe=document.querySelector('.nav-me');
 function syncMe(){if(navMe){const n=NAMES[viewer],same=n&&n[1].split(' ')[0]===n[0];navMe.hidden=!document.querySelector('.me-menu');
   navMe.querySelector('b').textContent=n?(same?n[1]:n[0]):'Kdo jsi?';navMe.querySelector('small').textContent=n&&!same?n[1]:'';navMe.title=n?'Hraju za '+n[1]+': změnit postavu':'Vyber, za koho hraješ'}
@@ -3165,7 +3169,7 @@ function me(slug){viewer=slug;
   const on=document.querySelector('.me-chips:not([hidden]) .mc[aria-pressed=true]');
   if(on)on.parentElement.scrollLeft=on.offsetLeft-on.parentElement.offsetLeft-2;
   syncLoot();syncCraft();
-  try{localStorage.setItem('me',slug)}catch(e){}}
+  try{localStorage.setItem('player',OWNER[slug]||'');localStorage.removeItem('me')}catch(e){}}
 document.querySelectorAll('.mc[data-me]').forEach(b=>b.addEventListener('click',()=>{me(b.dataset.me);fitJump(b.dataset.me)}));
 const menu=document.querySelector('.me-menu');
 function menuOpen(on){if(!menu)return;menu.hidden=!on;navMe.setAttribute('aria-expanded',on);
@@ -3182,14 +3186,14 @@ function gateDone(slug){gate.hidden=true;document.body.classList.remove('gate-on
   try{localStorage.setItem('me-asked','1')}catch(e){}me(slug);fitJump(slug)}
 gate?.querySelectorAll('.ch[data-pick]').forEach(b=>b.addEventListener('click',()=>gateDone(b.dataset.pick)));
 gate?.querySelector('.gate-skip').addEventListener('click',()=>gateDone(''));
-{let asked=false;try{asked=!!localStorage.getItem('me-asked')||!!localStorage.getItem('me')}catch(e){asked=true}
+{let asked=false;try{asked=!!localStorage.getItem('me-asked')||!!localStorage.getItem('player')||!!localStorage.getItem('me')}catch(e){asked=true}
  if(gate&&!asked&&!viewer&&!location.hash.startsWith('#char-')){gate.hidden=false;document.body.classList.add('gate-on');
    gate.querySelector('.ch').focus({preventScroll:true})}}
 document.querySelectorAll('.ah-more').forEach(b=>b.addEventListener('click',()=>{const t=b.previousElementSibling.querySelector('.ahead'),
   on=t.classList.toggle('ah-open');b.textContent=on?'méně dungeonů ▴':'další dungeony ('+b.dataset.n+') ▾'}));
 if(sel)sel.addEventListener('change',()=>pick(+sel.value));
-{let m='',saved=null;try{m=localStorage.getItem('me')||'';saved=localStorage.getItem('rc-pick')}catch(e){}
-  me(OWNER[m]?m:'');const o=selOpts.find(o=>o.dataset.title===saved);if(o)pick(+o.value);fitJump(viewer)}
+{let p='',saved=null;try{p=localStorage.getItem('player')||OWNER[localStorage.getItem('me')]||'';saved=localStorage.getItem('rc-pick')}catch(e){}
+  me(MAINS[p]||'');const o=selOpts.find(o=>o.dataset.title===saved);if(o)pick(+o.value);fitJump(viewer)}
 const pcs=[...document.querySelectorAll('.pc[data-slug]')];
 const hasSheet=s=>[...document.querySelectorAll('.sheet')].some(x=>x.dataset.slug===s);
 let openNow='';

@@ -745,7 +745,8 @@ class Alts(unittest.TestCase):
         # v ready checku jen čipy postav hráče, hráče vybírá úvodní volba a lišta
         self.assertIn('<div class="me-chips" data-player="a" hidden>', html)
         self.assertIn('data-me="a2"', html)
-        self.assertIn('<span class="mc-name">A2 Velký</span>', html)
+        self.assertIn('<span class="mc-name">A2 Velký</span><span class="mc-lvl">25</span>', html)
+        self.assertIn('id="rc-mains">{"a": "a"', html)  # pamatuje se hráč, za něj jeho postava
         self.assertNotIn('data-who="', html)
         self.assertIn("může nasdílet B", html)
         self.assertNotIn("Kdo jde", html)
