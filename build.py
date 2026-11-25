@@ -1759,12 +1759,18 @@ def ahead_table(rows, best, members, by_slug=None):
                    f'<span class="ah-short">{e(nick(m)[:3])}</span></th>' for p, m in zip(pl, members))
     body, far = [], 0
     shown = ahead_rows(rows, members, by_slug)
-    at = next((i for i, r in enumerate(shown) if r is best), None)
-    for i, r in enumerate(shown):
-        # na mobilu jen příští výprava a pár dungeonů kolem, zbytek pod „další dungeony“
-        hide = at is not None and (bool(r.get("done")) or not at - AHEAD_BEFORE <= i <= at + AHEAD_AFTER)
+    old = lambda r: bool(r.get("done")) and r is not best
+    live = [r for r in shown if not old(r)]
+    at = next((i for i, r in enumerate(live) if r is best), None)
+    n_old = sum(map(old, shown))
+    for r in shown:
+        # odehrané sbalené pod „odehrané (N)“ (desktop i mobil); na mobilu navíc jen příští výprava a pár dungeonů kolem
+        hide = not old(r) and at is not None and not at - AHEAD_BEFORE <= live.index(r) <= at + AHEAD_AFTER
         far += hide
-        classes = " ".join(c for c, on in (("ah-best", r is best), ("ah-done", r.get("done") and r is not best), ("ah-far", hide)) if on)
+        if old(r) and not any(old(x) for x in shown[:shown.index(r)]):
+            body.append(f'<tr class="ah-old-row"><td colspan="{len(members) + 2}"><button type="button" class="ah-old-btn" data-n="{n_old}">'
+                        f'✓ odehrané ({n_old}) ▾</button></td></tr>')
+        classes = " ".join(c for c, on in (("ah-best", r is best), ("ah-done ah-old", old(r)), ("ah-far", hide)) if on)
         cls = f' class="{classes}"' if classes else ""
         cells = ""
         for p, m, g in zip(pl, members, groups):
@@ -3076,6 +3082,10 @@ background:#0003;border:1px solid #ffffff10;border-radius:10px;padding:8px 12px}
 .ah-more{display:none;width:100%;margin-top:6px;min-height:36px;font:600 13px Inter,system-ui,sans-serif;color:var(--gold);
   background:none;border:1px dashed #6b5420;border-radius:8px;cursor:pointer}
 @media(max-width:600px){.ahead:not(.ah-open) .ah-far{display:none}.ah-more{display:block}}
+.ahead:not(.ah-old-open) .ah-old{display:none}
+.ahead .ah-old-row td{text-align:left;padding:2px 0}
+.ah-old-btn{background:none;border:0;padding:4px 0;min-height:32px;font:600 12px Inter,system-ui,sans-serif;color:var(--muted);cursor:pointer}
+.ah-old-btn:hover{color:var(--gold)}
 .ah{display:inline-block;min-width:30px;padding:1px 5px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.5;white-space:nowrap}
 .ah-short{display:none}
 .ah-ok{background:#6fbf7326;color:var(--ok)}.ah-soon{background:#e8a13c26;color:var(--warn)}.ah-last{background:#e0574b2e;color:var(--bad)}
@@ -3339,6 +3349,8 @@ gate?.querySelectorAll('.ch[data-pick]').forEach(b=>b.addEventListener('click',(
 gate?.querySelector('.gate-skip').addEventListener('click',()=>gateDone(''));
 {let asked=false;try{asked=!!localStorage.getItem('me-asked')||!!localStorage.getItem('player')||!!localStorage.getItem('me')}catch(e){asked=true}
  if(!asked&&!location.hash.startsWith('#char-'))openGate()}
+document.querySelectorAll('.ah-old-btn').forEach(b=>b.addEventListener('click',()=>{const on=b.closest('.ahead').classList.toggle('ah-old-open');
+  b.textContent='✓ odehrané ('+b.dataset.n+') '+(on?'▴':'▾')}));
 document.querySelectorAll('.ah-more').forEach(b=>b.addEventListener('click',()=>{const t=b.previousElementSibling.querySelector('.ahead'),
   on=t.classList.toggle('ah-open');b.textContent=on?'méně dungeonů ▴':'další dungeony ('+b.dataset.n+') ▾'}));
 if(sel)sel.addEventListener('change',()=>pick(+sel.value));

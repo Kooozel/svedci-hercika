@@ -397,6 +397,20 @@ class Dungeons(unittest.TestCase):
         self.assertIn("další dungeony (2)", html)
         self.assertIn('data-player="a"', html)
 
+    def test_ahead_table_folds_played_rows(self):
+        ds = [{"name": f"D{i}", "zone": "z", "min": 20 + 2 * i, "max": 30 + 2 * i, "done": i < 3} for i in range(8)]
+        team = [member("a", level=26)]
+        rows, _ = build.plan_dungeons(team, ds)
+        shown = build.ahead_rows(rows, team)
+        best = next(r for r in shown if not r.get("done"))
+        html = build.ahead_table(rows, best, team)
+        n = sum(1 for r in shown if r.get("done"))
+        # odehrané jsou sbalené na desktopu i mobilu a nepočítají se do „dva před příští výpravou“
+        self.assertEqual(html.count('ah-done ah-old'), n)
+        self.assertEqual(html.count("ah-old-btn"), 1)
+        self.assertIn(f"✓ odehrané ({n})", html)
+        self.assertNotIn("ah-old ah-far", html)
+
     def test_me_gate_offers_players_with_highest_level_char(self):
         chars = [Alts.char("j", 30, "j"), Alts.char("j2", 12, "j"), Alts.char("k", 31)]
         for c in chars:
