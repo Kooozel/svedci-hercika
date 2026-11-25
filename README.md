@@ -2,7 +2,7 @@
 
 Přehled naší party ve WoW Forever: příští dungeon, ready check dungeonových questů (co se nasdílí u vchodu
 a pro co si kdo musí dojít), postavy s XP a výbavou, profese a novinky od včerejška. Ready check a výbava potřebují API klíče.
-Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka se přegeneruje každé ráno kolem 5:20 (v létě 6:20, se zálohou o hodinu později) přes GitHub Actions. GitHub plánované běhy občas zpozdí.
+Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka se přegeneruje přes GitHub Actions při každém pushi na `main` nebo ručním spuštěním workflow.
 
 ## Úpravy
 
@@ -46,14 +46,14 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   (kůže od skinnera, Copper Rod od kováře…), kdo umí třpytky (enchanty, bez jmen, komu chybí) a kdo je na stropu
   skillu. Pod tím je přehled se skillem číslem (strop v tooltipu),
   hlášky k vedlejším profesím skoro na nule a jedna věta o profesích, které nikdo nemá. Detaily receptů a předmětů se ukládají do `cache/static.json`, takže se
-  z API stahuje jen to nové (ranní běh cache commitne). Smazáním souboru se stáhne znovu.
+  z API stahuje jen to nové (běh workflow cache commitne). Smazáním souboru se stáhne znovu.
   Nové recepty se ukážou v novinkách.
 - **Soukromí:** na stránku a do historie jde jen den posledního přihlášení, ne přesný čas.
 - **Kronika:** zápisy z výprav v `kronika.json`. Na hlavní stránce je první odstavec posledního zápisu,
   celá kronika je na `kronika.html`. Píše se ručně (s Claudem) po výpravě. Zápis může mít `titles`
   (slug → `emoji`, `title`, `detail`): ruční tituly za ten večer, třeba za špatný zeppelin, které přebijí ty ze statistik.
   Platí jen první den po výpravě.
-- **Denní historie:** ranní plánovaný běh commitne `history/RRRR-MM-DD.json` se stavem všech postav
+- **Denní historie:** první push nebo ruční běh dne (do 16:00) commitne `history/RRRR-MM-DD.json` se stavem všech postav
   (levely, XP, statistiky, výbava). Z rozdílu dvou dnů se pozná, co se ten večer stalo. Kvůli tomu má workflow
   právo zápisu do repozitáře, takže si před vlastním pushem udělej `git pull`.
 - **Dungeony:** seznam a rozsahy levelů jsou podle
@@ -126,8 +126,6 @@ S klíči (ze souboru mimo repozitář):
 3. Na [develop.battle.net](https://develop.battle.net/access/clients) založ API klienta a jeho Client ID a Secret
    ulož do Settings → Secrets and variables → Actions jako `BNET_CLIENT_ID` a `BNET_CLIENT_SECRET`.
 4. Actions → „Stránka party“ → Run workflow.
-
-GitHub vypne plánované běhy, když se v repozitáři 60 dní nic nestane. Pak stačí workflow znovu zapnout v záložce Actions.
 
 ## Zdroje dat
 
