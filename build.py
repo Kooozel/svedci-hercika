@@ -1410,15 +1410,10 @@ def nick(m):
 
 def who_name(m, name=None):
     """Jméno postavy v popiscích: u hráče s alty „přezdívka · celé jméno“ (jde o to, kterou postavou),
-    u hráče s jedinou postavou jen char_label (přezdívka navíc, jen když se postava jmenuje jinak)."""
+    u hráče s jedinou postavou jen přezdívka hráče."""
     if m.get("solo"):
-        return char_label(m)
+        return nick(m)
     return f'{nick(m)} · {name or m["name"]}'
-
-
-def char_label(m):
-    """Celé jméno postavy, s hráčem, když se jmenuje jinak než on: Cildac Velky (Fanda)."""
-    return m["name"] if nick(m) == first(m) else f'{m["name"]} ({nick(m)})'
 
 
 def order_chars(chars):
@@ -2103,11 +2098,11 @@ def or_list(names):
 
 
 def people_names(chars):
-    """Jména do věty: jedna postava hráče celým jménem, víc postav přezdívkou s počtem."""
+    """Jména do věty: přezdívka hráče, u víc postav s počtem."""
     groups = {}
     for m in chars:
         groups.setdefault(m.get("player", m["slug"]), []).append(m)
-    return [char_label(g[0]) if len(g) == 1 else f'{nick(g[0])} ({pl(len(g), ("{n} postava", "{n} postavy", "{n} postav"))})'
+    return [nick(g[0]) if len(g) == 1 else f'{nick(g[0])} ({pl(len(g), ("{n} postava", "{n} postavy", "{n} postav"))})'
             for g in groups.values()]
 
 
@@ -3230,7 +3225,7 @@ background:#0003;border:1px solid #ffffff10;border-radius:10px;padding:8px 12px}
 .nw-avs{display:flex}.nw-avs .nw-av{width:26px;height:26px;margin-right:-8px;filter:grayscale(1);opacity:.6;border-color:var(--line)}
 .nw-quiet>span:last-child{margin-left:8px}
 .sub-h{font:600 13px Inter,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:18px 0 8px}
-.craft-box .sub-h{margin-top:0}
+.craft-box{display:flex;flex-direction:column;gap:10px}.craft-box .sub-h,.craft-box p{margin:0}
 .loot-dg{margin-bottom:12px}
 .loot-dg>summary{list-style:none;cursor:pointer;background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:12px 14px}
 .loot-dg>summary::-webkit-details-marker{display:none}
@@ -3554,7 +3549,7 @@ def main():
     ok = [m for m in members if m["ok"]]
     chars = order_chars([m for m in loaded if m["ok"]])  # navíc alti: ready check, karty, novinky
     count = Counter(m.get("player", m["slug"]) for m in chars)
-    for m in loaded:  # hráč s jedinou postavou nemá v popiscích přezdívku navíc (who_name)
+    for m in loaded:  # hráč s jedinou postavou je v popiscích jen přezdívkou (who_name)
         m["solo"] = count[m.get("player", m["slug"])] == 1
     if not ok:
         sys.exit("Nepodařilo se načíst žádnou postavu, stránku neměním.")

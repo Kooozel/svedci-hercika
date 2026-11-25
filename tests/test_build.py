@@ -477,9 +477,9 @@ class Dungeons(unittest.TestCase):
         for c in chars:
             c["solo"] = c["player"] == "a"
         a, b = chars[0], chars[1]
-        self.assertEqual(build.who_name(a), "A Velký")
+        self.assertEqual(build.who_name(a), "A")
         self.assertEqual(build.who_name(b), "B · B Velký")
-        self.assertEqual(build.title_who(a, {}), "A Velký")
+        self.assertEqual(build.title_who(a, {}), "A")
         check = Alts().check(party)
         html = build.ready_section([check], chars)
         self.assertNotIn('class="me-chips" data-player="a"', html)
@@ -490,7 +490,7 @@ class Dungeons(unittest.TestCase):
         r = {"name": "SFK", "zone": "z", "min": 22, "max": 28}
         solo = build.ahead_table([r], r, [a], {"a": a})
         self.assertNotIn("jde alt", solo)
-        self.assertIn('title="A Velký (Mage): ', solo)
+        self.assertIn('title="A (Mage): ', solo)
         self.assertIn("jde alt", build.ahead_table([r], r, [a, b], {c["slug"]: c for c in chars}))
 
     def test_ahead_cell(self):
@@ -802,8 +802,6 @@ class Alts(unittest.TestCase):
                  {"ok": True, "slug": "b", "name": "Zrza Jegod", "player": "b"}]
         build.add_nicks({"players": [{"name": "Fanda", "chars": ["a", "a2"]}, {"chars": ["b"]}]}, chars)
         self.assertEqual([m["nick"] for m in chars], ["Fanda", "Fanda", "Zrza"])
-        self.assertEqual(build.char_label(chars[1]), "Cildac Velky (Fanda)")
-        self.assertEqual(build.char_label(chars[2]), "Zrza Jegod")
 
     def test_mark_from_party_goes_to_all_player_chars(self):
         chars = [{"ok": True, "slug": "a", "name": "Johnie Rotking", "player": "a"},
