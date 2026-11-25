@@ -37,6 +37,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   z jejich sloupce v ready checku (odhad, nebo co jsi jim přepnul). Když se vybraná postava do dungeonu nevejde, řekne to. Odkaz vede na celý ready check. Pod tím mřížka „Kam dál“: dungeony začínající
   pod 40 (`AHEAD_UNTIL`) × hráči, kolik levelů zbývá, než bude dungeon procházka. Za hráče se v každém řádku bere postava
   s největší rezervou (nejnižší, která se do dungeonu vejde; jinak nejbližší pod rozsahem), tooltip buňky řekne kterou.
+  Jen řádek příští výpravy bere stejnou postavu jako ready check, ať se mřížka a tabulka questů pod ní neliší.
   Tvůj sloupec a ručně přepnuté sloupce z ready checku počítají ve všech řádcích se zvolenou postavou. Hranice „do lvl“ je konec
   rozsahu, nebo Wowhead Easy z `difficulty`, co přijde dřív (vysvětluje ji věta pod legendou, na mobilu má sloupec hlavičku „lvl“). Dungeon, který je procházka pro všechny, zmizí,
   nahoře je, co uteče nejdřív. Sloupec vybraného hráče je zvýrazněný. Když za hráče jde jiná postava než hlavní, má buňka tečku v barvě jejího povolání a tooltip ji jmenuje („Kozel · Kozel Smradlák (Mage): …“). Na mobilu je v mřížce jen příští výprava, dva dungeony
@@ -52,7 +53,7 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   (HP a dva hlavní staty role číslem, `STAT_ROWS` v `build.py`, zbytek je na Armory), stupně řemesel a pet. Kdo se odhlásil s Resurrection
   Sickness, má to na kartě. Odkaz `#char-jmeno-prijmeni` otevře rovnou danou postavu; obnovení stránky
   kartu znovu neotevře a sama od sebe se neotevře žádná.
-- **Kdo jsi:** při první návštěvě stránka ukáže jen volbu hráče (za něj jeho postava s nejvyšším levelem) a „jen koukám“.
+- **Kdo jsi:** při první návštěvě stránka ukáže jen volbu hráče (za něj stejný odhad jako u ostatních: naposledy hraná postava, která se vejde do příští výpravy) a „jen koukám“.
   Jinou postavu si zvolíš v liště, stránka si ji pamatuje v prohlížeči (`localStorage`, `me`) a lišta, výprava, ready check,
   loot i Dílna berou všude tu samou. Odkaz `#char-…` volbu přeskočí.
 - **Ready check:** nahoře jsou čipy tvých postav (jméno v barvě classy a level) pro přepnutí alta. Vybraná postava je vpravo v liště
@@ -106,7 +107,8 @@ Data se berou z oficiálního Blizzard API (záloha: veřejná Armory), stránka
   hláška (`quip`), taktika a loot. Taktika (`tip`) a poznámka dungeonu jmenují role a classy (tank, healer, mage, paladin…), ne hráče,
   ať sedí, ať jde kdokoli (hlídá to test); jména můžou být jen v hláškách. U kusu jsou jen ti, kdo ho unesou a komu sedí hlavní stat (`stat`: Caster, Spirit, Agility, Strength…),
   s hláškou místo velký / malý upgrade (🎲 = hodí se víc lidem, domluvit se před rollem). Vzácné BoE kusy z trashe
-  (`"boe": true`) se nevypisují, jen věta. Na štítku je přezdívka, u hráče s víc postavami celé jméno postavy; „až na N“ = kus nasadí na levelu N. Co který štítek znamená, ukážou vzorové štítky pod „?“ pod lootem. Item level se u kusu neukazuje. Pod tím odměny z questů. Forever bossy ani většinu jejich lootu v API zatím nemá, takže typ (`inv`, `sub`), `level` a `req` se píšou ručně
+  (`"boe": true`) se nevypisují, jen věta. Na štítku je celé jméno postavy. Za hráče jsou vidět postavy ze sloupců ready checku toho dungeonu
+  (tvoje, ručně přepnuté přes ▾, jinak odhad), 🎲 i „nikomu“ se počítají jen z nich; „až na N“ = kus nasadí na levelu N. Co který štítek znamená, ukážou vzorové štítky pod „?“ pod lootem. Item level se u kusu neukazuje. Pod tím odměny z questů. Forever bossy ani většinu jejich lootu v API zatím nemá, takže typ (`inv`, `sub`), `level` a `req` se píšou ručně
   ze zdrojů (Warcraft Wiki, Method). Když API předmět zná (třeba questová odměna), stačí `id`.
   Číselné staty kusů (armor, DPS, Str, spell power…) se berou z Wowhead tooltipu podle `id` a ukládají do
   `cache/static.json` (stahuje se jen nové, klíče k tomu nejsou potřeba). Ručně zapsané `values` u kusu mají přednost,
