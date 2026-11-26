@@ -380,6 +380,16 @@
 "req": 0,
 "sub": "Other"
 },
+"250077": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/1387662.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 15,
+"name": "Twice-Spiced Raptor Slice",
+"quality": "COMMON",
+"req": 5,
+"sub": "Food & Drink"
+},
 "250079": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134024.jpg",
 "inv": "NON_EQUIP",
@@ -389,6 +399,16 @@
 "quality": "COMMON",
 "req": 1,
 "sub": "Food & Drink"
+},
+"250346": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134738.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 45,
+"name": "Elixir of Spirit",
+"quality": "COMMON",
+"req": 45,
+"sub": "Elixirs"
 },
 "250497": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134665.jpg",
@@ -4225,6 +4245,32 @@
 ]
 ]
 },
+"54408": {
+"item": null,
+"name": "Enchant Weapon - Revelation",
+"reagents": [
+[
+11083,
+8
+],
+[
+11084,
+6
+],
+[
+11082,
+2
+],
+[
+249409,
+4
+],
+[
+249410,
+4
+]
+]
+},
 "54453": {
 "item": 249409,
 "name": "Cerulean Dye",
@@ -4267,6 +4313,20 @@
 ]
 ]
 },
+"54502": {
+"item": 250077,
+"name": "Twice-Spiced Raptor Slice",
+"reagents": [
+[
+12184,
+1
+],
+[
+2678,
+2
+]
+]
+},
 "54504": {
 "item": 250079,
 "name": "Tasty Raptor Bites",
@@ -4278,6 +4338,24 @@
 [
 2678,
 4
+]
+]
+},
+"54553": {
+"item": 250346,
+"name": "Elixir of Spirit",
+"reagents": [
+[
+3358,
+3
+],
+[
+3356,
+1
+],
+[
+3372,
+1
 ]
 ]
 },
