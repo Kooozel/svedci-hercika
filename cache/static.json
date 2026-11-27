@@ -50,6 +50,26 @@
 "req": 0,
 "sub": "Enchanting"
 },
+"10940": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132858.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 10,
+"name": "Strange Dust",
+"quality": "COMMON",
+"req": 0,
+"sub": "Enchanting"
+},
+"10978": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132877.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 20,
+"name": "Small Glimmering Shard",
+"quality": "RARE",
+"req": 0,
+"sub": "Enchanting"
+},
 "11082": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132862.jpg",
 "inv": "NON_EQUIP",
@@ -57,6 +77,36 @@
 "level": 25,
 "name": "Greater Astral Essence",
 "quality": "UNCOMMON",
+"req": 0,
+"sub": "Enchanting"
+},
+"11084": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132876.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 25,
+"name": "Large Glimmering Shard",
+"quality": "RARE",
+"req": 0,
+"sub": "Enchanting"
+},
+"11128": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135147.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 30,
+"name": "Golden Rod",
+"quality": "COMMON",
+"req": 0,
+"sub": "Enchanting"
+},
+"11130": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135147.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 30,
+"name": "Runed Golden Rod",
+"quality": "COMMON",
 "req": 0,
 "sub": "Enchanting"
 },
@@ -79,6 +129,16 @@
 "quality": "UNCOMMON",
 "req": 13,
 "sub": "Wand"
+},
+"11291": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135437.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 30,
+"name": "Star Wood",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
 },
 "118": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134829.jpg",
@@ -126,6 +186,16 @@
 "kind": "Consumable",
 "level": 20,
 "name": "Silver Skeleton Key",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Other"
+},
+"15870": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134247.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 30,
+"name": "Golden Skeleton Key",
 "quality": "UNCOMMON",
 "req": 0,
 "sub": "Other"
@@ -340,6 +410,26 @@
 "req": 1,
 "sub": "Wand"
 },
+"249391": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/961627.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 25,
+"name": "Pyrite",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Metal & Stone"
+},
+"249392": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135156.jpg",
+"inv": "TWOHWEAPON",
+"kind": "Weapon",
+"level": 30,
+"name": "Glimmering Staff",
+"quality": "RARE",
+"req": 25,
+"sub": "Staff"
+},
 "249409": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/1021860.jpg",
 "inv": "NON_EQUIP",
@@ -540,6 +630,16 @@
 "req": 15,
 "sub": "Cloth"
 },
+"253945": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134590.jpg",
+"inv": "LEGS",
+"kind": "Armor",
+"level": 25,
+"name": "Filigreed Pearly Leggings",
+"quality": "RARE",
+"req": 20,
+"sub": "Cloth"
+},
 "253949": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132767.jpg",
 "inv": "HEAD",
@@ -548,6 +648,16 @@
 "name": "Pristine Circlet",
 "quality": "RARE",
 "req": 20,
+"sub": "Cloth"
+},
+"253983": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132767.jpg",
+"inv": "HEAD",
+"kind": "Armor",
+"level": 30,
+"name": "Filigreed Pearly Circlet",
+"quality": "RARE",
+"req": 25,
 "sub": "Cloth"
 },
 "253987": {
@@ -998,6 +1108,16 @@
 "name": "Patterned Bronze Bracers",
 "quality": "UNCOMMON",
 "req": 20,
+"sub": "Mail"
+},
+"2870": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132750.jpg",
+"inv": "CHEST",
+"kind": "Armor",
+"level": 29,
+"name": "Shining Silver Breastplate",
+"quality": "RARE",
+"req": 24,
 "sub": "Mail"
 },
 "2871": {
@@ -1850,6 +1970,26 @@
 "req": 24,
 "sub": "Cloth"
 },
+"7050": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133693.jpg",
+"inv": "HEAD",
+"kind": "Armor",
+"level": 32,
+"name": "Silk Headband",
+"quality": "UNCOMMON",
+"req": 27,
+"sub": "Cloth"
+},
+"7071": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133607.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 30,
+"name": "Iron Buckle",
+"quality": "COMMON",
+"req": 0,
+"sub": "Parts"
+},
 "7276": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133150.jpg",
 "inv": "CLOAK",
@@ -1952,6 +2092,20 @@
 ],
 [
 3470,
+1
+]
+]
+},
+"11184": {
+"item": 15870,
+"name": "Golden Skeleton Key",
+"reagents": [
+[
+3577,
+1
+],
+[
+3486,
 1
 ]
 ]
@@ -2364,6 +2518,32 @@
 [
 2838,
 1
+]
+]
+},
+"1645": {
+"item": 2870,
+"name": "Shining Silver Breastplate",
+"reagents": [
+[
+2841,
+20
+],
+[
+1206,
+2
+],
+[
+1705,
+2
+],
+[
+5500,
+2
+],
+[
+2842,
+4
 ]
 ]
 },
@@ -3863,6 +4043,16 @@
 ]
 ]
 },
+"4847": {
+"item": 7071,
+"name": "Iron Buckle",
+"reagents": [
+[
+3575,
+1
+]
+]
+},
 "4848": {
 "item": 7026,
 "name": "Linen Belt",
@@ -3910,6 +4100,20 @@
 [
 2321,
 1
+]
+]
+},
+"4851": {
+"item": 7050,
+"name": "Silk Headband",
+"reagents": [
+[
+4305,
+3
+],
+[
+2321,
+2
 ]
 ]
 },
@@ -4271,6 +4475,36 @@
 ]
 ]
 },
+"54409": {
+"item": 249392,
+"name": "Glimmering Staff",
+"reagents": [
+[
+11084,
+4
+],
+[
+10978,
+2
+],
+[
+11291,
+4
+],
+[
+11082,
+1
+],
+[
+10940,
+5
+],
+[
+249391,
+3
+]
+]
+},
 "54453": {
 "item": 249409,
 "name": "Cerulean Dye",
@@ -4577,6 +4811,28 @@
 ]
 ]
 },
+"55453": {
+"item": 253945,
+"name": "Filigreed Pearly Leggings",
+"reagents": [
+[
+4305,
+8
+],
+[
+2321,
+4
+],
+[
+249409,
+2
+],
+[
+5498,
+4
+]
+]
+},
 "55455": {
 "item": 253949,
 "name": "Pristine Circlet",
@@ -4604,6 +4860,28 @@
 [
 11082,
 2
+]
+]
+},
+"55472": {
+"item": 253983,
+"name": "Filigreed Pearly Circlet",
+"reagents": [
+[
+4305,
+8
+],
+[
+2321,
+4
+],
+[
+249409,
+2
+],
+[
+5498,
+6
 ]
 ]
 },
@@ -4806,6 +5084,30 @@
 ]
 ]
 },
+"7422": {
+"item": null,
+"name": "Enchant Shield - Lesser Spirit",
+"reagents": [
+[
+10998,
+1
+],
+[
+10940,
+2
+]
+]
+},
+"7425": {
+"item": null,
+"name": "Enchant Bracer - Lesser Stamina",
+"reagents": [
+[
+11083,
+1
+]
+]
+},
 "7496": {
 "item": null,
 "name": "Enchant Chest - Intellect",
@@ -4813,6 +5115,42 @@
 [
 11082,
 1
+]
+]
+},
+"7502": {
+"item": 11130,
+"name": "Runed Golden Rod",
+"reagents": [
+[
+11128,
+1
+],
+[
+5500,
+1
+],
+[
+11082,
+1
+],
+[
+11083,
+1
+]
+]
+},
+"7836": {
+"item": 11128,
+"name": "Golden Rod",
+"reagents": [
+[
+3577,
+1
+],
+[
+3478,
+2
 ]
 ]
 },
@@ -5237,6 +5575,16 @@
 "DPS": 4.0
 }
 },
+"249392": {
+"bop": true,
+"v": 2,
+"values": {
+"DPS": 18.4,
+"INTELLECT": 11,
+"SPELL_POWER": 34,
+"STAMINA": 11
+}
+},
 "250497": {
 "bop": true,
 "v": 2,
@@ -5369,6 +5717,17 @@
 "STAMINA": 4
 }
 },
+"253945": {
+"bop": true,
+"v": 2,
+"values": {
+"ARCANE_SPELL_DAMAGE": 11,
+"ARMOR": 37,
+"INTELLECT": 6,
+"SPIRIT": 4,
+"STAMINA": 5
+}
+},
 "253949": {
 "bop": true,
 "v": 2,
@@ -5377,6 +5736,15 @@
 "SPELL_DAMAGE_DONE": 6,
 "SPELL_HEALING_DONE": 18,
 "STAMINA": 10
+}
+},
+"253983": {
+"bop": true,
+"v": 2,
+"values": {
+"ARCANE_SPELL_DAMAGE": 14,
+"ARMOR": 38,
+"STAMINA": 12
 }
 },
 "253987": {
@@ -6781,6 +7149,14 @@
 "STAMINA": 6
 }
 },
+"2870": {
+"v": 2,
+"values": {
+"ARMOR": 214,
+"STAMINA": 6,
+"STRENGTH": 14
+}
+},
 "3078": {
 "bop": true,
 "v": 2,
@@ -7739,6 +8115,14 @@
 "values": {
 "ARMOR": 34,
 "FROST_SPELL_DAMAGE": 10,
+"STAMINA": 8
+}
+},
+"7050": {
+"v": 2,
+"values": {
+"ARMOR": 36,
+"SPELL_POWER": 9,
 "STAMINA": 8
 }
 },
