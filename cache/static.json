@@ -40,6 +40,16 @@
 "req": 2,
 "sub": "Mail"
 },
+"10592": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134816.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 40,
+"name": "Catseye Draught",
+"quality": "COMMON",
+"req": 30,
+"sub": "Elixirs"
+},
 "10938": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132867.jpg",
 "inv": "NON_EQUIP",
@@ -1130,6 +1140,16 @@
 "req": 15,
 "sub": "Other"
 },
+"2880": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133588.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 5,
+"name": "Weak Flux",
+"quality": "COMMON",
+"req": 0,
+"sub": "Other"
+},
 "2996": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/132890.jpg",
 "inv": "NON_EQUIP",
@@ -1240,6 +1260,16 @@
 "req": 16,
 "sub": "Elixirs"
 },
+"3391": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134837.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 30,
+"name": "Elixir of Ogre Strength",
+"quality": "COMMON",
+"req": 20,
+"sub": "Elixirs"
+},
 "3470": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/135243.jpg",
 "inv": "NON_EQUIP",
@@ -1320,6 +1350,16 @@
 "req": 0,
 "sub": "Metal & Stone"
 },
+"3577": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133217.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 30,
+"name": "Gold Bar",
+"quality": "UNCOMMON",
+"req": 0,
+"sub": "Metal & Stone"
+},
 "3726": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134003.jpg",
 "inv": "NON_EQUIP",
@@ -1369,6 +1409,16 @@
 "quality": "COMMON",
 "req": 22,
 "sub": "Potions"
+},
+"3859": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133234.jpg",
+"inv": "NON_EQUIP",
+"kind": "Trade Goods",
+"level": 35,
+"name": "Steel Bar",
+"quality": "COMMON",
+"req": 0,
+"sub": "Metal & Stone"
 },
 "4231": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134366.jpg",
@@ -1740,6 +1790,16 @@
 "req": 1,
 "sub": "Elixirs"
 },
+"6149": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134853.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 41,
+"name": "Greater Mana Potion",
+"quality": "COMMON",
+"req": 31,
+"sub": "Potions"
+},
 "6214": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/133055.jpg",
 "inv": "TWOHWEAPON",
@@ -2069,6 +2129,36 @@
 "quality": "COMMON",
 "req": 3,
 "sub": "Potions"
+},
+"8949": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134873.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 37,
+"name": "Elixir of Agility",
+"quality": "COMMON",
+"req": 27,
+"sub": "Elixirs"
+},
+"8951": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134845.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 39,
+"name": "Elixir of Defense",
+"quality": "COMMON",
+"req": 29,
+"sub": "Elixirs"
+},
+"8956": {
+"icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134732.jpg",
+"inv": "NON_EQUIP",
+"kind": "Consumable",
+"level": 41,
+"name": "Oil of Immolation",
+"quality": "COMMON",
+"req": 31,
+"sub": "Other"
 },
 "929": {
 "icon": "https://render.worldofwarcraft.com/forever-eu/icons/56/134831.jpg",
@@ -2677,6 +2767,24 @@
 ]
 ]
 },
+"1822": {
+"item": 3391,
+"name": "Elixir of Ogre Strength",
+"reagents": [
+[
+2449,
+1
+],
+[
+3356,
+1
+],
+[
+3372,
+1
+]
+]
+},
 "1832": {
 "item": 3382,
 "name": "Minor Troll's Blood Elixir",
@@ -2732,6 +2840,16 @@
 [
 2592,
 2
+]
+]
+},
+"1846": {
+"item": 3577,
+"name": "Smelt Gold",
+"reagents": [
+[
+2776,
+1
 ]
 ]
 },
@@ -2881,6 +2999,20 @@
 ],
 [
 3372,
+1
+]
+]
+},
+"2037": {
+"item": 3859,
+"name": "Smelt Steel",
+"reagents": [
+[
+3575,
+1
+],
+[
+3857,
 1
 ]
 ]
@@ -4981,6 +5113,78 @@
 ]
 ]
 },
+"5997": {
+"item": 8949,
+"name": "Elixir of Agility",
+"reagents": [
+[
+3820,
+1
+],
+[
+3821,
+1
+],
+[
+3372,
+1
+]
+]
+},
+"5998": {
+"item": 8951,
+"name": "Elixir of Defense",
+"reagents": [
+[
+3355,
+1
+],
+[
+3821,
+1
+],
+[
+3372,
+1
+]
+]
+},
+"5999": {
+"item": 8956,
+"name": "Oil of Immolation",
+"reagents": [
+[
+4625,
+1
+],
+[
+3821,
+1
+],
+[
+8925,
+1
+]
+]
+},
+"6000": {
+"item": 6149,
+"name": "Greater Mana Potion",
+"reagents": [
+[
+3358,
+1
+],
+[
+3821,
+1
+],
+[
+3372,
+1
+]
+]
+},
 "6576": {
 "item": 10045,
 "name": "Simple Linen Pants",
@@ -5034,6 +5238,24 @@
 [
 2840,
 4
+]
+]
+},
+"6848": {
+"item": 10592,
+"name": "Catseye Draught",
+"reagents": [
+[
+3821,
+1
+],
+[
+3818,
+1
+],
+[
+3372,
+1
 ]
 ]
 },
